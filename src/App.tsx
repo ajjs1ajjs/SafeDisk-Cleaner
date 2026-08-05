@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import * as api from "./api";
 import {
   CATEGORY_LABELS,
@@ -75,10 +76,7 @@ export default function App() {
     setProgress({ current_root: "", files_scanned: 0, dirs_scanned: 0, candidates_found: 0, percent: 0, finished: false });
     setMessage("");
     try {
-      const roots = customRoots
-        .split(/[,;\n]/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      const roots = parseRoots(customRoots);
       const result = await api.scan(
         roots,
         includeMedium,
@@ -181,10 +179,7 @@ export default function App() {
     runClean(selectedCandidates, mode, doScan);
 
   const doDupes = async () => {
-    const roots = customRoots
-      .split(/[,;\n]/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const roots = parseRoots(customRoots);
     if (roots.length === 0) {
       roots.push(...drives.map((d) => `${d.letter}\\`));
     }
@@ -254,6 +249,47 @@ export default function App() {
 
   const doCleanDupes = () =>
     runClean(dupeSelectedCandidates, "interactive", doDupes);
+
+  const parseRoots = (s: string) =>
+    s
+      .split(/[,;\n]/)
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
+
+  const doPickFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: true,
+        title: "Виберіть папку або диск для аналізу",
+      });
+      if (!selected) return;
+      const paths = Array.isArray(selected) ? selected : [selected];
+      setCustomRoots((prev) => {
+        const merged = new Set([...parseRoots(prev), ...paths]);
+        return [...merged].join(", ");
+      });
+    } catch (e) {
+      setMessage(`Помилка вибору: ${e}`);
+    }
+  };
+
+  const isDriveSelected = (letter: string) => {
+    const root = `${letter}\\`;
+    return parseRoots(customRoots).some((r) => r === root || r === letter);
+  };
+
+  const toggleDrive = (letter: string) => {
+    const root = `${letter}\\`;
+    setCustomRoots((prev) => {
+      const existing = parseRoots(prev);
+      const has = existing.includes(root) || existing.includes(letter);
+      const next = has
+        ? existing.filter((r) => r !== root && r !== letter)
+        : [...existing, root];
+      return next.join(", ");
+    });
+  };
 
   const doEmptyRecycleBin = async () => {
     setBusy(true);
@@ -327,7 +363,16 @@ export default function App() {
       <section className="scan-bar">
         <div className="drives">
           {drives.map((d) => (
-            <div className="drive" key={d.letter}>
+            <div
+              className={`drive${isDriveSelected(d.letter) ? " selected" : ""}`}
+              key={d.letter}
+              onClick={() => toggleDrive(d.letter)}
+              title={
+                isDriveSelected(d.letter)
+                  ? "Прибрати диск з аналізу"
+                  : "Додати диск до аналізу"
+              }
+            >
               <strong>{d.letter}</strong>
               <span>{d.kind}</span>
               <span>
@@ -343,6 +388,13 @@ export default function App() {
             value={customRoots}
             onChange={(e) => setCustomRoots(e.target.value)}
           />
+          <button
+            className="ghost"
+            onClick={doPickFolder}
+            disabled={scanning || dupeScanning || busy}
+          >
+            Обзор...
+          </button>
           <label>
             <input
               type="checkbox"

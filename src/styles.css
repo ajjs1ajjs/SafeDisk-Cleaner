@@ -153,6 +153,21 @@ button.mini {
   display: flex;
   flex-direction: column;
   min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drive:hover {
+  border-color: var(--accent);
+}
+
+.drive.selected {
+  border-color: var(--green);
+  background: rgba(52, 192, 138, 0.08);
+}
+
+.drive.selected strong {
+  color: var(--green);
 }
 
 .drive strong {
