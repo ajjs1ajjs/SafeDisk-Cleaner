@@ -41,7 +41,7 @@ git push origin $tag
 
 # Prepare release notes
 if (-not $ReleaseNotes) {
-    $changelog = Get-Content "$root/CHANGELOG.md" -Raw -ErrorAction SilentlyContinue
+    $changelog = Get-Content "$root/CHANGELOG.md" -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
     if ($changelog -match "(?s)^# .*?\n\n(## .*?)\n\n## ") {
         $ReleaseNotes = $Matches[1]
     } else {
