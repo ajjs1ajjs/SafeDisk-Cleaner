@@ -252,7 +252,7 @@ pub fn scan(opts: &ScanOptions) -> ScanResult {
 
 pub fn scan_with_progress(
     opts: &ScanOptions,
-    mut on_progress: impl FnMut(ScanProgress),
+    mut on_progress: impl FnMut(ScanProgress) + Send,
 ) -> ScanResult {
     let started = Instant::now();
     let roots = if opts.roots.is_empty() {
@@ -263,16 +263,21 @@ pub fn scan_with_progress(
     let total_roots = roots.len().max(1);
 
     let (tx, rx) = mpsc::channel();
-    let results: Vec<(Vec<Candidate>, u64, u64)> = roots
-        .par_iter()
-        .enumerate()
-        .map(|(i, r)| scan_one_root(r, opts, &tx, i, total_roots))
-        .collect();
-    drop(tx);
-
-    for p in rx {
-        on_progress(p);
-    }
+    let results: Vec<(Vec<Candidate>, u64, u64)> = std::thread::scope(|s| {
+        let reader = s.spawn(|| {
+            for p in rx {
+                on_progress(p);
+            }
+        });
+        let res: Vec<_> = roots
+            .par_iter()
+            .enumerate()
+            .map(|(i, r)| scan_one_root(r, opts, &tx, i, total_roots))
+            .collect();
+        drop(tx);
+        reader.join().expect("scan progress reader panicked");
+        res
+    });
 
     let mut candidates: Vec<Candidate> = results.iter().flat_map(|r| r.0.iter().cloned()).collect();
     candidates.extend(special_candidates(opts));
