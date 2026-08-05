@@ -74,6 +74,30 @@ npm run build:all
 
 Готові файли знаходяться у `src-tauri/target/release/bundle/`, портативна збірка — у `dist-portable/` та `BUILD/`.
 
+### Портативна версія та WebView2
+
+Портативна збірка **вбудовує фіксовану версію WebView2 Runtime** поруч з `safedisk-cleaner.exe`, тому працює навіть на машинах, де runtime не встановлено системно. Під час збірки:
+
+1. Скрипт автоматично визначає найновішу доступну фіксовану версію WebView2 (x64) з сайту Microsoft і завантажує її (`~300 МБ`, кешується у `src-tauri/.webview2-runtime/`).
+2. Розпакована папка runtime (наприклад, `Microsoft.WebView2.FixedVersionRuntime.*.x64`) копіюється в портативний каталог.
+3. При запуску програма виявляє папку runtime поруч з exe і використовує її (через змінну середовища `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`).
+
+Поведінка:
+
+- Якщо поруч з `safedisk-cleaner.exe` є папка `Microsoft.WebView2.FixedVersionRuntime.*` — вбудований runtime буде використано.
+- В інших випадках (інстальована версія) — використовується системний WebView2 Runtime.
+
+Параметри скрипта:
+
+```powershell
+# Використати конкретну версію runtime (замість авто-визначення)
+npm run build:portable -- --  # (передати аргументи можна напряму через powershell)
+powershell -ExecutionPolicy Bypass -File scripts\build-portable.ps1 -CabUrl "https://.../Microsoft.WebView2.FixedVersionRuntime.XXX.x64.cab"
+
+# Зібрати без вбудовування runtime (потребує системного WebView2)
+powershell -ExecutionPolicy Bypass -File scripts\build-portable.ps1 -SkipWebView2
+```
+
 ### Механіка релізів
 
 Версія береться з `src-tauri/tauri.conf.json` (єдине джерело істини).
