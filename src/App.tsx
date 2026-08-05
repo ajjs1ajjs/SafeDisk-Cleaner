@@ -10,6 +10,7 @@ import {
 import type {
   AuditEntry,
   Candidate,
+  CleanupProgress,
   CleanupResult,
   DriveInfo,
   QuarantineEntry,
@@ -25,6 +26,7 @@ export default function App() {
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
+  const [cleanProgress, setCleanProgress] = useState<CleanupProgress | null>(null);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [dupeScanning, setDupeScanning] = useState(false);
   const [dupeResult, setDupeResult] = useState<ScanResult | null>(null);
@@ -63,6 +65,20 @@ export default function App() {
         setProgress(null);
       } else {
         setProgress(p);
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen<CleanupProgress>("cleanup-progress", (event) => {
+      const p = event.payload;
+      if (p.finished) {
+        setCleanProgress(null);
+      } else {
+        setCleanProgress(p);
       }
     });
     return () => {
@@ -154,6 +170,14 @@ export default function App() {
     }
     setBusy(true);
     setMessage("");
+    setCleanProgress({
+      processed: 0,
+      total: cands.length,
+      current_path: "",
+      status: "starting",
+      percent: 0,
+      finished: false,
+    });
     try {
       const result = await api.cleanup(
         cands,
@@ -172,6 +196,7 @@ export default function App() {
       setMessage(`Помилка очищення: ${e}`);
     } finally {
       setBusy(false);
+      setCleanProgress(null);
     }
   };
 
@@ -455,6 +480,33 @@ export default function App() {
           {progress.current_root && (
             <div className="progress-root" title={progress.current_root}>
               {progress.current_root}
+            </div>
+          )}
+        </section>
+      )}
+
+      {busy && cleanProgress && !cleanProgress.finished && (
+        <section className="progress cleanup-progress">
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{
+                width: `${Math.min(100, Math.max(0, cleanProgress.percent))}%`,
+              }}
+            />
+          </div>
+          <div className="progress-stats">
+            <span>
+              Очищення: {cleanProgress.processed.toLocaleString()} з{" "}
+              {cleanProgress.total.toLocaleString()} файлів
+            </span>
+            <span className="progress-percent">
+              {Math.round(cleanProgress.percent)}%
+            </span>
+          </div>
+          {cleanProgress.current_path && (
+            <div className="progress-root" title={cleanProgress.current_path}>
+              {cleanProgress.current_path}
             </div>
           )}
         </section>

@@ -63,12 +63,14 @@ async fn scan_duplicates_command(roots: Vec<String>) -> Result<ScanResult, Strin
 
 #[tauri::command]
 async fn cleanup_command(
+    app: tauri::AppHandle,
     candidates: Vec<Candidate>,
     mode: String,
     quarantine_retention_days: u64,
     move_to_recycle_bin: bool,
     auto_threshold: u8,
 ) -> Result<CleanupResult, String> {
+    use tauri::Emitter;
     tauri::async_runtime::spawn_blocking(move || {
         let mode = match mode.as_str() {
             "dry-run" => CleanMode::DryRun,
@@ -82,7 +84,10 @@ async fn cleanup_command(
             move_to_recycle_bin,
             auto_threshold: if auto_threshold == 0 { 95 } else { auto_threshold },
         };
-        Ok(cleanup::run(&candidates, &opts))
+        let on_progress = |p: &CleanupProgress| {
+            let _ = app.emit("cleanup-progress", p);
+        };
+        Ok(cleanup::run_with_progress(&candidates, &opts, Some(&on_progress)))
     })
     .await
     .map_err(|e| e.to_string())?

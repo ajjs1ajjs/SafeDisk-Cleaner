@@ -65,6 +65,15 @@ export interface ScanProgress {
   finished: boolean;
 }
 
+export interface CleanupProgress {
+  processed: number;
+  total: number;
+  current_path: string;
+  status: string;
+  percent: number;
+  finished: boolean;
+}
+
 export interface CleanupEntry {
   path: string;
   size: number;

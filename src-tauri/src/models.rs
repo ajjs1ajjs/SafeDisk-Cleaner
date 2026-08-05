@@ -123,6 +123,16 @@ pub struct ScanProgress {
     pub finished: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CleanupProgress {
+    pub processed: u64,
+    pub total: u64,
+    pub current_path: String,
+    pub status: String,
+    pub percent: f64,
+    pub finished: bool,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct CleanupOptions {
     pub mode: CleanMode,

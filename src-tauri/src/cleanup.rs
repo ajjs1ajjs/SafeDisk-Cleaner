@@ -26,6 +26,14 @@ fn today() -> String {
 }
 
 pub fn run(candidates: &[Candidate], opts: &CleanupOptions) -> CleanupResult {
+    run_with_progress(candidates, opts, None)
+}
+
+pub fn run_with_progress(
+    candidates: &[Candidate],
+    opts: &CleanupOptions,
+    on_progress: Option<&dyn Fn(&CleanupProgress)>,
+) -> CleanupResult {
     let _ = crate::quarantine::purge_expired(opts.quarantine_retention_days);
 
     let mut ordered: Vec<&Candidate> = candidates.iter().collect();
@@ -34,6 +42,11 @@ pub fn run(candidates: &[Candidate], opts: &CleanupOptions) -> CleanupResult {
             .cmp(&a.confidence)
             .then(b.size.cmp(&a.size))
     });
+
+    let total = ordered
+        .iter()
+        .filter(|c| c.action != CandidateAction::Keep)
+        .count() as u64;
 
     let mut entries = Vec::new();
     let mut freed: u64 = 0;
@@ -44,6 +57,26 @@ pub fn run(candidates: &[Candidate], opts: &CleanupOptions) -> CleanupResult {
             continue;
         }
         processed += 1;
+
+        if let Some(cb) = on_progress {
+            let percent = if total == 0 {
+                100.0
+            } else {
+                processed as f64 * 100.0 / total as f64
+            };
+            cb(&CleanupProgress {
+                processed: processed as u64,
+                total,
+                current_path: cand.path.clone(),
+                status: if matches!(opts.mode, CleanMode::DryRun) {
+                    "dry-run".into()
+                } else {
+                    "cleaning".into()
+                },
+                percent,
+                finished: false,
+            });
+        }
 
         if matches!(opts.mode, CleanMode::DryRun) {
             freed += cand.size;
@@ -101,6 +134,17 @@ pub fn run(candidates: &[Candidate], opts: &CleanupOptions) -> CleanupResult {
                 });
             }
         }
+    }
+
+    if let Some(cb) = on_progress {
+        cb(&CleanupProgress {
+            processed: processed as u64,
+            total,
+            current_path: String::new(),
+            status: "done".into(),
+            percent: 100.0,
+            finished: true,
+        });
     }
 
     CleanupResult {
