@@ -1,6 +1,6 @@
 [package]
 name = "safedisk-cleaner"
-version = "0.2.4"
+version = "0.2.5"
 description = "Safe Windows disk analyzer and cleaner"
 authors = ["ajjs1ajjs"]
 edition = "2021"
