@@ -8,7 +8,6 @@ BUILD/
 dist-portable/
 src-tauri/target/
 src-tauri/gen/
-src-tauri/.webview2-runtime/
 
 # AI editor
 .claude/
