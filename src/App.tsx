@@ -27,6 +27,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
   const [cleanProgress, setCleanProgress] = useState<CleanupProgress | null>(null);
+  const [pendingRefresh, setPendingRefresh] = useState<(() => Promise<void>) | null>(null);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [dupeScanning, setDupeScanning] = useState(false);
   const [dupeResult, setDupeResult] = useState<ScanResult | null>(null);
@@ -191,7 +192,7 @@ export default function App() {
         `Оброблено ${result.processed}, звільнено ${humanSize(result.freed_bytes)}.`
       );
       await refreshMisc();
-      if (after) await after();
+      setPendingRefresh(() => after ?? null);
     } catch (e) {
       setMessage(`Помилка очищення: ${e}`);
     } finally {
@@ -202,6 +203,12 @@ export default function App() {
 
   const doClean = (mode: "dry-run" | "auto" | "interactive") =>
     runClean(selectedCandidates, mode, doScan);
+
+  const confirmRefresh = async () => {
+    const fn = pendingRefresh;
+    setPendingRefresh(null);
+    if (fn) await fn();
+  };
 
   const doDupes = async () => {
     const roots = parseRoots(customRoots);
@@ -322,7 +329,7 @@ export default function App() {
       await api.emptyRecycleBin();
       setMessage("Кошик очищено.");
       await refreshMisc();
-      await doScan();
+      setPendingRefresh(() => doScan);
     } catch (e) {
       setMessage(`Помилка: ${e}`);
     } finally {
@@ -513,6 +520,20 @@ export default function App() {
       )}
 
       {message && <div className="message">{message}</div>}
+
+      {pendingRefresh && (
+        <div className="message refresh-prompt">
+          <span>Очищення завершено. Оновити аналіз?</span>
+          <div className="refresh-prompt-actions">
+            <button className="primary" onClick={confirmRefresh}>
+              Так
+            </button>
+            <button className="ghost" onClick={() => setPendingRefresh(null)}>
+              Ні
+            </button>
+          </div>
+        </div>
+      )}
 
       {scanResult && (
         <>

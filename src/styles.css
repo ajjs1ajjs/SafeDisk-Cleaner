@@ -223,6 +223,19 @@ button.mini {
   margin: 12px 0;
 }
 
+.refresh-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.refresh-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .summary {
   margin: 16px 0;
 }
