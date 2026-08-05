@@ -559,4 +559,33 @@ mod tests {
         assert_eq!(hash_file(&f).unwrap(), hash_file(&f).unwrap());
         std::fs::remove_dir_all(&dir).ok();
     }
+
+    #[test]
+    fn scan_progress_streams_events() {
+        let root = test_root("progress");
+        std::fs::remove_dir_all(&root).ok();
+        std::fs::create_dir_all(&root).unwrap();
+        for i in 0..600 {
+            std::fs::write(root.join(format!("f{:04}.log", i)), vec![0u8; 128]).unwrap();
+        }
+        let opts = ScanOptions {
+            roots: vec![root.to_string_lossy().to_string()],
+            recency_days: 90,
+            ..Default::default()
+        };
+        let mut events: Vec<f64> = Vec::new();
+        scan_with_progress(&opts, |p| events.push(p.percent));
+        assert!(
+            events.len() >= 2,
+            "expected intermediate + finished events, got {}",
+            events.len()
+        );
+        assert!(
+            events.iter().any(|&p| p > 0.0 && p < 100.0),
+            "expected intermediate percent, got {:?}",
+            events
+        );
+        assert_eq!(*events.last().unwrap(), 100.0, "last event must be 100%");
+        std::fs::remove_dir_all(&root).ok();
+    }
 }
