@@ -76,10 +76,24 @@ npm run build:all
 
 ### Портативна версія
 
-Портативна збірка — це **один файл** `safedisk-cleaner.exe` (без додаткових папок). Вона використовує **системний WebView2 Runtime** (вбудований у Windows 10/11 або встановлений окремо), тому запускається швидко навіть з мережевої шари.
+Портативна збірка — це **один файл** `safedisk-cleaner.exe` (~300 МБ), у який **вбудовано WebView2 Runtime** (фіксована версія). Вона працює повністю офлайн, без встановленого системного WebView2, і нічого не завантажує під час роботи.
 
-- Якщо WebView2 Runtime не встановлено — програма показує діалог українською з пропозицією завантажити його (кнопка «Так» відкриває офіційний інсталятор).
-- Для CLI-режиму (`analyze`, `clean`, ...) WebView2 не потрібен взагалі.
+Як це працює:
+
+1. При першому запуску програма розпаковує вбудований runtime у `%LOCALAPPDATA%\SafeDisk\WebView2Runtime` і використовує його.
+2. Наступні запуски стартують з локального кешу — швидко навіть якщо сам exe лежить на мережевій шарі.
+3. Інстальована версія (NSIS/MSI) використовує системний WebView2 Runtime (стандартна поведінка).
+
+Під час збірки `build-portable.ps1`:
+- Завантажує найновішу фіксовану версію WebView2 (x64) з сайту Microsoft (`~300 МБ`, кешується у `src-tauri/.webview2-cache/`).
+- Стискає її у `src-tauri/webview2-runtime.zip` і вшиває в exe (feature `embed-webview2`).
+- Збирає один exe з `cargo build --release --features embed-webview2`.
+
+Кеш можна оновити:
+```powershell
+Remove-Item -Recurse -Force src-tauri\.webview2-cache; Remove-Item src-tauri\webview2-runtime.zip
+powershell -ExecutionPolicy Bypass -File scripts\prepare-webview2-runtime.ps1
+```
 
 ### Механіка релізів
 

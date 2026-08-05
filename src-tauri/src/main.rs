@@ -1,6 +1,67 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "embed-webview2"))]
+mod embedded_webview2 {
+    use std::io::Cursor;
+    use std::path::{Path, PathBuf};
+
+    const RUNTIME_ZIP: &[u8] = include_bytes!("../webview2-runtime.zip");
+
+    pub fn setup() {
+        if let Some(dir) = ensure_runtime() {
+            std::env::set_var("WEBVIEW2_BROWSER_EXECUTABLE_FOLDER", &dir);
+        }
+    }
+
+    fn ensure_runtime() -> Option<PathBuf> {
+        let root = cache_root();
+        if let Some(dir) = find_runtime(&root) {
+            return Some(dir);
+        }
+        let _ = std::fs::create_dir_all(&root);
+        extract(RUNTIME_ZIP, &root).ok()?;
+        find_runtime(&root)
+    }
+
+    fn cache_root() -> PathBuf {
+        let base = std::env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir);
+        base.join("SafeDisk").join("WebView2Runtime")
+    }
+
+    fn find_runtime(root: &Path) -> Option<PathBuf> {
+        let entries = std::fs::read_dir(root).ok()?;
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() && p.join("msedgewebview2.exe").exists() {
+                return Some(p);
+            }
+        }
+        None
+    }
+
+    fn extract(zip_bytes: &[u8], dest: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let mut archive = zip::ZipArchive::new(Cursor::new(zip_bytes))?;
+        for i in 0..archive.len() {
+            let mut entry = archive.by_index(i)?;
+            let name = entry.name().replace('\\', "/");
+            let out_path = dest.join(name);
+            if entry.is_dir() {
+                std::fs::create_dir_all(&out_path)?;
+                continue;
+            }
+            if let Some(parent) = out_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            let mut f = std::fs::File::create(&out_path)?;
+            std::io::copy(&mut entry, &mut f)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(all(windows, not(feature = "embed-webview2")))]
 mod webview2_check {
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
@@ -56,7 +117,10 @@ mod webview2_check {
 
     pub fn show_missing_dialog() {
         use windows_sys::Win32::UI::Shell::ShellExecuteW;
-        use windows_sys::Win32::UI::WindowsAndMessaging::{IDYES, MB_DEFBUTTON1, MB_ICONINFORMATION, MB_SETFOREGROUND, MB_YESNO, MessageBoxW, SW_SHOWNORMAL};
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            IDYES, MB_DEFBUTTON1, MB_ICONINFORMATION, MB_SETFOREGROUND, MB_YESNO, MessageBoxW,
+            SW_SHOWNORMAL,
+        };
 
         let title = wide("SafeDisk Cleaner");
         let msg = wide(
@@ -94,7 +158,10 @@ fn main() {
         std::process::exit(safedisk_cleaner_lib::cli_public::run_cli(&args));
     }
 
-    #[cfg(windows)]
+    #[cfg(all(windows, feature = "embed-webview2"))]
+    embedded_webview2::setup();
+
+    #[cfg(all(windows, not(feature = "embed-webview2")))]
     if !webview2_check::runtime_installed() {
         webview2_check::show_missing_dialog();
         std::process::exit(1);

@@ -1,5 +1,6 @@
 param(
-    [string]$OutputDir = "dist-portable"
+    [string]$OutputDir = "dist-portable",
+    [string]$WebView2CabUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,17 +15,21 @@ $exeName = "safedisk-cleaner.exe"
 Write-Host "=== $AppName v$Version Portable Build ===" -ForegroundColor Cyan
 Write-Host "Version: $Version" -ForegroundColor Gray
 
-Write-Host "[1/3] Building frontend assets..." -ForegroundColor Yellow
+Write-Host "[1/4] Building frontend assets..." -ForegroundColor Yellow
 npm run build
 if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
 
-Write-Host "Running cargo build --release..." -ForegroundColor Yellow
+Write-Host "[2/4] Preparing embedded WebView2 runtime..." -ForegroundColor Yellow
+& "$PSScriptRoot\prepare-webview2-runtime.ps1" -CabUrl $WebView2CabUrl
+if ($LASTEXITCODE -ne 0) { throw "WebView2 runtime preparation failed" }
+
+Write-Host "Running cargo build --release (embed-webview2)..." -ForegroundColor Yellow
 Set-Location src-tauri
-cargo build --release
+cargo build --release --features embed-webview2
 if ($LASTEXITCODE -ne 0) { throw "cargo build --release failed" }
 Set-Location $projectRoot
 
-Write-Host "[2/3] Creating portable package..." -ForegroundColor Yellow
+Write-Host "[3/4] Creating portable package..." -ForegroundColor Yellow
 
 $portableDir = "$OutputDir\$AppName Portable"
 if (Test-Path $portableDir) {
@@ -46,7 +51,7 @@ if (Test-Path "src-tauri\icons\icon.ico") {
 Write-Host "  Portable dir: $portableDir" -ForegroundColor Gray
 Write-Host "  Executable:   $portableDir\$exeName" -ForegroundColor Gray
 
-Write-Host "[3/3] Creating portable ZIP archive..." -ForegroundColor Yellow
+Write-Host "[4/4] Creating portable ZIP archive..." -ForegroundColor Yellow
 
 $zipName = "$AppName v${Version} Portable.zip"
 $zipPath = "$OutputDir\$zipName"
