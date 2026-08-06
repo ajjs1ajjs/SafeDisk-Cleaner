@@ -8,9 +8,8 @@ namespace SafeDiskCleaner.App.Services;
 
 /// <summary>
 /// Downloads and installs a newer release from GitHub.
-/// - Installed (Program Files): downloads the Setup bootstrapper and launches it.
-/// - Portable: downloads the portable exe and swaps it via an updater script
-///   (the running exe cannot be replaced while running).
+/// Downloads the portable exe and swaps it via an updater script
+/// (the running exe cannot be replaced while running).
 /// </summary>
 public sealed class AutoUpdater
 {
@@ -23,31 +22,12 @@ public sealed class AutoUpdater
         _httpFactory = httpFactory;
     }
 
-    public bool IsRunningFromInstalledLocation
-    {
-        get
-        {
-            var baseDir = AppContext.BaseDirectory;
-            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            var pfX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            return baseDir.StartsWith(pf, StringComparison.OrdinalIgnoreCase)
-                || baseDir.StartsWith(pfX86, StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
     public async Task<UpdateInfo> CheckAsync(CancellationToken ct = default) =>
         await _update.CheckAsync(ct);
 
-    /// <summary>Picks the release asset that matches the current deployment type.</summary>
-    public ReleaseAsset? SelectAsset(UpdateInfo info)
-    {
-        if (IsRunningFromInstalledLocation)
-        {
-            return info.Assets.FirstOrDefault(a => a.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase));
-        }
-
-        return info.Assets.FirstOrDefault(a => a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
-    }
+    /// <summary>Picks the portable release asset.</summary>
+    public ReleaseAsset? SelectAsset(UpdateInfo info) =>
+        info.Assets.FirstOrDefault(a => a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
 
     public async Task DownloadAsync(
         ReleaseAsset asset,
@@ -78,19 +58,10 @@ public sealed class AutoUpdater
     }
 
     /// <summary>
-    /// Installs the downloaded package. Returns after launching the update flow;
-    /// the caller should then shut the application down.
+    /// Installs the downloaded package by swapping the portable exe. Returns after
+    /// launching the update flow; the caller should then shut the application down.
     /// </summary>
-    public void LaunchInstaller(string downloadedPath)
-    {
-        if (IsRunningFromInstalledLocation)
-        {
-            Process.Start(new ProcessStartInfo(downloadedPath) { UseShellExecute = true });
-            return;
-        }
-
-        LaunchPortableSwap(downloadedPath);
-    }
+    public void LaunchInstaller(string downloadedPath) => LaunchPortableSwap(downloadedPath);
 
     private static void LaunchPortableSwap(string downloadedPath)
     {

@@ -26,5 +26,4 @@ dist
 # AI editor
 .claude/
 
-src/SafeDiskCleaner.Setup/SafeDiskCleaner.msi
 

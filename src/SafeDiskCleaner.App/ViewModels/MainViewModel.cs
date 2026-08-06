@@ -180,8 +180,8 @@ public sealed partial class MainViewModel : ObservableObject
 
             _updater.LaunchInstaller(destination);
 
-            // The current executable is being replaced / reinstalled — close the app.
-            Application.Current.Dispatcher.BeginInvoke(() => Application.Current.Shutdown());
+            // The current executable is being replaced — close the app.
+            await Application.Current.Dispatcher.InvokeAsync(() => Application.Current.Shutdown());
         }
         catch (Exception ex)
         {

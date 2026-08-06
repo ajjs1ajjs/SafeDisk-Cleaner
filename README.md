@@ -89,11 +89,11 @@ dotnet test
 
 ```
 SafeDiskCleaner.sln
-├── Directory.Build.props       # спільна версія 0.3.0
+├── Directory.Build.props       # спільна версія 0.3.1
 ├── src/
 │   ├── SafeDiskCleaner.Core/           # домен: моделі, rules, confidence, safety, scanner, Windows interop
 │   ├── SafeDiskCleaner.Infrastructure/ # EF Core, Refit+Polly, Serilog, сервіси, DI
-│   ├── SafeDiskCleaner.App/            # WPF UI (MaterialDesign, MVVM)
+│   ├── SafeDiskCleaner.App/            # WPF UI (MaterialDesign, MVVM) — портативна збірка
 │   └── SafeDiskCleaner.Cli/            # консольний застосунок
 └── tests/
     └── SafeDiskCleaner.Tests/          # xUnit + FluentAssertions + Moq (89 тестів)
