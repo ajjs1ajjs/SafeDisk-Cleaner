@@ -132,9 +132,11 @@ public sealed partial class ScanViewModel : ObservableObject
 
     public void ToggleCandidateSelection(CandidateRow row) => NotifySelectionChanged();
 
+    private bool _batchUpdating;
+
     private void OnCandidatePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(CandidateRow.IsSelected))
+        if (e.PropertyName == nameof(CandidateRow.IsSelected) && !_batchUpdating)
         {
             NotifySelectionChanged();
         }
@@ -143,9 +145,17 @@ public sealed partial class ScanViewModel : ObservableObject
     [RelayCommand]
     public void ToggleAllSelection(bool select)
     {
-        foreach (var row in Candidates.Where(c => c.IsSelectable))
+        _batchUpdating = true;
+        try
         {
-            row.IsSelected = select;
+            foreach (var row in Candidates.Where(c => c.IsSelectable))
+            {
+                row.IsSelected = select;
+            }
+        }
+        finally
+        {
+            _batchUpdating = false;
         }
 
         NotifySelectionChanged();
@@ -292,7 +302,9 @@ public sealed partial class ScanViewModel : ObservableObject
                 AutoThreshold = _settings.AutoThreshold,
             };
 
-            var result = await _cleanup.RunAsync(selected, options, OnCleanupProgress);
+            var result = await Task.Run(
+                () => _cleanup.RunAsync(selected, options, OnCleanupProgress),
+                CancellationToken.None);
             CleanupResult = result;
 
             Message = result.Mode == CleanMode.DryRun

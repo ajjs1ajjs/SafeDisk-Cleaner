@@ -10,6 +10,7 @@
         <converters:InverseBooleanConverter x:Key="InverseBool" />
         <converters:RiskToBrushConverter x:Key="RiskToBrush" />
         <converters:ConfidenceToBrushConverter x:Key="ConfidenceToBrush" />
+        <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
@@ -35,14 +36,34 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource MaterialDesignFlatButton}"
-                                        MinWidth="52"
                                         Margin="0,0,6,6"
-                                        Padding="8,4"
+                                        Padding="10,6"
+                                        AutomationProperties.Name="{Binding Letter}"
                                         Command="{Binding DataContext.ToggleDriveCommand, ElementName=Root}"
                                         CommandParameter="{Binding Letter}">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Letter}" FontWeight="SemiBold" TextAlignment="Center" />
-                                        <TextBlock Text="{Binding Kind}" FontSize="10" Opacity="0.6" TextAlignment="Center" />
+                                    <Button.ToolTip>
+                                        <TextBlock>
+                                            <Run Text="{Binding Letter}" />
+                                            <Run Text=" — " />
+                                            <Run Text="{Binding Kind}" />
+                                            <Run Text=" · вільно " />
+                                            <Run Text="{Binding Free, Converter={StaticResource BytesToHuman}}" />
+                                        </TextBlock>
+                                    </Button.ToolTip>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Harddisk"
+                                                                 Width="16"
+                                                                 Height="16"
+                                                                 Margin="0,0,6,0"
+                                                                 VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Letter}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding Kind}"
+                                                   FontSize="11"
+                                                   Opacity="0.7"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </DataTemplate>
@@ -162,8 +183,9 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                        <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding ScanResult.Summary.TotalPotential, StringFormat={}{0:N0}}" />
-                        <TextBlock Text="Потенційно звільниться (B)" FontSize="12" Opacity="0.7" />
+                        <TextBlock FontSize="22" FontWeight="SemiBold"
+                                   Text="{Binding ScanResult.Summary.TotalPotential, Converter={StaticResource BytesToHuman}}" />
+                        <TextBlock Text="Потенційно звільниться" FontSize="12" Opacity="0.7" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,12,0">
                         <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding ScanResult.Summary.ScannedFiles, StringFormat={}{0:N0}}" />
@@ -203,8 +225,7 @@
                                 <TextBlock VerticalAlignment="Center">
                                     <Run Text="{Binding SelectedCount, Mode=OneWay}" />
                                     <Run Text=" вибрано · " />
-                                    <Run Text="{Binding SelectedSize, Mode=OneWay, StringFormat={}{0:N0}}" />
-                                    <Run Text=" B" />
+                                    <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
                                 </TextBlock>
                             </StackPanel>
 
@@ -299,7 +320,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120" />
                             <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
-                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="90" />
+                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
                             <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="240" />
                         </DataGrid.Columns>
                     </DataGrid>

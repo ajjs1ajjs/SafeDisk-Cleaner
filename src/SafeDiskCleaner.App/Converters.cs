@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Utils;
 
 namespace SafeDiskCleaner.App;
 
@@ -88,6 +89,22 @@ public sealed class ActionToCheckEnabledConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value is CandidateAction action && action != CandidateAction.Keep;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+public sealed class BytesToHumanSizeConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value switch
+        {
+            long l => HumanSize.Format(l),
+            ulong ul => HumanSize.Format((long)ul),
+            int i => HumanSize.Format(i),
+            null => "—",
+            _ => "—",
+        };
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();

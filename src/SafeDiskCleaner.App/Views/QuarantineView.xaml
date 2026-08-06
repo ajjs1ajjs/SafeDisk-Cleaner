@@ -6,6 +6,7 @@
     <UserControl.Resources>
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
         <converters:InverseBooleanConverter x:Key="InverseBoolConverter" />
+        <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -54,7 +55,7 @@
                           Style="{StaticResource MaterialDesignDataGrid}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
-                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="100" />
+                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
                         <DataGridTextColumn Header="Дата" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
                         <DataGridTemplateColumn Header="Дії" Width="220">
                             <DataGridTemplateColumn.CellTemplate>

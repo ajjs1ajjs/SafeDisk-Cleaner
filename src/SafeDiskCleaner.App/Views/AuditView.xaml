@@ -5,6 +5,7 @@
              xmlns:converters="clr-namespace:SafeDiskCleaner.App">
     <UserControl.Resources>
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -52,7 +53,7 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
                         <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="130" />
-                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="100" />
+                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
                         <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
                         <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="200" />
                     </DataGrid.Columns>

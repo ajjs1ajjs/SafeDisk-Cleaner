@@ -117,9 +117,11 @@ public sealed partial class DuplicatesViewModel : ObservableObject
 
     public void ToggleCandidateSelection(CandidateRow row) => OnPropertyChanged(nameof(SelectedSize));
 
+    private bool _batchUpdating;
+
     private void OnCandidatePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(CandidateRow.IsSelected))
+        if (e.PropertyName == nameof(CandidateRow.IsSelected) && !_batchUpdating)
         {
             OnPropertyChanged(nameof(SelectedSize));
             OnPropertyChanged(nameof(SelectedCount));
@@ -129,9 +131,17 @@ public sealed partial class DuplicatesViewModel : ObservableObject
     [RelayCommand]
     public void ToggleAllSelection(bool select)
     {
-        foreach (var row in Candidates.Where(c => c.IsSelectable))
+        _batchUpdating = true;
+        try
         {
-            row.IsSelected = select;
+            foreach (var row in Candidates.Where(c => c.IsSelectable))
+            {
+                row.IsSelected = select;
+            }
+        }
+        finally
+        {
+            _batchUpdating = false;
         }
 
         OnPropertyChanged(nameof(SelectedSize));
@@ -160,7 +170,9 @@ public sealed partial class DuplicatesViewModel : ObservableObject
                 AutoThreshold = _settings.AutoThreshold,
             };
 
-            var result = await _cleanup.RunAsync(selected, options, _ => { });
+            var result = await Task.Run(
+                () => _cleanup.RunAsync(selected, options, _ => { }),
+                CancellationToken.None);
             CleanupResult = result;
             Message = $"Оброблено {result.Processed}, звільнено {HumanSize.Format(result.FreedBytes)}.";
             await _eventBus.RaiseDataChangedAsync();
