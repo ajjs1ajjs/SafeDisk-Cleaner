@@ -41,7 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
             new NavItem { Title = "Налаштування", IconKind = "CogOutline", Target = settingsVm },
         ];
 
-        _selectedNavItem = NavItems[0];
+        SelectedNavItem = NavItems[0];
 
         eventBus.DataChanged += OnDataChangedAsync;
     }

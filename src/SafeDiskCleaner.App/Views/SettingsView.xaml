@@ -6,7 +6,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20,16,20,24" MaxWidth="760">
 
-            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Інтерфейс"
                                FontSize="15"
@@ -15,9 +15,9 @@
                     <CheckBox Content="Темна тема"
                               IsChecked="{Binding IsDarkTheme}" />
                 </StackPanel>
-            </Border>
+            </materialDesign:Card>
 
-            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Очищення"
                                FontSize="15"
@@ -44,9 +44,9 @@
                                  Text="{Binding AutoThreshold, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                 </StackPanel>
-            </Border>
+            </materialDesign:Card>
 
-            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Програма"
                                FontSize="15"
@@ -82,7 +82,7 @@
                                    FontSize="13" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </materialDesign:Card>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

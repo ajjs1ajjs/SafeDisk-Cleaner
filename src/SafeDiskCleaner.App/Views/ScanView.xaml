@@ -17,7 +17,7 @@
         <StackPanel Margin="20,16,20,24">
 
             <!-- Scan options card -->
-            <Border Style="{StaticResource MaterialDesignCard}"
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}"
                     Padding="20,16"
                     Margin="0,0,0,16">
                 <StackPanel>
@@ -115,7 +115,7 @@
                                 Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </materialDesign:Card>
 
             <!-- Progress -->
             <StackPanel Visibility="{Binding ScanProgress, Converter={StaticResource NullToCollapsed}}" Margin="0,0,0,16">
@@ -185,7 +185,7 @@
             </StackPanel>
 
             <!-- Candidates -->
-            <Border Style="{StaticResource MaterialDesignCard}"
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}"
                     Padding="0"
                     Margin="0,0,0,16"
                     Visibility="{Binding ScanResult, Converter={StaticResource NullToCollapsed}}">
@@ -278,10 +278,10 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
-            </Border>
+            </materialDesign:Card>
 
             <!-- Cleanup result -->
-            <Border Style="{StaticResource MaterialDesignCard}"
+            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}"
                     Padding="0"
                     Margin="0,0,0,16"
                     Visibility="{Binding CleanupResult, Converter={StaticResource NullToCollapsed}}">
@@ -308,7 +308,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
-            </Border>
+            </materialDesign:Card>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
