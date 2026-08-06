@@ -124,9 +124,19 @@ public sealed partial class MainViewModel : ObservableObject
             UpdateInfo = await _updater.CheckAsync();
             OnPropertyChanged(nameof(LatestVersionText));
         }
-        catch
+        catch (Exception ex)
         {
             // update check must never break the app
+            try
+            {
+                System.IO.File.WriteAllText(
+                    System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sdc-update-error.log"),
+                    ex.ToString());
+            }
+            catch
+            {
+                // ignore
+            }
         }
     }
 

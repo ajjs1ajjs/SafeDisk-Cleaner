@@ -36,7 +36,7 @@ public sealed class UpdateService : IUpdateService
 
         try
         {
-            var release = await _api.GetLatestRelease(Repo, ct);
+            var release = await _api.GetLatestRelease("ajjs1ajjs", "SafeDisk-Cleaner", ct);
             var tag = release.TagName;
             var htmlUrl = release.HtmlUrl;
 

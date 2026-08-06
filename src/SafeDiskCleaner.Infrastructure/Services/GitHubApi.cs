@@ -1,22 +1,25 @@
+using System.Text.Json.Serialization;
 using Refit;
 
 namespace SafeDiskCleaner.Infrastructure.Services;
 
 public sealed record GitHubAsset(
-    [property: AliasAs("name")] string? Name,
-    [property: AliasAs("browser_download_url")] string? BrowserDownloadUrl,
-    [property: AliasAs("size")] long Size);
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("browser_download_url")] string? BrowserDownloadUrl,
+    [property: JsonPropertyName("size")] long Size);
 
 public sealed record GitHubRelease(
-    [property: AliasAs("tag_name")] string? TagName,
-    [property: AliasAs("html_url")] string? HtmlUrl,
-    [property: AliasAs("assets")] IReadOnlyList<GitHubAsset>? Assets);
+    [property: JsonPropertyName("tag_name")] string? TagName,
+    [property: JsonPropertyName("html_url")] string? HtmlUrl,
+    [property: JsonPropertyName("assets")] IReadOnlyList<GitHubAsset>? Assets);
 
 public interface IGitHubApi
 {
-    [Get("/repos/{ownerRepo}/releases/latest")]
+    // Owner and repo are separate path segments; a single {repo} parameter
+    // with a slash would be URL-encoded (%2F) and rejected by GitHub (404).
+    [Get("/repos/{owner}/{repo}/releases/latest")]
     [Headers("Accept: application/vnd.github+json", "User-Agent: SafeDisk-Cleaner")]
-    Task<GitHubRelease> GetLatestRelease(string ownerRepo, CancellationToken cancellationToken);
+    Task<GitHubRelease> GetLatestRelease(string owner, string repo, CancellationToken cancellationToken);
 }
 
 public static class SemanticVersion

@@ -28,7 +28,11 @@ public static class DependencyInjection
             options.UseSqlite(connection);
         });
 
-        services.AddHttpClient("github", client => client.Timeout = TimeSpan.FromSeconds(8))
+        services.AddHttpClient("github", client =>
+            {
+                client.BaseAddress = new Uri("https://api.github.com");
+                client.Timeout = TimeSpan.FromSeconds(8);
+            })
             .AddStandardResilienceHandler();
 
         services.AddSingleton<IGitHubApi>(sp =>
