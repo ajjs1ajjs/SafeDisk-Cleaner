@@ -6,11 +6,12 @@ const uint MB_SETFOREGROUND = 0x10000;
 const uint MB_SYSTEMMODAL = 0x1000;
 const string Version = "0.3.1";
 
-var msiPath = ExtractMsi();
 var exitCode = 1;
 
 try
 {
+    var msiPath = ExtractMsi();
+
     var startInfo = new ProcessStartInfo("msiexec.exe")
     {
         Arguments = $"/i \"{msiPath}\" /passive",
@@ -28,13 +29,7 @@ try
         : $"Встановлення завершилося з кодом {exitCode}.";
 
     ShowMessage(message, "SafeDisk Cleaner — інсталятор");
-}
-catch (Exception ex)
-{
-    ShowMessage($"Не вдалося запустити інсталятор: {ex.Message}", "SafeDisk Cleaner — інсталятор");
-}
-finally
-{
+
     try
     {
         File.Delete(msiPath);
@@ -44,13 +39,22 @@ finally
         // best-effort cleanup
     }
 }
+catch (Exception ex)
+{
+    ShowMessage($"Не вдалося запустити інсталятор: {ex.Message}", "SafeDisk Cleaner — інсталятор");
+}
 
 return exitCode;
 
 static string ExtractMsi()
 {
     var assembly = typeof(Program).Assembly;
-    using var stream = assembly.GetManifestResourceStream("SafeDiskCleaner.msi")
+
+    var resourceName = assembly.GetManifestResourceNames()
+        .FirstOrDefault(n => n.EndsWith("SafeDiskCleaner.msi", StringComparison.OrdinalIgnoreCase))
+        ?? throw new InvalidOperationException("Installer payload not found");
+
+    using var stream = assembly.GetManifestResourceStream(resourceName)
         ?? throw new InvalidOperationException("Installer payload not found");
 
     var directory = Path.Combine(Path.GetTempPath(), "SafeDiskSetup");

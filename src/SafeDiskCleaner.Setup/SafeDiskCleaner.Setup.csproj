@@ -16,7 +16,7 @@
     <Content Include="app-icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <EmbeddedResource Include="SafeDiskCleaner.msi" />
+    <EmbeddedResource Include="SafeDiskCleaner.msi" LogicalName="SafeDiskCleaner.msi" />
   </ItemGroup>
 
 </Project>
