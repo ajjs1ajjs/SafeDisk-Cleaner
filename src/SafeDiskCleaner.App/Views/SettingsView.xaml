@@ -1,0 +1,88 @@
+<UserControl x:Class="SafeDiskCleaner.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,16,20,24" MaxWidth="760">
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Інтерфейс"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+                    <CheckBox Content="Темна тема"
+                              IsChecked="{Binding IsDarkTheme}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Очищення"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+                    <Grid Margin="0,4,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Термін зберігання карантину (днів):" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                                 Width="80"
+                                 Text="{Binding QuarantineRetentionDays, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Auto-поріг впевненості (%):" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                                 Width="80"
+                                 Text="{Binding AutoThreshold, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Програма"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+                    <Grid Margin="0,4,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Версія:" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding Version}" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Margin="0,4,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Каталог даних:" VerticalAlignment="Top" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding DataRoot}"
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Opacity="0.8" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Content="Перевірити оновлення"
+                                Command="{Binding CheckUpdateCommand}" />
+                        <TextBlock Text="{Binding UpdateText}"
+                                   Margin="16,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="13" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

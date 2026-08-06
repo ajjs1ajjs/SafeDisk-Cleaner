@@ -1,0 +1,80 @@
+<UserControl x:Class="SafeDiskCleaner.App.Views.QuarantineView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:SafeDiskCleaner.App">
+    <UserControl.Resources>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,16,20,24">
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Карантин"
+                                   FontSize="15"
+                                   FontWeight="SemiBold" />
+                        <TextBlock FontSize="12"
+                                   Opacity="0.7"
+                                   TextWrapping="Wrap"
+                                   Text="Файли, які SafeDisk перемістив перед видаленням. Тут їх можна відновити або видалити остаточно." />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Content="Очистити карантин"
+                            VerticalAlignment="Center"
+                            Command="{Binding EmptyCommand}"
+                            IsEnabled="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}" />
+                </Grid>
+            </Border>
+
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Background="{DynamicResource MaterialDesignCardBackground}"
+                    CornerRadius="8"
+                    Padding="14,10"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="0">
+                <DataGrid ItemsSource="{Binding Entries}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          MaxHeight="600"
+                          Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
+                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="100" />
+                        <DataGridTextColumn Header="Дата" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                        <DataGridTemplateColumn Header="Дії" Width="220">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                Content="Відновити"
+                                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                Content="Видалити"
+                                                Foreground="{DynamicResource MaterialDesignError}"
+                                                Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

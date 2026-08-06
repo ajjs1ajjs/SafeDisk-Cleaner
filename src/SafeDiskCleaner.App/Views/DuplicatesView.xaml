@@ -1,0 +1,169 @@
+<UserControl x:Class="SafeDiskCleaner.App.Views.DuplicatesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:SafeDiskCleaner.App"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             x:Name="Root">
+    <UserControl.Resources>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        <converters:ConfidenceToBrushConverter x:Key="ConfidenceToBrush" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,16,20,24">
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Пошук дублікатів"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+                    <TextBlock FontSize="12"
+                               Opacity="0.7"
+                               TextWrapping="Wrap"
+                               Text="Аналізуються файли розміром понад 4 КБ за BLAKE3-хешем. Шлях аналізу: шляхи з вкладки «Сканування» або всі диски, якщо не вказано." />
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Command="{Binding ScanDuplicatesCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                    <Setter Property="Content" Value="Знайти дублікати" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsScanning}" Value="True">
+                                            <Setter Property="Content" Value="Пошук..." />
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Content="Скасувати"
+                                Margin="8,0,0,0"
+                                Command="{Binding CancelScanCommand}"
+                                Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Background="{DynamicResource MaterialDesignCardBackground}"
+                    CornerRadius="8"
+                    Padding="14,10"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}"
+                    Padding="0"
+                    Margin="0,0,0,16"
+                    Visibility="{Binding DuplicateResult, Converter={StaticResource NullToCollapsed}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="16,12" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Дублікати" Margin="0,0,16,0" />
+                                <TextBlock VerticalAlignment="Center">
+                                    <Run Text="{Binding SelectedCount, Mode=OneWay}" />
+                                    <Run Text=" вибрано · " />
+                                    <Run Text="{Binding SelectedSize, Mode=OneWay, StringFormat={}{0:N0}}" />
+                                    <Run Text=" B" />
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                        Content="Вибрати все"
+                                        Command="{Binding ToggleAllSelectionCommand}">
+                                    <Button.CommandParameter>
+                                        <sys:Boolean>True</sys:Boolean>
+                                    </Button.CommandParameter>
+                                </Button>
+                                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                        Content="Зняти"
+                                        Command="{Binding ToggleAllSelectionCommand}">
+                                    <Button.CommandParameter>
+                                        <sys:Boolean>False</sys:Boolean>
+                                    </Button.CommandParameter>
+                                </Button>
+                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Content="Очистити вибрані"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding CleanDuplicatesCommand}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Candidates}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              MaxHeight="480"
+                              Style="{StaticResource MaterialDesignDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header=""
+                                                    IsReadOnly="False"
+                                                    Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                            <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
+                            <DataGridTextColumn Header="Розмір" Binding="{Binding SizeText}" Width="100" />
+                            <DataGridTextColumn Header="Останній доступ" Binding="{Binding LastAccessText}" Width="120" />
+                            <DataGridTemplateColumn Header="Confidence" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="4" Padding="6,2"
+                                                HorizontalAlignment="Left"
+                                                Background="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}">
+                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}" FontSize="12" Foreground="White" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Оригінал" Binding="{Binding Reason}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}"
+                    Padding="0"
+                    Margin="0,0,0,16"
+                    Visibility="{Binding CleanupResult, Converter={StaticResource NullToCollapsed}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Padding="16,12" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Результат очищення" />
+                    </Border>
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding CleanupResult.Entries}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              MaxHeight="360"
+                              Style="{StaticResource MaterialDesignDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
+                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="90" />
+                            <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="240" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

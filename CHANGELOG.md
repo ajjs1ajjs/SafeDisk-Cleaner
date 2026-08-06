@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.3.0 — Повний перепис на .NET 10 / WPF
+
+**Архітектура**
+- Повний перепис з Tauri (Rust + React) на **WPF + .NET 10 LTS**
+- MVVM (CommunityToolkit.Mvvm), Dependency Injection, Generic Host
+- Layered архітектура: `SafeDiskCleaner.Core` / `Infrastructure` / `App` / `Cli`
+
+**Стек**
+- UI: MaterialDesignInXamlToolkit (Material Design 3), темна/світла тема
+- Дані: EF Core + SQLite (audit log, карантин)
+- HTTP: HttpClientFactory + Refit + Polly (Resilience: retry/timeout/circuit breaker)
+- Логування: Serilog (async sink, rolling file)
+- Валідація: FluentValidation
+- Хешування дублікатів: BLAKE3
+- CLI: `SafeDiskCleaner.Cli` з підкомандами analyze/clean/duplicates/drives/audit/quarantine/update
+
+**Виправлені проблеми безпеки (порівняно з v0.2.6)**
+- **Command injection** усунено: шлях до файлу більше не вставляється в PowerShell-скрипт, а передається через змінну середовища
+- **Таймаут** для PowerShell `Get-AuthenticodeSignature` (10 с) замість вічного очікування
+- Перевірка оновлень більше **не блокує** UI (async + Polly timeout)
+- `PathProtection` канонізує шляхи — обхід через `..`/символічні посилання більше не пройде
+- Виправлено вразливий `SQLitePCLRaw 2.1.11` → `2.1.12` (GHSA-2m69-gcr7-jv3q)
+- Semver: підтримка pre-release тегів (`2.0.0-beta.1`)
+- Переміщення у карантин між різними томами (copy+delete fallback)
+
+**Тести**
+- 89 unit-тестів (xUnit + FluentAssertions + Moq)
+
 ## v0.2.6
 
 - Портативна збірка — один файл `safedisk-cleaner.exe` (~300 МБ) з **вбудованим WebView2 Runtime**

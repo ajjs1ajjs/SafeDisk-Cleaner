@@ -2,15 +2,18 @@
 
 Безпечний інструмент для аналізу та очищення дисків Windows із пріоритетом на безпеку даних, прозорість рішень та повний контроль користувача.
 
+> **v0.3.0** — повний перепис на **WPF + .NET 10 LTS** (раніше: Tauri / Rust + React).
+
 ## 🚀 Основний функціонал
 
-- **Scanner Engine**: багатопотоковий обхід файлової системи та пошук безпечних кандидатів на видалення (Temp, Crash Dumps, Browser Cache, Logs, Package Cache, Windows Update cache).
+- **Scanner Engine**: багатопотоковий обхід файлової системи та пошук безпечних кандидатів на видалення (Temp, Crash Dumps, Browser Cache, Logs, Package Cache, Windows Update cache, DriverStore, Windows.old).
 - **Confidence System**: кожен файл отримує рейтинг безпеки `0-100%` із поясненням причини.
 - **Safety Engine**: ніколи не чіпає системні шляхи, захищені розширення та файли, що використовуються.
 - **Режими роботи**: Analyze / Interactive / Auto / Dry Run.
-- **Recovery System**: малі файли переміщуються в Кошик, великі — у Карантин (`C:\ProgramData\SafeDisk\Quarantine`) із терміном зберігання.
-- **Audit Log**: повний журнал усіх дій (JSONL).
-- **Tauri UI** (React + TypeScript) та CLI.
+- **Recovery System**: малі файли переміщуються в Кошик, великі — у Карантин із терміном зберігання.
+- **Audit Log**: повний журнал усіх дій (EF Core + SQLite).
+- **Дублікати**: пошук копій за BLAKE3-хешем.
+- **WPF UI** (Material Design 3) та **CLI**.
 
 ## 🔒 Основні принципи безпеки
 
@@ -22,126 +25,76 @@
 
 ## 🛠️ Стек технологій
 
-- **Core**: Tauri v2, Rust Stable, rayon, walkdir
-- **Windows Integration**: windows-sys (SHFileOperation, Recycle Bin, диски)
-- **Frontend**: React (TypeScript), Vite
-- **Дані**: JSON-звіти, JSONL audit log, quarantine manifest
+| Шар | Технологія |
+|-----|------------|
+| Платформа | **WPF, .NET 10 LTS** |
+| UI | MaterialDesignInXamlToolkit (Material Design 3), темна/світла тема |
+| Архітектура | MVVM (CommunityToolkit.Mvvm), Dependency Injection, Generic Host |
+| Дані | Entity Framework Core + SQLite |
+| HTTP | HttpClientFactory + Refit + Polly (Retry/Timeout/Circuit Breaker) |
+| Логування | Serilog (async sink, rolling file) |
+| Валідація | FluentValidation |
+| Хешування | BLAKE3 |
+| Тести | xUnit + FluentAssertions + Moq |
 
-## 💻 Розробка та запуск (Onboarding)
+## 💻 Розробка та запуск
 
 ### Системні вимоги
 
-- **Node.js** (v20+)
-- **Rust & Cargo** (v1.75+)
-- **C++ Build Tools** (MSVC)
+- **.NET 10 SDK** (WPF: Windows + Windows Desktop runtime)
 
-### Перший запуск проєкту
+### Перший запуск
 
 ```bash
-# 1. Встановіть залежності
-npm install
-
-# 2. Запуск у режимі розробки (Tauri + Vite)
-npm run tauri dev
+dotnet restore
+dotnet build -c Release
 ```
 
-### CLI (без UI)
+### WPF UI
 
 ```bash
-npm run tauri dev -- --  # не потрібно — використовуйте збірку CLI:
-
-# Debug-збірка CLI (запуск із src-tauri)
-cargo run -- analyze
-cargo run -- clean --dry-run
-cargo run -- clean --auto
-cargo run -- drives
-cargo run -- audit
-cargo run -- quarantine list
+dotnet run --project src/SafeDiskCleaner.App
 ```
 
-### Збірка релізної версії
+### CLI
 
 ```bash
-# Інсталятори (NSIS + MSI)
-npm run build:installer
-
-# Portable ZIP
-npm run build:portable
-
-# Все одразу: NSIS + MSI + Portable, копіювання в BUILD\
-npm run build:all
+dotnet run --project src/SafeDiskCleaner.Cli -- analyze --roots C:\Users\Me\AppData\Local\Temp
+dotnet run --project src/SafeDiskCleaner.Cli -- clean --dry-run
+dotnet run --project src/SafeDiskCleaner.Cli -- clean --auto
+dotnet run --project src/SafeDiskCleaner.Cli -- duplicates --roots D:\
+dotnet run --project src/SafeDiskCleaner.Cli -- drives
+dotnet run --project src/SafeDiskCleaner.Cli -- audit
+dotnet run --project src/SafeDiskCleaner.Cli -- quarantine list
+dotnet run --project src/SafeDiskCleaner.Cli -- update
 ```
 
-Готові файли знаходяться у `src-tauri/target/release/bundle/`, портативна збірка — у `dist-portable/` та `BUILD/`.
+### Тести
 
-### Портативна версія
-
-Портативна збірка — це **один файл** `safedisk-cleaner.exe` (~300 МБ), у який **вбудовано WebView2 Runtime** (фіксована версія). Вона працює повністю офлайн, без встановленого системного WebView2, і нічого не завантажує під час роботи.
-
-Як це працює:
-
-1. При першому запуску програма розпаковує вбудований runtime у `%LOCALAPPDATA%\SafeDisk\WebView2Runtime` і використовує його.
-2. Наступні запуски стартують з локального кешу — швидко навіть якщо сам exe лежить на мережевій шарі.
-3. Інстальована версія (NSIS/MSI) використовує системний WebView2 Runtime (стандартна поведінка).
-
-Під час збірки `build-portable.ps1`:
-- Завантажує найновішу фіксовану версію WebView2 (x64) з сайту Microsoft (`~300 МБ`, кешується у `src-tauri/.webview2-cache/`).
-- Стискає її у `src-tauri/webview2-runtime.zip` і вшиває в exe (feature `embed-webview2`).
-- Збирає один exe з `cargo build --release --features embed-webview2`.
-
-Кеш можна оновити:
-```powershell
-Remove-Item -Recurse -Force src-tauri\.webview2-cache; Remove-Item src-tauri\webview2-runtime.zip
-powershell -ExecutionPolicy Bypass -File scripts\prepare-webview2-runtime.ps1
+```bash
+dotnet test
 ```
-
-### Механіка релізів
-
-Версія береться з `src-tauri/tauri.conf.json` (єдине джерело істини).
-
-```powershell
-# Повний реліз: build → push → tag v<version> → GitHub Release з нотами з CHANGELOG.md
-.\scripts\release.ps1
-
-# Або з власними нотами
-.\scripts\release.ps1 -ReleaseNotes "Текст нотаток"
-```
-
-Перед релізом:
-1. Оновіть версію у `src-tauri/tauri.conf.json` (і `package.json`).
-2. Додайте запис у верх `CHANGELOG.md`.
-3. Закомітьте всі зміни (скрипт вимагає чистий `git status`).
-4. Запустіть `.\scripts\release.ps1`.
-
-Авто-оновлення в додатку перевіряє останній реліз через GitHub API.
 
 ## 📁 Де зберігаються дані?
 
-- **Audit Log**: `C:\ProgramData\SafeDisk\audit\audit.log.jsonl`
-- **Карантин**: `C:\ProgramData\SafeDisk\Quarantine\`
+- **SQLite база**: `C:\ProgramData\SafeDisk\SafeDisk.db` (audit log, карантин)
+- **Карантин**: `C:\ProgramData\SafeDisk\quarantine\`
 - **Звіти**: `C:\ProgramData\SafeDisk\reports\`
+- **Логи (Serilog)**: `C:\ProgramData\SafeDisk\logs\`
+- **Налаштування**: `C:\ProgramData\SafeDisk\settings.json`
 
 Якщо `C:\ProgramData` недоступний для запису — використовується `%LOCALAPPDATA%\SafeDisk`.
 
 ## 📦 Структура проєкту
 
 ```
-src-tauri/src/
-├── lib.rs          # Tauri команди та точка входу
-├── main.rs         # CLI entry
-├── cli.rs          # CLI: analyze/clean/drives/audit/quarantine
-├── models.rs       # Структури даних (Candidate, ScanResult, AuditEntry...)
-├── scanner.rs      # Scanner Engine (walkdir + rayon)
-├── rules.rs        # Rules Engine (класифікація файлів)
-├── confidence.rs   # Confidence System
-├── safety.rs       # Safety Engine (валідація перед видаленням)
-├── cleanup.rs      # Cleanup Engine (pipeline)
-├── audit.rs        # Audit Log (JSONL)
-├── quarantine.rs   # Recovery System (карантин)
-├── paths.rs        # Каталоги даних
-├── windows_utils.rs# Windows API (Recycle Bin, диски, атрибути)
-└── update.rs       # Перевірка оновлень (GitHub API)
-
-src/                # React UI (TypeScript)
-scripts/            # build/release PowerShell скрипти
+SafeDiskCleaner.sln
+├── Directory.Build.props       # спільна версія 0.3.0
+├── src/
+│   ├── SafeDiskCleaner.Core/           # домен: моделі, rules, confidence, safety, scanner, Windows interop
+│   ├── SafeDiskCleaner.Infrastructure/ # EF Core, Refit+Polly, Serilog, сервіси, DI
+│   ├── SafeDiskCleaner.App/            # WPF UI (MaterialDesign, MVVM)
+│   └── SafeDiskCleaner.Cli/            # консольний застосунок
+└── tests/
+    └── SafeDiskCleaner.Tests/          # xUnit + FluentAssertions + Moq (89 тестів)
 ```

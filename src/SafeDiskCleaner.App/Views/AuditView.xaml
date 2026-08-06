@@ -1,0 +1,63 @@
+<UserControl x:Class="SafeDiskCleaner.App.Views.AuditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:SafeDiskCleaner.App">
+    <UserControl.Resources>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,16,20,24">
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="20,16" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Audit Log"
+                                   FontSize="15"
+                                   FontWeight="SemiBold" />
+                        <TextBlock FontSize="12"
+                                   Opacity="0.7"
+                                   Text="Журнал всіх операцій очищення, що зберігається в SQLite (EF Core)." />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Content="Очистити лог"
+                            VerticalAlignment="Center"
+                            Command="{Binding ClearCommand}" />
+                </Grid>
+            </Border>
+
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Background="{DynamicResource MaterialDesignCardBackground}"
+                    CornerRadius="8"
+                    Padding="14,10"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
+            </Border>
+
+            <Border Style="{StaticResource MaterialDesignCard}" Padding="0">
+                <DataGrid ItemsSource="{Binding Entries}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          MaxHeight="600"
+                          Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                        <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="130" />
+                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="100" />
+                        <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
+                        <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="200" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
