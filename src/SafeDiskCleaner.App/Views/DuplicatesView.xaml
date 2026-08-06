@@ -13,60 +13,70 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20,16,20,24">
+        <StackPanel Margin="24,20,24,28">
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
+            <!-- ===== DUPLICATE SEARCH CARD ===== -->
+            <Border Style="{StaticResource NeonCard}">
                 <StackPanel>
                     <TextBlock Text="Пошук дублікатів"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,12" />
+                               Style="{StaticResource NeonCardTitle}" />
                     <TextBlock FontSize="12"
-                               Opacity="0.7"
+                               Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap"
-                               Text="Аналізуються файли розміром понад 4 КБ за BLAKE3-хешем. Шлях аналізу: шляхи з вкладки «Сканування» або всі диски, якщо не вказано." />
-                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                               Text="Аналізуються файли розміром понад 4 КБ за BLAKE3-хешем. Шлях аналізу: шляхи з вкладки «Сканування» або всі диски, якщо не вказано. Карантинюються якщо не вказано. Знайтикти дублікатов." />
+                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
                         <Button Command="{Binding ScanDuplicatesCommand}">
+                            <Button.Content>
+                                <TextBlock Text="Знайти дублікати" />
+                            </Button.Content>
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                                    <Setter Property="Content" Value="Знайти дублікати" />
+                                <Style TargetType="Button" BasedOn="{StaticResource NeonPrimaryButton}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsScanning}" Value="True">
-                                            <Setter Property="Content" Value="Пошук..." />
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <TextBlock Text="Пошук..." />
+                                                </Setter.Value>
+                                            </Setter>
                                             <Setter Property="IsEnabled" Value="False" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                        <Button Style="{StaticResource NeonOutlineButton}"
                                 Content="Скасувати"
-                                Margin="8,0,0,0"
+                                Margin="12,0,0,0"
                                 Command="{Binding CancelScanCommand}"
                                 Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </StackPanel>
-            </materialDesign:Card>
-
-            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
-                    Background="{DynamicResource MaterialDesignCardBackground}"
-                    CornerRadius="8"
-                    Padding="14,10"
-                    Margin="0,0,0,16">
-                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
             </Border>
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}"
+            <!-- ===== MESSAGE ===== -->
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonInfoBorder}"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </Border>
+
+            <!-- ===== DUPLICATES TABLE ===== -->
+            <Border Visibility="{Binding DuplicateResult, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonCard}"
                     Padding="0"
-                    Margin="0,0,0,16"
-                    Visibility="{Binding DuplicateResult, Converter={StaticResource NullToCollapsed}}">
+                    Margin="0,0,0,16">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Padding="16,12" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Padding="16,12"
+                            Background="#161D2E"
+                            CornerRadius="12,12,0,0"
+                            BorderBrush="#1E2D3D"
+                            BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -74,8 +84,14 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Дублікати" Margin="0,0,16,0" />
-                                <TextBlock VerticalAlignment="Center">
+                                <TextBlock FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{StaticResource NeonCyanBrush}"
+                                           Text="Дублікати" Margin="0,0,16,0">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
+                                    </TextBlock.Effect>
+                                </TextBlock>
+                                <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}">
                                     <Run Text="{Binding SelectedCount, Mode=OneWay}" />
                                     <Run Text=" вибрано · " />
                                     <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
@@ -83,21 +99,21 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                <Button Style="{StaticResource NeonFlatButton}"
                                         Content="Вибрати все"
                                         Command="{Binding ToggleAllSelectionCommand}">
                                     <Button.CommandParameter>
                                         <sys:Boolean>True</sys:Boolean>
                                     </Button.CommandParameter>
                                 </Button>
-                                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                <Button Style="{StaticResource NeonFlatButton}"
                                         Content="Зняти"
                                         Command="{Binding ToggleAllSelectionCommand}">
                                     <Button.CommandParameter>
                                         <sys:Boolean>False</sys:Boolean>
                                     </Button.CommandParameter>
                                 </Button>
-                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                <Button Style="{StaticResource NeonPrimaryButton}"
                                         Content="Очистити вибрані"
                                         Margin="8,0,0,0"
                                         Command="{Binding CleanDuplicatesCommand}" />
@@ -111,7 +127,7 @@
                               CanUserAddRows="False"
                               IsReadOnly="True"
                               MaxHeight="480"
-                              Style="{StaticResource MaterialDesignDataGrid}">
+                              Style="{StaticResource NeonDataGrid}">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Header=""
                                                     IsReadOnly="False"
@@ -122,10 +138,10 @@
                             <DataGridTemplateColumn Header="Confidence" Width="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="4" Padding="6,2"
+                                        <Border CornerRadius="6" Padding="6,3"
                                                 HorizontalAlignment="Left"
                                                 Background="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}">
-                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}" FontSize="12" Foreground="White" />
+                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}" FontSize="12" Foreground="White" FontWeight="SemiBold" />
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -134,19 +150,30 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
-            </materialDesign:Card>
+            </Border>
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}"
+            <!-- ===== CLEANUP RESULT TABLE ===== -->
+            <Border Visibility="{Binding CleanupResult, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonCard}"
                     Padding="0"
-                    Margin="0,0,0,16"
-                    Visibility="{Binding CleanupResult, Converter={StaticResource NullToCollapsed}}">
+                    Margin="0,0,0,16">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Padding="16,12" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Результат очищення" />
+                    <Border Grid.Row="0" Padding="16,12"
+                            Background="#161D2E"
+                            CornerRadius="12,12,0,0"
+                            BorderBrush="#1E2D3D"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource NeonCyanBrush}"
+                                   Text="Результат очищення">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
+                            </TextBlock.Effect>
+                        </TextBlock>
                     </Border>
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding CleanupResult.Entries}"
@@ -154,7 +181,7 @@
                               CanUserAddRows="False"
                               IsReadOnly="True"
                               MaxHeight="360"
-                              Style="{StaticResource MaterialDesignDataGrid}">
+                              Style="{StaticResource NeonDataGrid}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120" />
                             <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
@@ -163,7 +190,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
-            </materialDesign:Card>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

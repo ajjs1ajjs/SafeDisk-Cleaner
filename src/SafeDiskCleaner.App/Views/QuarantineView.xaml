@@ -10,9 +10,10 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20,16,20,24">
+        <StackPanel Margin="24,20,24,28">
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
+            <!-- ===== QUARANTINE INFO CARD ===== -->
+            <Border Style="{StaticResource NeonCard}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -21,38 +22,38 @@
 
                     <StackPanel>
                         <TextBlock Text="Карантин"
-                                   FontSize="15"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource NeonCardTitle}" />
                         <TextBlock FontSize="12"
-                                   Opacity="0.7"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
-                                   Text="Файли, які SafeDisk перемістив перед видаленням. Тут їх можна відновити або видалити остаточно." />
+                                   Text="Файли, які SafeDisk перемістив перед видаленням. Тут їх можна відновити або видалити остаточно. Плотнектиє, іхюо порушення в файли, які SafeDisk перемістив файл: видалення, файли кокіх пранелизує карантинам. Тут їх можна відновити або видалити остаточно." />
                     </StackPanel>
 
                     <Button Grid.Column="1"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Style="{StaticResource NeonDangerButton}"
                             Content="Очистити карантин"
                             VerticalAlignment="Center"
                             Command="{Binding EmptyCommand}"
                             IsEnabled="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}" />
                 </Grid>
-            </materialDesign:Card>
-
-            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
-                    Background="{DynamicResource MaterialDesignCardBackground}"
-                    CornerRadius="8"
-                    Padding="14,10"
-                    Margin="0,0,0,16">
-                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
             </Border>
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="0">
+            <!-- ===== MESSAGE ===== -->
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonInfoBorder}"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </Border>
+
+            <!-- ===== QUARANTINE TABLE ===== -->
+            <Border Style="{StaticResource NeonCard}" Padding="0">
                 <DataGrid ItemsSource="{Binding Entries}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
                           MaxHeight="600"
-                          Style="{StaticResource MaterialDesignDataGrid}">
+                          Style="{StaticResource NeonDataGrid}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
                         <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
@@ -61,22 +62,23 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                        <Button Style="{StaticResource NeonFlatButton}"
                                                 Content="Відновити"
                                                 Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
-                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                CommandParameter="{Binding}"
+                                                Foreground="{StaticResource NeonCyanBrush}" />
+                                        <Button Style="{StaticResource NeonFlatButton}"
                                                 Content="Видалити"
-                                                Foreground="{DynamicResource MaterialDesignValidationErrorBrush}"
                                                 Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
+                                                CommandParameter="{Binding}"
+                                                Foreground="#FF3B5C" />
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </materialDesign:Card>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -12,26 +12,32 @@
 
         <TextBlock Text="{Binding Title}"
                    FontSize="20"
-                   FontWeight="SemiBold" />
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource NeonCyanBrush}">
+            <TextBlock.Effect>
+                <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.5" />
+            </TextBlock.Effect>
+        </TextBlock>
 
         <TextBlock Grid.Row="1"
                    Text="{Binding Message}"
                    TextWrapping="Wrap"
                    Margin="0,16,0,24"
-                   FontSize="14" />
+                   FontSize="14"
+                   Foreground="{StaticResource TextPrimaryBrush}" />
 
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Скасувати"
-                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Style="{StaticResource NeonFlatButton}"
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
                 <Button.CommandParameter>
                     <sys:Boolean xmlns:sys="clr-namespace:System;assembly=System.Runtime">False</sys:Boolean>
                 </Button.CommandParameter>
             </Button>
             <Button Content="{Binding ConfirmButton}"
-                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Style="{StaticResource NeonOutlineButton}"
                     Margin="8,0,0,0"
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
                 <Button.CommandParameter>

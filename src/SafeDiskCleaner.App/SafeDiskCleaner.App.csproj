@@ -18,7 +18,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.3.0</Version>
     <AssemblyName>SafeDiskCleaner</AssemblyName>
     <ApplicationIcon>app-icon.ico</ApplicationIcon>
   </PropertyGroup>

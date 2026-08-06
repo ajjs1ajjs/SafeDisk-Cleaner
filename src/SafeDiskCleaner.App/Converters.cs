@@ -34,6 +34,23 @@ public sealed class CountToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+public sealed class DriveIsSelectedConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (values.Length < 2) return false;
+        var letter = values[0] as string;
+        var roots = values[1] as string;
+        if (string.IsNullOrEmpty(letter) || string.IsNullOrEmpty(roots)) return false;
+        var rootsList = roots.Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var root = $"{letter}\\";
+        return rootsList.Any(r => string.Equals(r, root, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 public sealed class RiskToBrushConverter : IValueConverter
 {
     private static readonly Brush Safe = new SolidColorBrush(Color.FromRgb(0x34, 0xC0, 0x8A));

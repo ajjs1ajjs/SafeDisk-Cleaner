@@ -9,9 +9,10 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20,16,20,24">
+        <StackPanel Margin="24,20,24,28">
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="20,16" Margin="0,0,0,16">
+            <!-- ===== AUDIT LOG INFO CARD ===== -->
+            <Border Style="{StaticResource NeonCard}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -20,36 +21,36 @@
 
                     <StackPanel>
                         <TextBlock Text="Audit Log"
-                                   FontSize="15"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource NeonCardTitle}" />
                         <TextBlock FontSize="12"
-                                   Opacity="0.7"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
                                    Text="Журнал всіх операцій очищення, що зберігається в SQLite (EF Core)." />
                     </StackPanel>
 
                     <Button Grid.Column="1"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Style="{StaticResource NeonDangerButton}"
                             Content="Очистити лог"
                             VerticalAlignment="Center"
                             Command="{Binding ClearCommand}" />
                 </Grid>
-            </materialDesign:Card>
-
-            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
-                    Background="{DynamicResource MaterialDesignCardBackground}"
-                    CornerRadius="8"
-                    Padding="14,10"
-                    Margin="0,0,0,16">
-                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
             </Border>
 
-            <materialDesign:Card Style="{StaticResource MaterialDesignElevatedCard}" Padding="0">
+            <!-- ===== MESSAGE ===== -->
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonInfoBorder}"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </Border>
+
+            <!-- ===== AUDIT TABLE ===== -->
+            <Border Style="{StaticResource NeonCard}" Padding="0">
                 <DataGrid ItemsSource="{Binding Entries}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
                           MaxHeight="600"
-                          Style="{StaticResource MaterialDesignDataGrid}">
+                          Style="{StaticResource NeonDataGrid}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
                         <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="130" />
@@ -58,7 +59,7 @@
                         <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="200" />
                     </DataGrid.Columns>
                 </DataGrid>
-            </materialDesign:Card>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
