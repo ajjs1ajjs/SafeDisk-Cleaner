@@ -112,6 +112,14 @@ public sealed class UpdateInfo
     public string LatestVersion { get; init; } = string.Empty;
     public string CurrentVersion { get; init; } = string.Empty;
     public string DownloadUrl { get; init; } = string.Empty;
+    public IReadOnlyList<ReleaseAsset> Assets { get; init; } = Array.Empty<ReleaseAsset>();
+}
+
+public sealed class ReleaseAsset
+{
+    public string Name { get; init; } = string.Empty;
+    public string DownloadUrl { get; init; } = string.Empty;
+    public long Size { get; init; }
 }
 
 public sealed class ScanOptions

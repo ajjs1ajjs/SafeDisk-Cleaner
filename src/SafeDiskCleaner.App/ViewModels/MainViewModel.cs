@@ -1,7 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.Core.Models;
 
 namespace SafeDiskCleaner.App.ViewModels;
 
@@ -14,11 +19,16 @@ public sealed class NavItem
 
 public sealed partial class MainViewModel : ObservableObject
 {
+    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromMinutes(30);
+
     private readonly AppSettings _settings;
+    private readonly AutoUpdater _updater;
+    private readonly DispatcherTimer _updateTimer;
 
     public MainViewModel(
         AppSettings settings,
         IAppEventBus eventBus,
+        AutoUpdater updater,
         ScanViewModel scan,
         DuplicatesViewModel duplicates,
         QuarantineViewModel quarantine,
@@ -26,6 +36,7 @@ public sealed partial class MainViewModel : ObservableObject
         SettingsViewModel settingsVm)
     {
         _settings = settings;
+        _updater = updater;
         Scan = scan;
         Duplicates = duplicates;
         Quarantine = quarantine;
@@ -44,6 +55,9 @@ public sealed partial class MainViewModel : ObservableObject
         SelectedNavItem = NavItems[0];
 
         eventBus.DataChanged += OnDataChangedAsync;
+
+        _updateTimer = new DispatcherTimer { Interval = UpdateCheckInterval };
+        _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
     }
 
     public ScanViewModel Scan { get; }
@@ -68,6 +82,24 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private object? _currentPage;
 
+    [ObservableProperty]
+    private UpdateInfo? _updateInfo;
+
+    [ObservableProperty]
+    private bool _isDownloading;
+
+    [ObservableProperty]
+    private double _downloadProgress;
+
+    [ObservableProperty]
+    private string? _updateStatus;
+
+    public bool IsUpdateBannerVisible => UpdateInfo is { Available: true };
+
+    partial void OnUpdateInfoChanged(UpdateInfo? value) => OnPropertyChanged(nameof(IsUpdateBannerVisible));
+
+    public string LatestVersionText => UpdateInfo?.LatestVersion ?? string.Empty;
+
     private async Task OnDataChangedAsync()
     {
         await Quarantine.RefreshAsync();
@@ -80,5 +112,74 @@ public sealed partial class MainViewModel : ObservableObject
         Scan.LoadSavedOptions();
         await Quarantine.RefreshAsync();
         await Audit.RefreshAsync();
+
+        _updateTimer.Start();
+        await CheckForUpdateAsync();
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            UpdateInfo = await _updater.CheckAsync();
+            OnPropertyChanged(nameof(LatestVersionText));
+        }
+        catch
+        {
+            // update check must never break the app
+        }
+    }
+
+    [RelayCommand]
+    private async Task UpdateAsync()
+    {
+        if (UpdateInfo is not { Available: true })
+        {
+            return;
+        }
+
+        var asset = _updater.SelectAsset(UpdateInfo);
+        if (asset is null)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(UpdateInfo.DownloadUrl) { UseShellExecute = true });
+            }
+            catch
+            {
+                // cannot open browser
+            }
+
+            return;
+        }
+
+        IsDownloading = true;
+        DownloadProgress = 0;
+        UpdateStatus = "Завантаження...";
+        try
+        {
+            var destination = Path.Combine(
+                Path.GetTempPath(),
+                $"SafeDisk-{UpdateInfo.LatestVersion}-{Path.GetFileName(asset.Name)}");
+            var progress = new Progress<double>(p => DownloadProgress = p);
+
+            await _updater.DownloadAsync(asset, destination, progress);
+
+            UpdateStatus = "Встановлення...";
+            await Task.Delay(300);
+
+            _updater.LaunchInstaller(destination);
+
+            // The current executable is being replaced / reinstalled — close the app.
+            Application.Current.Dispatcher.BeginInvoke(() => Application.Current.Shutdown());
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus = $"Помилка: {ex.Message}";
+        }
+        finally
+        {
+            IsDownloading = false;
+        }
     }
 }

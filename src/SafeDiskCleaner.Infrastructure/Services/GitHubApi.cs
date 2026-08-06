@@ -2,9 +2,15 @@ using Refit;
 
 namespace SafeDiskCleaner.Infrastructure.Services;
 
+public sealed record GitHubAsset(
+    [property: AliasAs("name")] string? Name,
+    [property: AliasAs("browser_download_url")] string? BrowserDownloadUrl,
+    [property: AliasAs("size")] long Size);
+
 public sealed record GitHubRelease(
     [property: AliasAs("tag_name")] string? TagName,
-    [property: AliasAs("html_url")] string? HtmlUrl);
+    [property: AliasAs("html_url")] string? HtmlUrl,
+    [property: AliasAs("assets")] IReadOnlyList<GitHubAsset>? Assets);
 
 public interface IGitHubApi
 {

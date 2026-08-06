@@ -3,7 +3,7 @@
 
   <Package Name="SafeDisk Cleaner"
            Manufacturer="SafeDisk"
-           Version="0.3.0"
+           Version="0.3.1"
            UpgradeCode="8B6A3C1E-2F4D-4A7B-9C8E-5D1A2B3C4D5E"
            Language="1033"
            Scope="perMachine"

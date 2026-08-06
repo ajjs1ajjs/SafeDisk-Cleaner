@@ -40,6 +40,16 @@ public sealed class UpdateService : IUpdateService
             var tag = release.TagName;
             var htmlUrl = release.HtmlUrl;
 
+            var assets = (release.Assets ?? Array.Empty<GitHubAsset>())
+                .Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.BrowserDownloadUrl))
+                .Select(a => new ReleaseAsset
+                {
+                    Name = a.Name!,
+                    DownloadUrl = a.BrowserDownloadUrl!,
+                    Size = a.Size,
+                })
+                .ToList();
+
             var available = !string.IsNullOrWhiteSpace(tag)
                 && !string.IsNullOrWhiteSpace(htmlUrl)
                 && SemanticVersion.IsNewerThan(tag, _currentVersion);
@@ -50,6 +60,7 @@ public sealed class UpdateService : IUpdateService
                 LatestVersion = tag ?? string.Empty,
                 CurrentVersion = _currentVersion,
                 DownloadUrl = htmlUrl ?? string.Empty,
+                Assets = assets,
             };
             _cacheExpiry = DateTimeOffset.UtcNow.Add(CacheDuration);
             return _cached;

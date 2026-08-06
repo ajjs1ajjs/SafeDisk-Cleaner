@@ -16,6 +16,7 @@ public static class AppServices
         services.AddSingleton<AppSettings>();
         services.AddSingleton<IDialogService, DialogService>();
         services.AddSingleton<IAppEventBus, AppEventBus>();
+        services.AddSingleton<AutoUpdater>();
 
         services.AddSingleton<SignatureInspector>();
         services.AddSingleton<SafetyValidator>();

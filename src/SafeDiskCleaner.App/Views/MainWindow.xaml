@@ -4,6 +4,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:vm="clr-namespace:SafeDiskCleaner.App.ViewModels"
         xmlns:views="clr-namespace:SafeDiskCleaner.App.Views"
+        xmlns:converters="clr-namespace:SafeDiskCleaner.App"
         Title="SafeDisk Cleaner"
         Height="820"
         Width="1280"
@@ -15,6 +16,8 @@
         TextElement.FontSize="14"
         FontFamily="{materialDesign:MaterialDesignFont}">
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <DataTemplate DataType="{x:Type vm:ScanViewModel}">
             <views:ScanView />
         </DataTemplate>
@@ -35,6 +38,7 @@
     <materialDesign:DialogHost Identifier="RootDialogHost">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -78,7 +82,57 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="1">
+            <Border Grid.Row="1"
+                    Padding="16,10"
+                    Background="{DynamicResource PrimaryHueLightBrush}"
+                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsUpdateBannerVisible, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Update"
+                                                 Width="18"
+                                                 Height="18"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                                 Margin="0,0,8,0" />
+                        <TextBlock VerticalAlignment="Center">
+                            <Run Text="Доступна версія " />
+                            <Run Text="{Binding LatestVersionText, Mode=OneWay}" FontWeight="SemiBold" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <ProgressBar Width="160"
+                                     Height="4"
+                                     Maximum="100"
+                                     Value="{Binding DownloadProgress, Mode=OneWay}"
+                                     Style="{StaticResource MaterialDesignLinearProgressBar}"
+                                     Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"
+                                     Margin="0,0,12,0" />
+                        <TextBlock Text="{Binding UpdateStatus}"
+                                   FontSize="12"
+                                   Opacity="0.8"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"
+                                   Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}" />
+                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                Content="Оновити"
+                                Command="{Binding UpdateCommand}"
+                                IsEnabled="{Binding IsDownloading, Converter={StaticResource InverseBooleanConverter}}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />

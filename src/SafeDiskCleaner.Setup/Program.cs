@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 const uint MB_ICONINFORMATION = 0x40;
 const uint MB_SETFOREGROUND = 0x10000;
 const uint MB_SYSTEMMODAL = 0x1000;
-const string Version = "0.3.0";
+const string Version = "0.3.1";
 
 var msiPath = ExtractMsi();
 var exitCode = 1;
