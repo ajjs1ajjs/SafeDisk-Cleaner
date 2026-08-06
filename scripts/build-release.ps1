@@ -33,7 +33,14 @@ Invoke-Dotnet @(
 )
 
 # 3. Stage final artifact
-Copy-Item (Join-Path $release "portable\SafeDiskCleaner.exe") (Join-Path $final "SafeDiskCleaner-$Version-portable-win64.exe") -Force
+$finalExe = Join-Path $final "SafeDiskCleaner-$Version-portable-win64.exe"
+Copy-Item (Join-Path $release "portable\SafeDiskCleaner.exe") $finalExe -Force
+
+# 4. Ship launcher alongside the exe and drop Mark-of-the-Web from artifacts
+Copy-Item (Join-Path $PSScriptRoot "run.cmd") (Join-Path $final "run.cmd") -Force
+Get-ChildItem $final -File | ForEach-Object {
+    Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue
+}
 
 Write-Host ""
 Write-Host "Artifacts ready:" -ForegroundColor Green
