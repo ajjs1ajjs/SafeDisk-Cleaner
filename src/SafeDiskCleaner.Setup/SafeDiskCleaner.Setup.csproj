@@ -9,9 +9,13 @@
     <AssemblyName>SafeDiskCleaner-Setup</AssemblyName>
     <Version>0.3.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>app-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="app-icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="SafeDiskCleaner.msi" />
   </ItemGroup>
 

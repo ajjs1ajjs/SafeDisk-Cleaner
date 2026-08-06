@@ -32,8 +32,10 @@ public sealed class AuditService : IAuditService
     public async Task<IReadOnlyList<AuditEntry>> GetAllAsync(CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        return await db.AuditLogs
+        var entities = await db.AuditLogs
             .AsNoTracking()
+            .ToListAsync(ct);
+        return entities
             .OrderByDescending(e => e.Timestamp)
             .Select(e => new AuditEntry
             {
@@ -44,7 +46,7 @@ public sealed class AuditService : IAuditService
                 Success = e.Success,
                 Detail = e.Detail,
             })
-            .ToListAsync(ct);
+            .ToList();
     }
 
     public async Task ClearAsync(CancellationToken ct = default)

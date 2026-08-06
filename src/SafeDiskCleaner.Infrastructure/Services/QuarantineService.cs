@@ -19,8 +19,10 @@ public sealed class QuarantineService : IQuarantineService
     public async Task<IReadOnlyList<QuarantineEntry>> ListAsync(CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        return await db.Quarantines
+        var entities = await db.Quarantines
             .AsNoTracking()
+            .ToListAsync(ct);
+        return entities
             .OrderByDescending(e => e.QuarantinedAt)
             .Select(e => new QuarantineEntry
             {
@@ -31,7 +33,7 @@ public sealed class QuarantineService : IQuarantineService
                 QuarantinedAt = e.QuarantinedAt,
                 ExpiresAt = e.ExpiresAt,
             })
-            .ToListAsync(ct);
+            .ToList();
     }
 
     public async Task<string> QuarantineAsync(string sourcePath, uint retentionDays, CancellationToken ct = default)

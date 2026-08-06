@@ -64,6 +64,12 @@ if (-not (Test-Path $installerWxs)) {
 }
 Copy-Item $installerWxs $installerDir -Force
 
+# Copy app icon for WiX shortcuts
+$appIcon = Join-Path $root "src\SafeDiskCleaner.App\app-icon.ico"
+if (Test-Path $appIcon) {
+    Copy-Item $appIcon $installerDir -Force
+}
+
 Invoke-Wix @(
     "build", "-o", "SafeDiskCleaner.msi", "AppFiles.wxs", "Installer.wxs", "-arch", "x64", "-culture", "en-US"
 ) -WorkDir $installerDir

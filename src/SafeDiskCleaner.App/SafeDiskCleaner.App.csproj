@@ -20,7 +20,14 @@
     <UseWPF>true</UseWPF>
     <Version>0.3.0</Version>
     <AssemblyName>SafeDiskCleaner</AssemblyName>
+    <ApplicationIcon>app-icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="app-icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="appsettings.json">
