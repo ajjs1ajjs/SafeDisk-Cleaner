@@ -18,6 +18,7 @@ public sealed partial class DuplicatesViewModel : ObservableObject
     private readonly IAppEventBus _eventBus;
     private readonly AppSettings _settings;
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _cleanupCts;
 
     [ObservableProperty]
     private bool _isScanning;
@@ -170,9 +171,12 @@ public sealed partial class DuplicatesViewModel : ObservableObject
                 AutoThreshold = _settings.AutoThreshold,
             };
 
+            _cleanupCts?.Cancel();
+            _cleanupCts = new CancellationTokenSource();
+
             var result = await Task.Run(
-                () => _cleanup.RunAsync(selected, options, _ => { }),
-                CancellationToken.None);
+                () => _cleanup.RunAsync(selected, options, _ => { }, _cleanupCts.Token),
+                _cleanupCts.Token);
             CleanupResult = result;
             Message = $"Оброблено {result.Processed}, звільнено {HumanSize.Format(result.FreedBytes)}.";
             await _eventBus.RaiseDataChangedAsync();

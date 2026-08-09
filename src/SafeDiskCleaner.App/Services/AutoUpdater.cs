@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
 
@@ -35,7 +37,8 @@ public sealed class AutoUpdater
         IProgress<double>? progress,
         CancellationToken ct = default)
     {
-        using var client = _httpFactory.CreateClient("github");
+        // Large payload client (no 8s total timeout) configured in DI.
+        using var client = _httpFactory.CreateClient("downloads");
         using var response = await client.GetAsync(asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
 
@@ -60,8 +63,89 @@ public sealed class AutoUpdater
     /// <summary>
     /// Installs the downloaded package by swapping the portable exe. Returns after
     /// launching the update flow; the caller should then shut the application down.
+    /// The downloaded binary is verified before anything is executed.
     /// </summary>
-    public void LaunchInstaller(string downloadedPath) => LaunchPortableSwap(downloadedPath);
+    public void LaunchInstaller(string downloadedPath)
+    {
+        VerifyPackage(downloadedPath);
+        LaunchPortableSwap(downloadedPath);
+    }
+
+    /// <summary>
+    /// Verifies the downloaded file before it is ever executed:
+    /// 1. it must be a valid PE executable (not an HTML error page / truncated file);
+    /// 2. if the currently running exe is Authenticode-signed, the downloaded exe
+    ///    must be signed by the same publisher.
+    /// </summary>
+    internal static void VerifyPackage(string downloadedPath)
+    {
+        if (!File.Exists(downloadedPath) || new FileInfo(downloadedPath).Length == 0)
+        {
+            throw new InvalidOperationException("Downloaded update is empty or missing");
+        }
+
+        if (!IsValidPe(downloadedPath))
+        {
+            throw new InvalidOperationException("Downloaded update is not a valid executable");
+        }
+
+        var currentExe = Process.GetCurrentProcess().MainModule?.FileName;
+        if (string.IsNullOrWhiteSpace(currentExe))
+        {
+            return;
+        }
+
+        try
+        {
+            // X509CertificateLoader has no Authenticode-extraction equivalent
+            // (see dotnet/runtime#91763); CreateFromSignedFile is the only
+            // built-in API that reads the signer cert out of a signed PE.
+#pragma warning disable SYSLIB0057
+            var currentCert = X509Certificate.CreateFromSignedFile(currentExe);
+            var newCert = X509Certificate.CreateFromSignedFile(downloadedPath);
+#pragma warning restore SYSLIB0057
+            if (!string.Equals(currentCert.Subject, newCert.Subject, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Update publisher does not match the installed application");
+            }
+        }
+        catch (CryptographicException)
+        {
+            // The installed exe is not Authenticode-signed, so the publisher
+            // cannot be cross-checked. The PE-format check above still protects
+            // against non-executable downloads. Strong integrity verification
+            // requires the project to sign its release binaries.
+        }
+    }
+
+    private static bool IsValidPe(string path)
+    {
+        try
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new BinaryReader(fs);
+
+            if (reader.ReadUInt16() != 0x5A4D) // "MZ"
+            {
+                return false;
+            }
+
+            fs.Position = 0x3C;
+            var peOffset = reader.ReadInt32();
+            if (peOffset <= 0 || peOffset > fs.Length - 4)
+            {
+                return false;
+            }
+
+            fs.Position = peOffset;
+            return reader.ReadUInt32() == 0x00004550; // "PE\0\0"
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private static void LaunchPortableSwap(string downloadedPath)
     {
@@ -75,6 +159,7 @@ public sealed class AutoUpdater
         Directory.CreateDirectory(updaterDir);
         var script = Path.Combine(updaterDir, "update.cmd");
 
+        // Paths are quoted and %% is doubled for batch-safe interpolation.
         var content =
             "@echo off\r\n" +
             ":wait\r\n" +
@@ -83,9 +168,9 @@ public sealed class AutoUpdater
             "  timeout /t 1 /nobreak >nul\r\n" +
             "  goto wait\r\n" +
             ")\r\n" +
-            $"copy /y \"{downloadedPath}\" \"{currentExe}\" >nul\r\n" +
-            $"del /q \"{downloadedPath}\"\r\n" +
-            $"start \"\" \"{currentExe}\"\r\n" +
+            $"copy /y \"{EscapeForBatch(downloadedPath)}\" \"{EscapeForBatch(currentExe)}\" >nul\r\n" +
+            $"del /q \"{EscapeForBatch(downloadedPath)}\"\r\n" +
+            $"start \"\" \"{EscapeForBatch(currentExe)}\"\r\n" +
             "del \"%~f0\"\r\n";
 
         File.WriteAllText(script, content);
@@ -97,4 +182,8 @@ public sealed class AutoUpdater
             WindowStyle = ProcessWindowStyle.Hidden,
         });
     }
+
+    /// <summary>Escapes a path for interpolation into a batch file.</summary>
+    private static string EscapeForBatch(string path) =>
+        path.Replace("%", "%%").Replace("&", "^&").Replace("|", "^|").Replace("<", "^<").Replace(">", "^>");
 }

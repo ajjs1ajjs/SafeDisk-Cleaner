@@ -16,16 +16,26 @@ public sealed class AuditService : IAuditService
 
     public async Task AppendAsync(AuditEntry entry, CancellationToken ct = default)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        db.AuditLogs.Add(new AuditLogEntry
+        await AppendManyAsync([entry], ct);
+    }
+
+    public async Task AppendManyAsync(IReadOnlyList<AuditEntry> entries, CancellationToken ct = default)
+    {
+        if (entries.Count == 0)
         {
-            Timestamp = entry.Timestamp,
-            Action = entry.Action,
-            Path = entry.Path,
-            Size = entry.Size,
-            Success = entry.Success,
-            Detail = entry.Detail,
-        });
+            return;
+        }
+
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        db.AuditLogs.AddRange(entries.Select(e => new AuditLogEntry
+        {
+            Timestamp = e.Timestamp,
+            Action = e.Action,
+            Path = e.Path,
+            Size = e.Size,
+            Success = e.Success,
+            Detail = e.Detail,
+        }));
         await db.SaveChangesAsync(ct);
     }
 

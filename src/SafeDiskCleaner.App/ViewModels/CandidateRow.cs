@@ -31,6 +31,6 @@ public sealed class CandidateRow : ObservableObject
     public byte Confidence => Item.Confidence;
     public string Recommendation => Core.Confidence.ConfidenceEngine.Recommendation(Item.Confidence);
     public string Reason => Item.Reason;
-    public string LastAccessText => Item.LastAccessDays is { } days ? $"{days} дн." : "—";
+    public string LastAccessText => Item.LastAccessDays is { } days && days != uint.MaxValue ? $"{days} дн." : "—";
     public bool IsSelectable => Item.Action != CandidateAction.Keep;
 }

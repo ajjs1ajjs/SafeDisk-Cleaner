@@ -35,6 +35,14 @@ public static class DependencyInjection
             })
             .AddStandardResilienceHandler();
 
+        // Downloads the portable release binary — large payload, so no short
+        // total timeout here (an 8s ceiling would kill a ~150MB download on a
+        // normal connection). Cancellation is driven by the caller's token.
+        services.AddHttpClient("downloads", client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        });
+
         services.AddSingleton<IGitHubApi>(sp =>
         {
             var factory = sp.GetRequiredService<IHttpClientFactory>();

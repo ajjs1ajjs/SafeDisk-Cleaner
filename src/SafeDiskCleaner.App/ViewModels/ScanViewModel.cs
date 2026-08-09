@@ -18,6 +18,7 @@ public sealed partial class ScanViewModel : ObservableObject
     private readonly IAppEventBus _eventBus;
     private readonly AppSettings _settings;
     private CancellationTokenSource? _scanCts;
+    private CancellationTokenSource? _cleanupCts;
 
     [ObservableProperty]
     private ObservableCollection<DriveInfo> _drives = [];
@@ -302,9 +303,12 @@ public sealed partial class ScanViewModel : ObservableObject
                 AutoThreshold = _settings.AutoThreshold,
             };
 
+            _cleanupCts?.Cancel();
+            _cleanupCts = new CancellationTokenSource();
+
             var result = await Task.Run(
-                () => _cleanup.RunAsync(selected, options, OnCleanupProgress),
-                CancellationToken.None);
+                () => _cleanup.RunAsync(selected, options, OnCleanupProgress, _cleanupCts.Token),
+                _cleanupCts.Token);
             CleanupResult = result;
 
             Message = result.Mode == CleanMode.DryRun

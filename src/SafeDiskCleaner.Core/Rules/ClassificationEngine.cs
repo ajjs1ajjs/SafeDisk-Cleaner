@@ -110,6 +110,10 @@ public static class ClassificationEngine
             return ClassificationResult.CandidateResult(Category.PackageCache, 92, "Package manager cache");
         }
 
+        // NOTE: the Windows DriverStore (C:\Windows\System32\DriverStore) is NOT
+        // treated as cleanable cache — it holds installed driver packages. Removing
+        // it here prevents offering installed drivers for deletion.
+
         if (lower.Contains(@"\windowstemp", StringComparison.Ordinal) || lower.Contains(@"\temp\", StringComparison.Ordinal))
         {
             return ClassificationResult.CandidateResult(Category.Temp, 99, "Temporary file");
@@ -118,11 +122,6 @@ public static class ClassificationEngine
         if (string.Equals(Path.GetExtension(path), ".log", StringComparison.OrdinalIgnoreCase))
         {
             return ClassificationResult.CandidateResult(Category.Logs, 85, "Log file");
-        }
-
-        if (lower.Contains("driverstore", StringComparison.Ordinal))
-        {
-            return ClassificationResult.CandidateResult(Category.DriverCache, 75, "Driver store cache");
         }
 
         if (lower.Contains(@"\microsoft\windows\explorer", StringComparison.Ordinal) &&

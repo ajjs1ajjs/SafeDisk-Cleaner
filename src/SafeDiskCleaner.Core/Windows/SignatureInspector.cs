@@ -19,7 +19,17 @@ public sealed class SignatureInspector
         "$sig = Get-AuthenticodeSignature -LiteralPath $env:SDC_SIGNATURE_PATH; " +
         "if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject }";
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _cache =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public bool HasMicrosoftSignature(string path)
+    {
+        // Signatures do not change for a given file during a run; caching avoids
+        // spawning a PowerShell process per candidate (the original cost driver).
+        return _cache.GetOrAdd(path, static (p, @this) => @this.Check(p), this);
+    }
+
+    private bool Check(string path)
     {
         if (!File.Exists(path))
         {

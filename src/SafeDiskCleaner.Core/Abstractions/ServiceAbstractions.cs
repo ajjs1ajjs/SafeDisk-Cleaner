@@ -17,6 +17,7 @@ public interface IAppPaths
 public interface IAuditService
 {
     Task AppendAsync(AuditEntry entry, CancellationToken ct = default);
+    Task AppendManyAsync(IReadOnlyList<AuditEntry> entries, CancellationToken ct = default);
     Task<IReadOnlyList<AuditEntry>> GetAllAsync(CancellationToken ct = default);
     Task ClearAsync(CancellationToken ct = default);
 }

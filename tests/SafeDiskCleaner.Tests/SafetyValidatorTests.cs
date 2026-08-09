@@ -68,7 +68,7 @@ public sealed class SafetyValidatorTests
 
         var verdict = Validator.Validate(file, Category.Temp, 1_000_000);
         verdict.Allowed.Should().BeFalse();
-        verdict.Reasons[0].Should().Contain("accessed");
+        verdict.Reasons[0].Should().Contain("last used");
     }
 
     [Fact]

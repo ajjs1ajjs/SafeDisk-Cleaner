@@ -21,6 +21,8 @@ public sealed class CleanupEngine
         _audit = audit;
     }
 
+    private const int AuditBatchSize = 50;
+
     public async Task<CleanupResult> RunAsync(
         IReadOnlyList<Candidate> candidates,
         CleanupOptions options,
@@ -37,66 +39,105 @@ public sealed class CleanupEngine
 
         var total = (ulong)ordered.Count;
         var entries = new List<CleanupEntry>();
+        var auditBuffer = new List<AuditEntry>(AuditBatchSize);
         long freed = 0;
         ulong processed = 0;
 
-        foreach (var candidate in ordered)
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            processed++;
-
-            onProgress?.Invoke(new CleanupProgress
+            foreach (var candidate in ordered)
             {
-                Processed = processed,
-                Total = total,
-                CurrentPath = candidate.Path,
-                Status = options.Mode == CleanMode.DryRun ? "dry-run" : "cleaning",
-                Percent = total == 0 ? 100.0 : processed * 100.0 / total,
-                Finished = false,
-            });
+                ct.ThrowIfCancellationRequested();
+                processed++;
 
-            if (options.Mode == CleanMode.DryRun)
-            {
-                freed += candidate.Size;
-                entries.Add(new CleanupEntry
+                onProgress?.Invoke(new CleanupProgress
+                {
+                    Processed = processed,
+                    Total = total,
+                    CurrentPath = candidate.Path,
+                    Status = options.Mode == CleanMode.DryRun ? "dry-run" : "cleaning",
+                    Percent = total == 0 ? 100.0 : processed * 100.0 / total,
+                    Finished = false,
+                });
+
+                if (options.Mode == CleanMode.DryRun)
+                {
+                    freed += candidate.Size;
+                    entries.Add(new CleanupEntry
+                    {
+                        Path = candidate.Path,
+                        Size = candidate.Size,
+                        Category = candidate.Category,
+                        Confidence = candidate.Confidence,
+                        Status = CleanupStatus.WouldDelete,
+                        Detail = "Dry run — nothing was deleted",
+                    });
+                    continue;
+                }
+
+                // A single failing file must not abort the whole run:
+                // record it as Failed and continue with the rest.
+                CleanupOutcome result;
+                try
+                {
+                    result = await ExecuteAsync(candidate, options, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    result = CleanupOutcome.Failed(ex.Message);
+                }
+
+                var entry = new CleanupEntry
                 {
                     Path = candidate.Path,
                     Size = candidate.Size,
                     Category = candidate.Category,
                     Confidence = candidate.Confidence,
-                    Status = CleanupStatus.WouldDelete,
-                    Detail = "Dry run — nothing was deleted",
+                    Status = result.Status,
+                    Detail = result.Status == CleanupStatus.Failed ? result.Error : result.Status.Description(),
+                };
+
+                entries.Add(entry);
+
+                if (result.Status.IsSuccess())
+                {
+                    freed += candidate.Size;
+                }
+
+                auditBuffer.Add(new AuditEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Action = result.Status.AsString(),
+                    Path = candidate.Path,
+                    Size = candidate.Size,
+                    Success = result.Status.IsSuccess(),
+                    Detail = entry.Detail,
                 });
-                continue;
+
+                if (auditBuffer.Count >= AuditBatchSize)
+                {
+                    await FlushAuditAsync(auditBuffer, ct);
+                }
             }
-
-            var result = await ExecuteAsync(candidate, options, ct);
-            var entry = new CleanupEntry
+        }
+        finally
+        {
+            // Never lose buffered audit entries, even on cancellation/exception.
+            if (auditBuffer.Count > 0)
             {
-                Path = candidate.Path,
-                Size = candidate.Size,
-                Category = candidate.Category,
-                Confidence = candidate.Confidence,
-                Status = result.Status,
-                Detail = result.Status == CleanupStatus.Failed ? result.Error : result.Status.Description(),
-            };
-
-            entries.Add(entry);
-
-            if (result.Status.IsSuccess())
-            {
-                freed += candidate.Size;
+                try
+                {
+                    await FlushAuditAsync(auditBuffer, CancellationToken.None);
+                }
+                catch
+                {
+                    // Audit persistence is best-effort; it must not mask cleanup errors.
+                }
             }
-
-            await _audit.AppendAsync(new AuditEntry
-            {
-                Timestamp = DateTime.UtcNow,
-                Action = result.Status.AsString(),
-                Path = candidate.Path,
-                Size = candidate.Size,
-                Success = result.Status.IsSuccess(),
-                Detail = entry.Detail,
-            }, ct);
         }
 
         onProgress?.Invoke(new CleanupProgress
@@ -117,6 +158,18 @@ public sealed class CleanupEngine
             FreedBytes = freed,
             Entries = entries,
         };
+    }
+
+    private async Task FlushAuditAsync(List<AuditEntry> buffer, CancellationToken ct)
+    {
+        if (buffer.Count == 0)
+        {
+            return;
+        }
+
+        var batch = buffer.ToArray();
+        buffer.Clear();
+        await _audit.AppendManyAsync(batch, ct);
     }
 
     private async Task<CleanupOutcome> ExecuteAsync(Candidate candidate, CleanupOptions options, CancellationToken ct)

@@ -96,10 +96,12 @@ public sealed class ClassificationEngineTests
     }
 
     [Fact]
-    public void DriverStore_IsDriverCache()
+    public void DriverStore_IsNotClassifiedAsCache()
     {
+        // SECURITY: the Windows DriverStore holds installed driver packages;
+        // it must never be offered for deletion.
         var result = ClassificationEngine.Classify(@"C:\Windows\DriverStore\FileRepository\foo\file.txt");
-        result.Category.Should().Be(Category.DriverCache);
+        result.Kind.Should().Be(MatchKind.None);
     }
 
     [Fact]

@@ -58,12 +58,17 @@ public sealed class SafetyValidator
 
         try
         {
+            // Windows may not update LastAccessTime (NTFS last-access is disabled
+            // by default), so also consider LastWriteTime: a file written or
+            // accessed recently must not be cleaned.
             var accessed = File.GetLastAccessTimeUtc(path);
-            var days = ConfidenceEngine.ElapsedDays(accessed);
+            var written = File.GetLastWriteTimeUtc(path);
+            var mostRecent = accessed > written ? accessed : written;
+            var days = ConfidenceEngine.ElapsedDays(mostRecent);
             if (days < recencyDays)
             {
                 return SafetyVerdict.Deny(
-                    $"File was accessed {days} day(s) ago (recency threshold {recencyDays} days)");
+                    $"File was last used {days} day(s) ago (recency threshold {recencyDays} days)");
             }
         }
         catch

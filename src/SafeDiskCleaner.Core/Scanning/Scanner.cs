@@ -54,7 +54,6 @@ public sealed class Scanner
         if (includeMedium)
         {
             roots.Add(Path.Combine(windows, "SoftwareDistribution", "Download"));
-            roots.Add(Path.Combine(windows, "DriverStore"));
         }
 
         if (includeAdvanced)

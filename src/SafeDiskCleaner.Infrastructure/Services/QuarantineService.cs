@@ -55,16 +55,42 @@ public sealed class QuarantineService : IQuarantineService
 
         var now = DateTime.UtcNow;
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        db.Quarantines.Add(new QuarantineEntity
+        try
         {
-            Id = id,
-            OriginalPath = sourcePath,
-            StoredName = name,
-            Size = size,
-            QuarantinedAt = now,
-            ExpiresAt = now.AddDays(retentionDays),
-        });
-        await db.SaveChangesAsync(ct);
+            db.Quarantines.Add(new QuarantineEntity
+            {
+                Id = id,
+                OriginalPath = sourcePath,
+                StoredName = name,
+                Size = size,
+                QuarantinedAt = now,
+                ExpiresAt = now.AddDays(retentionDays),
+            });
+            await db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            // The file has already been moved. If we cannot record the DB row,
+            // move it back so it is not orphaned in the quarantine directory.
+            try
+            {
+                if (File.Exists(dest) && !File.Exists(sourcePath))
+                {
+                    File.Move(dest, sourcePath);
+                }
+
+                if (Directory.Exists(targetDir))
+                {
+                    Directory.Delete(targetDir, recursive: true);
+                }
+            }
+            catch
+            {
+                // Rollback is best-effort; the original exception is more useful.
+            }
+
+            throw;
+        }
 
         return id;
     }
@@ -125,19 +151,34 @@ public sealed class QuarantineService : IQuarantineService
             .Where(e => e.QuarantinedAt <= cutoff)
             .ToListAsync(ct);
 
+        var purged = 0;
         foreach (var entity in expired)
         {
             var dir = Path.Combine(_paths.QuarantineDir, entity.Id);
             if (Directory.Exists(dir))
             {
-                Directory.Delete(dir, recursive: true);
+                try
+                {
+                    Directory.Delete(dir, recursive: true);
+                }
+                catch (IOException)
+                {
+                    // A locked/blocked file — skip the DB row too so the entry
+                    // is not reported as purged while its data is still on disk.
+                    continue;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
             }
 
             db.Quarantines.Remove(entity);
+            purged++;
         }
 
         await db.SaveChangesAsync(ct);
-        return expired.Count;
+        return purged;
     }
 
     public async Task<int> EmptyAsync(CancellationToken ct = default)
@@ -145,18 +186,32 @@ public sealed class QuarantineService : IQuarantineService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var all = await db.Quarantines.ToListAsync(ct);
 
+        var emptied = 0;
         foreach (var entity in all)
         {
             var dir = Path.Combine(_paths.QuarantineDir, entity.Id);
             if (Directory.Exists(dir))
             {
-                Directory.Delete(dir, recursive: true);
+                try
+                {
+                    Directory.Delete(dir, recursive: true);
+                }
+                catch (IOException)
+                {
+                    continue;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
             }
+
+            db.Quarantines.Remove(entity);
+            emptied++;
         }
 
-        db.Quarantines.RemoveRange(all);
         await db.SaveChangesAsync(ct);
-        return all.Count;
+        return emptied;
     }
 
     /// <summary>

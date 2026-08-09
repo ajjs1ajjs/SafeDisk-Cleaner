@@ -17,6 +17,7 @@ public sealed class CleanupEngineTests
         var file = Path.Combine(dir, "old.tmp");
         File.WriteAllBytes(file, new byte[1024]);
         File.SetLastAccessTimeUtc(file, DateTime.UtcNow.AddDays(-30));
+        File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddDays(-30));
         return file;
     }
 
@@ -59,7 +60,7 @@ public sealed class CleanupEngineTests
             result.FreedBytes.Should().Be(1024);
             File.Exists(file).Should().BeTrue("dry-run must not touch the file");
             quarantine.Verify(q => q.QuarantineAsync(It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<CancellationToken>()), Times.Never);
-            audit.Verify(a => a.AppendAsync(It.IsAny<AuditEntry>(), It.IsAny<CancellationToken>()), Times.Never);
+            audit.Verify(a => a.AppendManyAsync(It.IsAny<IReadOnlyList<AuditEntry>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
         finally
         {
@@ -125,8 +126,12 @@ public sealed class CleanupEngineTests
             result.Entries.Should().ContainSingle();
             result.Entries[0].Status.Should().Be(CleanupStatus.Quarantined);
             quarantine.Verify(q => q.QuarantineAsync(file, 14, It.IsAny<CancellationToken>()), Times.Once);
-            audit.Verify(a => a.AppendAsync(
-                It.Is<AuditEntry>(e => e.Success && e.Path == file && e.Action == "quarantined"),
+            audit.Verify(a => a.AppendManyAsync(
+                It.Is<IReadOnlyList<AuditEntry>>(entries =>
+                    entries.Count == 1
+                    && entries[0].Success
+                    && entries[0].Path == file
+                    && entries[0].Action == "quarantined"),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
         finally
