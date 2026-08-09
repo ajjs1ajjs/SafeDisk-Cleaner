@@ -79,7 +79,7 @@ public sealed class CleanupResult
 
 public sealed class AuditEntry
 {
-    public DateTimeOffset Timestamp { get; init; }
+    public DateTime Timestamp { get; init; }
     public string Action { get; init; } = string.Empty;
     public string Path { get; init; } = string.Empty;
     public long Size { get; init; }
@@ -93,8 +93,8 @@ public sealed class QuarantineEntry
     public string OriginalPath { get; init; } = string.Empty;
     public string QuarantinedPath { get; init; } = string.Empty;
     public long Size { get; init; }
-    public DateTimeOffset QuarantinedAt { get; init; }
-    public DateTimeOffset ExpiresAt { get; init; }
+    public DateTime QuarantinedAt { get; init; }
+    public DateTime ExpiresAt { get; init; }
 }
 
 public sealed class DriveInfo

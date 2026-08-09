@@ -90,7 +90,7 @@ public sealed class CleanupEngine
 
             await _audit.AppendAsync(new AuditEntry
             {
-                Timestamp = DateTimeOffset.UtcNow,
+                Timestamp = DateTime.UtcNow,
                 Action = result.Status.AsString(),
                 Path = candidate.Path,
                 Size = candidate.Size,

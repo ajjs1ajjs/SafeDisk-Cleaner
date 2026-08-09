@@ -34,9 +34,9 @@ public sealed class AuditService : IAuditService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var entities = await db.AuditLogs
             .AsNoTracking()
+            .OrderByDescending(e => e.Timestamp)
             .ToListAsync(ct);
         return entities
-            .OrderByDescending(e => e.Timestamp)
             .Select(e => new AuditEntry
             {
                 Timestamp = e.Timestamp,

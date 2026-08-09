@@ -21,9 +21,9 @@ public sealed class QuarantineService : IQuarantineService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var entities = await db.Quarantines
             .AsNoTracking()
+            .OrderByDescending(e => e.QuarantinedAt)
             .ToListAsync(ct);
         return entities
-            .OrderByDescending(e => e.QuarantinedAt)
             .Select(e => new QuarantineEntry
             {
                 Id = e.Id,
@@ -53,7 +53,7 @@ public sealed class QuarantineService : IQuarantineService
 
         MoveAcrossVolumes(sourcePath, dest);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTime.UtcNow;
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.Quarantines.Add(new QuarantineEntity
         {
@@ -119,7 +119,7 @@ public sealed class QuarantineService : IQuarantineService
 
     public async Task<int> PurgeExpiredAsync(uint retentionDays, CancellationToken ct = default)
     {
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-retentionDays);
+        var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var expired = await db.Quarantines
             .Where(e => e.QuarantinedAt <= cutoff)
