@@ -29,7 +29,7 @@ public sealed class CleanupEngine
         Action<CleanupProgress>? onProgress,
         CancellationToken ct = default)
     {
-        await _quarantine.PurgeExpiredAsync(options.QuarantineRetentionDays, ct);
+        await _quarantine.PurgeExpiredAsync(ct);
 
         var ordered = candidates
             .Where(c => c.Action != CandidateAction.Keep)

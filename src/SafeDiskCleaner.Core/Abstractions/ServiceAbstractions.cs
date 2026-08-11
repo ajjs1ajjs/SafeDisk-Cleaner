@@ -29,7 +29,7 @@ public interface IQuarantineService
     Task<string> QuarantineAsync(string sourcePath, uint retentionDays, CancellationToken ct = default);
     Task RestoreAsync(string id, CancellationToken ct = default);
     Task RemoveAsync(string id, CancellationToken ct = default);
-    Task<int> PurgeExpiredAsync(uint retentionDays, CancellationToken ct = default);
+    Task<int> PurgeExpiredAsync(CancellationToken ct = default);
     Task<int> EmptyAsync(CancellationToken ct = default);
 }
 

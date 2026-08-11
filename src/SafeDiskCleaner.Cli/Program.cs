@@ -309,7 +309,7 @@ static async Task<int> QuarantineActionAsync(
 
 static async Task<int> QuarantinePurgeAsync(SafeDiskCleaner.Core.Abstractions.IQuarantineService quarantine)
 {
-    var purged = await quarantine.PurgeExpiredAsync(retentionDays: 14);
+    var purged = await quarantine.PurgeExpiredAsync();
     Console.WriteLine($"Видалено прострочених записів: {purged}");
     return 0;
 }

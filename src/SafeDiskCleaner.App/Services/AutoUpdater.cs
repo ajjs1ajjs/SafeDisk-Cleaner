@@ -160,8 +160,11 @@ public sealed class AutoUpdater
         var script = Path.Combine(updaterDir, "update.cmd");
 
         // Paths are quoted and %% is doubled for batch-safe interpolation.
+        // setlocal DisableDelayedExpansion keeps '!' literal; '^' must be
+        // doubled so it is not consumed as an escape inside the batch file.
         var content =
             "@echo off\r\n" +
+            "setlocal DisableDelayedExpansion\r\n" +
             ":wait\r\n" +
             "tasklist /fi \"IMAGENAME eq SafeDiskCleaner.exe\" | find /i \"SafeDiskCleaner.exe\" >nul\r\n" +
             "if not errorlevel 1 (\r\n" +
@@ -183,7 +186,12 @@ public sealed class AutoUpdater
         });
     }
 
-    /// <summary>Escapes a path for interpolation into a batch file.</summary>
+    /// <summary>
+    /// Escapes a path for interpolation inside a quoted string in a batch file.
+    /// '%' must be doubled; '^' must be doubled so it survives as a literal
+    /// caret. '!' is made safe by <c>setlocal DisableDelayedExpansion</c> in
+    /// the script. Windows forbids '"' in file names, so quotes need no escape.
+    /// </summary>
     private static string EscapeForBatch(string path) =>
-        path.Replace("%", "%%").Replace("&", "^&").Replace("|", "^|").Replace("<", "^<").Replace(">", "^>");
+        path.Replace("%", "%%").Replace("^", "^^");
 }

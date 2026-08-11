@@ -53,17 +53,14 @@ public static class DependencyInjection
         return services;
     }
 
+    /// <summary>
+    /// Schedules database/app-data initialization to run at startup through the
+    /// host's own container (see <see cref="DatabaseInitializer"/>). No eager
+    /// provider is built here, so no duplicate singletons or leaked scopes.
+    /// </summary>
     public static IServiceCollection AddSafeDiskDatabase(this IServiceCollection services)
     {
-        var provider = services.BuildServiceProvider();
-        var paths = provider.GetRequiredService<IAppPaths>();
-        paths.EnsureCreated();
-
-        using var scope = provider.CreateScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
-        using var db = factory.CreateDbContext();
-        db.Database.EnsureCreated();
-
+        services.AddHostedService<DatabaseInitializer>();
         return services;
     }
 

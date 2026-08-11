@@ -19,6 +19,18 @@ public static class PathProtection
         @"\system volume information",
     ];
 
+    // Windows.old / Windows~old are scan roots: their nested \Windows\, System32,
+    // etc. belong to the OLD install that is junk to clean, so the system needles
+    // must not prune it. Only hard safety needles still apply.
+    private static readonly string[] WindowsOldProtectedNeedles =
+    [
+        @"\recovery\",
+        @"$recycle.bin",
+        @"\system volume information",
+    ];
+
+    private static readonly string[] WindowsOldMarkers = ["windows.old", "windows~old"];
+
     /// <summary>
     /// Determines whether a path belongs to a protected system directory.
     /// Uses a best-effort canonicalization first so that ".." segments and
@@ -45,7 +57,9 @@ public static class PathProtection
 
         foreach (var candidate in candidates)
         {
-            if (ProtectedNeedles.Any(candidate.Contains))
+            var inWindowsOld = WindowsOldMarkers.Any(candidate.Contains);
+            var needles = inWindowsOld ? WindowsOldProtectedNeedles : ProtectedNeedles;
+            if (needles.Any(candidate.Contains))
             {
                 return true;
             }

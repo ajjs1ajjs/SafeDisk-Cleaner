@@ -147,7 +147,9 @@ public sealed class InfrastructureIntegrationTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var purged = await Quarantine.PurgeExpiredAsync(retentionDays: 14);
+        // Purge is driven by each entry's ExpiresAt, not a caller-supplied
+        // retention value.
+        var purged = await Quarantine.PurgeExpiredAsync();
 
         purged.Should().Be(1);
         (await Quarantine.ListAsync()).Should().NotContain(e => e.Id == oldId);

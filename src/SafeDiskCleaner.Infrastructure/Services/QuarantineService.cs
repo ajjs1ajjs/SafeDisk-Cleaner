@@ -49,7 +49,18 @@ public sealed class QuarantineService : IQuarantineService
         }
 
         var dest = Path.Combine(targetDir, name);
-        var size = new FileInfo(sourcePath).Length;
+        // Read the size before the move. Guard against the TOCTOU race where the
+        // file is removed between measuring and moving, which used to surface as
+        // an uncaught FileNotFoundException and abort the whole cleanup run.
+        long size;
+        try
+        {
+            size = new FileInfo(sourcePath).Length;
+        }
+        catch (FileNotFoundException)
+        {
+            throw new InvalidOperationException($"Source file no longer exists: {sourcePath}");
+        }
 
         MoveAcrossVolumes(sourcePath, dest);
 
@@ -111,7 +122,11 @@ public sealed class QuarantineService : IQuarantineService
         }
 
         var original = entity.OriginalPath;
-        Directory.CreateDirectory(Path.GetDirectoryName(original) ?? string.Empty);
+        var originalDir = Path.GetDirectoryName(original);
+        if (!string.IsNullOrEmpty(originalDir))
+        {
+            Directory.CreateDirectory(originalDir);
+        }
 
         if (File.Exists(original))
         {
@@ -143,12 +158,16 @@ public sealed class QuarantineService : IQuarantineService
         }
     }
 
-    public async Task<int> PurgeExpiredAsync(uint retentionDays, CancellationToken ct = default)
+    public async Task<int> PurgeExpiredAsync(CancellationToken ct = default)
     {
-        var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
+        // Purge by the entry's own ExpiresAt (set when it was quarantined),
+        // not by a re-derived cutoff from a caller-supplied retention value.
+        // A caller passing a different retention would otherwise purge entries
+        // too early or keep them too long.
+        var now = DateTime.UtcNow;
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var expired = await db.Quarantines
-            .Where(e => e.QuarantinedAt <= cutoff)
+            .Where(e => e.ExpiresAt <= now)
             .ToListAsync(ct);
 
         var purged = 0;

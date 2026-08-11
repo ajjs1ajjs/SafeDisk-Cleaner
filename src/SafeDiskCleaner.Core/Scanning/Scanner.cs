@@ -78,16 +78,7 @@ public sealed class Scanner
     }
 
     public static bool ShouldPrune(string directory) =>
-        PathProtection.IsProtectedPath(directory)
-        || IsUnderProtectedLocation(directory);
-
-    private static bool IsUnderProtectedLocation(string path)
-    {
-        var lower = path.Replace('/', '\\').ToLowerInvariant();
-        return lower.Contains(@"\recovery\", StringComparison.Ordinal)
-            || lower.Contains(@"\system volume information", StringComparison.Ordinal)
-            || lower.Contains(@"$recycle.bin", StringComparison.Ordinal);
-    }
+        PathProtection.IsProtectedPath(directory);
 
     public ScanResult Scan(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct)
     {
@@ -183,6 +174,8 @@ public sealed class Scanner
         return string.IsNullOrWhiteSpace(windows) ? @"C:\" : Path.GetPathRoot(windows) ?? @"C:\";
     }
 
+    private static readonly object ProgressLock = new();
+
     private static (List<Candidate> Candidates, ulong Files, ulong Dirs) ScanOneRoot(
         string root,
         ScanOptions options,
@@ -203,50 +196,63 @@ public sealed class Scanner
             ct.ThrowIfCancellationRequested();
 
             var current = stack.Pop();
-            string[] subDirs;
-            string[] fileEntries;
+            // Stream the directory listing instead of allocating arrays for the
+            // entire directory (huge temp/cache dirs with 100k+ entries used to
+            // stall and spike GC).
             try
             {
-                subDirs = Directory.GetDirectories(current);
-                fileEntries = Directory.GetFiles(current);
+                foreach (var sub in Directory.EnumerateDirectories(current))
+                {
+                    dirs++;
+                    if (!ShouldPrune(sub))
+                    {
+                        stack.Push(sub);
+                    }
+                }
             }
             catch
             {
-                continue;
+                // unreadable directory — skip
             }
 
-            foreach (var sub in subDirs)
+            try
             {
-                if (!ShouldPrune(sub))
+                foreach (var file in Directory.EnumerateFiles(current))
                 {
-                    stack.Push(sub);
-                }
-            }
-
-            dirs += (ulong)subDirs.Length;
-
-            foreach (var file in fileEntries)
-            {
-                files++;
-                var candidate = ProcessFile(file, options);
-                if (candidate is not null)
-                {
-                    candidates.Add(candidate);
-                }
-
-                if (files % ProgressEveryFiles == 0)
-                {
-                    var partial = (files % ProgressWindowFiles) / (double)ProgressWindowFiles;
-                    onProgress?.Invoke(new ScanProgress
+                    files++;
+                    var candidate = ProcessFile(file, options);
+                    if (candidate is not null)
                     {
-                        CurrentRoot = root,
-                        FilesScanned = files,
-                        DirsScanned = dirs,
-                        CandidatesFound = (ulong)candidates.Count,
-                        Percent = ((rootIndex + partial) / totalRoots) * 100.0,
-                        Finished = false,
-                    });
+                        candidates.Add(candidate);
+                    }
+
+                    if (files % ProgressEveryFiles == 0)
+                    {
+                        var partial = (files % ProgressWindowFiles) / (double)ProgressWindowFiles;
+                        var progress = new ScanProgress
+                        {
+                            CurrentRoot = root,
+                            FilesScanned = files,
+                            DirsScanned = dirs,
+                            CandidatesFound = (ulong)candidates.Count,
+                            Percent = ((rootIndex + partial) / totalRoots) * 100.0,
+                            Finished = false,
+                        };
+                        // Parallel.For invokes this from multiple threads; serialize
+                        // the callback so the UI never observes interleaved state.
+                        if (onProgress is not null)
+                        {
+                            lock (ProgressLock)
+                            {
+                                onProgress(progress);
+                            }
+                        }
+                    }
                 }
+            }
+            catch
+            {
+                // unreadable directory — skip
             }
         }
 
@@ -393,46 +399,48 @@ public sealed class Scanner
                 ct.ThrowIfCancellationRequested();
                 var current = stack.Pop();
 
-                string[] subDirs;
-                string[] files;
                 try
                 {
-                    subDirs = Directory.GetDirectories(current);
-                    files = Directory.GetFiles(current);
+                    foreach (var sub in Directory.EnumerateDirectories(current))
+                    {
+                        if (!ShouldPrune(sub))
+                        {
+                            stack.Push(sub);
+                        }
+                    }
                 }
                 catch
                 {
-                    continue;
+                    // unreadable directory — skip
                 }
 
-                foreach (var sub in subDirs)
+                try
                 {
-                    if (!ShouldPrune(sub))
+                    foreach (var file in Directory.EnumerateFiles(current))
                     {
-                        stack.Push(sub);
-                    }
-                }
-
-                foreach (var file in files)
-                {
-                    try
-                    {
-                        var length = new FileInfo(file).Length;
-                        if (length >= DuplicateMinSize)
+                        try
                         {
-                            if (!sizeMap.TryGetValue(length, out var list))
+                            var length = new FileInfo(file).Length;
+                            if (length >= DuplicateMinSize)
                             {
-                                list = new List<string>();
-                                sizeMap[length] = list;
-                            }
+                                if (!sizeMap.TryGetValue(length, out var list))
+                                {
+                                    list = new List<string>();
+                                    sizeMap[length] = list;
+                                }
 
-                            list.Add(file);
+                                list.Add(file);
+                            }
+                        }
+                        catch
+                        {
+                            // unreadable or removed concurrently — skip
                         }
                     }
-                    catch
-                    {
-                        // unreadable or removed concurrently — skip
-                    }
+                }
+                catch
+                {
+                    // unreadable directory — skip
                 }
             }
         }
