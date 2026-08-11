@@ -23,12 +23,18 @@ Remove-Item (Join-Path $release "final") -Recurse -Force -ErrorAction SilentlyCo
 New-Item -ItemType Directory -Path $final -Force | Out-Null
 
 # 2. Publish portable single-file
+# The -p:Version/-p:AssemblyVersion/-p:FileVersion overrides make the built
+# binary report the actual release version, so the in-app update check compares
+# against the real version instead of the Directory.Build.props default.
 Invoke-Dotnet @(
     "publish", "$root\src\SafeDiskCleaner.App",
     "-c", "Release", "-r", "win-x64",
     "--self-contained", "true",
     "-p:PublishSingleFile=true",
     "-p:IncludeNativeLibrariesForSelfExtract=true",
+    "-p:Version=$Version",
+    "-p:AssemblyVersion=$Version.0",
+    "-p:FileVersion=$Version.0",
     "-o", (Join-Path $release "portable")
 )
 
