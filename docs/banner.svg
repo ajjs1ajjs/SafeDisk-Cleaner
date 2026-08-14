@@ -1,0 +1,61 @@
+<svg width="1280" height="360" viewBox="0 0 1280 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1e3a"/>
+      <stop offset="0.5" stop-color="#0d1226"/>
+      <stop offset="1" stop-color="#140d29"/>
+    </linearGradient>
+    <radialGradient id="glowCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#00E5FF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#00E5FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowPurple" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7B2FFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7B2FFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#19E3FF"/>
+      <stop offset="1" stop-color="#7B2FFF"/>
+    </linearGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="42"/>
+    </filter>
+    <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#ffffff" opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="360" fill="url(#bg)"/>
+  <rect width="1280" height="360" fill="url(#dots)"/>
+  <circle cx="170" cy="80" r="230" fill="url(#glowCyan)" filter="url(#blur)"/>
+  <circle cx="1140" cy="310" r="270" fill="url(#glowPurple)" filter="url(#blur)"/>
+
+  <path d="M1280 0 H980 L1280 130 Z" fill="#7B2FFF" opacity="0.18"/>
+  <path d="M1280 90 H1080 L1280 210 Z" fill="#00E5FF" opacity="0.12"/>
+
+  <g>
+    <path d="M150 84 L216 106 L216 172 C216 222 186 250 150 264 C114 250 84 222 84 172 L84 106 Z"
+          fill="url(#shieldGrad)" opacity="0.25" transform="translate(0 6) scale(1 1)" filter="url(#blur)"/>
+    <path d="M150 84 L216 106 L216 172 C216 222 186 250 150 264 C114 250 84 222 84 172 L84 106 Z"
+          fill="url(#shieldGrad)" stroke="#00E5FF" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M126 178 L148 200 L180 152" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="282" y="168" font-family="'Segoe UI', Arial, sans-serif" font-size="60" font-weight="700" fill="#FFFFFF" filter="url(#textGlow)">SafeDisk<tspan fill="#00E5FF"> Cleaner</tspan></text>
+  <text x="286" y="222" font-family="'Segoe UI', Arial, sans-serif" font-size="24" font-weight="400" fill="#A6B4CC">Безпечний аналіз, очищення та пошук дублікатів для Windows</text>
+  <text x="286" y="258" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="400" fill="#00E5FF" opacity="0.85">WPF · .NET 10 LTS · Material Design 3</text>
+
+  <g font-family="'Segoe UI', Arial, sans-serif" font-size="15" font-weight="600">
+    <rect x="980" y="300" width="132" height="34" rx="17" fill="#7B2FFF"/>
+    <text x="1046" y="323" text-anchor="middle" fill="#FFFFFF">Портативна</text>
+    <rect x="1124" y="300" width="132" height="34" rx="17" fill="#00A0C6"/>
+    <text x="1190" y="323" text-anchor="middle" fill="#FFFFFF">Інсталятор</text>
+  </g>
+</svg>
