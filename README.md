@@ -3,10 +3,10 @@
 Безпечний інструмент для аналізу та очищення дисків Windows із пріоритетом на безпеку даних, прозорість рішень та повний контроль користувача.
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-7B2FFF?style=for-the-badge">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-7B2FFF?style=for-the-badge">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-00E5FF?style=for-the-badge">
   <img alt="Framework" src="https://img.shields.io/badge/.NET-10_LTS-512BD4?style=for-the-badge">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-93_passing-00C853?style=for-the-badge">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-97_passing-00C853?style=for-the-badge">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-26A69A?style=for-the-badge">
   <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?style=for-the-badge&label=CI">
 </p>
@@ -100,23 +100,23 @@ dotnet test
 
 ```
 SafeDiskCleaner.sln
-├── Directory.Build.props       # спільна версія 1.0.0
+├── Directory.Build.props       # спільна версія 1.1.0
 ├── src/
 │   ├── SafeDiskCleaner.Core/           # домен: моделі, rules, confidence, safety, scanner, Windows interop
 │   ├── SafeDiskCleaner.Infrastructure/ # EF Core, Refit+Polly, Serilog, сервіси, DI
-│   ├── SafeDiskCleaner.App/            # WPF UI (MaterialDesign, MVVM) — портативна збірка
+│   ├── SafeDiskCleaner.App/            # WPF UI (MaterialDesign, MVVM) — портативна збірка + інсталятор
 │   └── SafeDiskCleaner.Cli/            # консольний застосунок
 └── tests/
-    └── SafeDiskCleaner.Tests/          # xUnit + FluentAssertions + Moq (93 тести, включно з інтеграційними на SQLite)
+    └── SafeDiskCleaner.Tests/          # xUnit + FluentAssertions + Moq (97 тестів, включно з інтеграційними на SQLite)
 ```
 
 ## 📝 Ліцензія
 
 MIT © [ajjs1ajjs](https://github.com/ajjs1ajjs) — див. [LICENSE](LICENSE).
 
-## 🗺️ Дорожня карта (після 1.0)
+## 🗺️ Дорожня карта (після 1.1)
 
-- Інсталятор (MSI) та автозапуск при старті Windows
+- Автозапуск при старті Windows
 - Планувальник автоматичного очищення
 - Підписка на події та сповіщення про завершення
 - Локалізація (EN/UA/PL)

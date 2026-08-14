@@ -3,129 +3,46 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
     <!-- ============================================================ -->
-    <!-- COLORS -->
+    <!-- SEMANTIC BRUSHES (fixed, not theme-dependent)                -->
+    <!-- Base + accent colors live in Themes/Base and Themes/Accents. -->
     <!-- ============================================================ -->
-    <Color x:Key="NeonCyanColor">#00E5FF</Color>
-    <Color x:Key="NeonBlueColor">#0070FF</Color>
-    <Color x:Key="NeonPurpleColor">#7B2FFF</Color>
     <Color x:Key="NeonRedColor">#FF3B5C</Color>
     <Color x:Key="NeonGreenColor">#34C08A</Color>
-    <Color x:Key="BgDeepColor">#0B0E14</Color>
-    <Color x:Key="BgSurfaceColor">#111827</Color>
-    <Color x:Key="BgCardColor">#161D2E</Color>
-    <Color x:Key="BgGlassColor">#1A2332</Color>
-    <Color x:Key="TextPrimaryColor">#E6EDF3</Color>
-    <Color x:Key="TextSecondaryColor">#8B949E</Color>
-    <Color x:Key="BorderColor">#1E2D3D</Color>
-    <Color x:Key="NeonBorderCyanColor">#00E5FF</Color>
-    <Color x:Key="NeonBorderPurpleColor">#7B2FFF</Color>
+    <Color x:Key="NeonBlueColor">#3AA2FF</Color>
+    <Color x:Key="NeonPurpleColor">#7B2FFF</Color>
 
-    <!-- ============================================================ -->
-    <!-- BRUSHES -->
-    <!-- ============================================================ -->
-    <SolidColorBrush x:Key="NeonCyanBrush" Color="{StaticResource NeonCyanColor}" />
-    <SolidColorBrush x:Key="NeonBlueBrush" Color="{StaticResource NeonBlueColor}" />
-    <SolidColorBrush x:Key="NeonPurpleBrush" Color="{StaticResource NeonPurpleColor}" />
     <SolidColorBrush x:Key="NeonRedBrush" Color="{StaticResource NeonRedColor}" />
     <SolidColorBrush x:Key="NeonGreenBrush" Color="{StaticResource NeonGreenColor}" />
-    <SolidColorBrush x:Key="BgDeepBrush" Color="{StaticResource BgDeepColor}" />
-    <SolidColorBrush x:Key="BgSurfaceBrush" Color="{StaticResource BgSurfaceColor}" />
-    <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}" />
-    <SolidColorBrush x:Key="BgGlassBrush" Color="{StaticResource BgGlassColor}" />
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
-    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
-    <SolidColorBrush x:Key="NeonBorderCyanBrush" Color="{StaticResource NeonBorderCyanColor}" />
-    <SolidColorBrush x:Key="NeonBorderPurpleBrush" Color="{StaticResource NeonBorderPurpleColor}" />
+    <SolidColorBrush x:Key="NeonBlueBrush" Color="{StaticResource NeonBlueColor}" />
+    <SolidColorBrush x:Key="NeonPurpleBrush" Color="{StaticResource NeonPurpleColor}" />
 
-    <!-- ============================================================ -->
-    <!-- BACKGROUND AURA GRADIENT -->
-    <!-- ============================================================ -->
-    <RadialGradientBrush x:Key="BgAuraBlue" Opacity="0.15" RadiusX="0.6" RadiusY="0.6" Center="0.5,0.2" GradientOrigin="0.5,0.2">
-        <RadialGradientBrush.GradientStops>
-            <GradientStop Color="#0070FF" Offset="0" />
-            <GradientStop Color="Transparent" Offset="1" />
-        </RadialGradientBrush.GradientStops>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="BgAuraPurple" Opacity="0.12" RadiusX="0.5" RadiusY="0.5" Center="0.5,0.8" GradientOrigin="0.5,0.8">
-        <RadialGradientBrush.GradientStops>
-            <GradientStop Color="#7B2FFF" Offset="0" />
-            <GradientStop Color="Transparent" Offset="1" />
-        </RadialGradientBrush.GradientStops>
-    </RadialGradientBrush>
-
-    <!-- ============================================================ -->
-    <!-- NEON BORDER GRADIENT -->
-    <!-- ============================================================ -->
-    <LinearGradientBrush x:Key="NeonBorderGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#00E5FF" Offset="0" />
-        <GradientStop Color="#0070FF" Offset="0.5" />
-        <GradientStop Color="#7B2FFF" Offset="1" />
-    </LinearGradientBrush>
-
-    <!-- ============================================================ -->
-    <!-- GLOW EFFECTS -->
-    <!-- ============================================================ -->
-    <DropShadowEffect x:Key="NeonCyanGlow" Color="#00E5FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
-    <DropShadowEffect x:Key="NeonBlueGlow" Color="#0070FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
-    <DropShadowEffect x:Key="NeonPurpleGlow" Color="#7B2FFF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
     <DropShadowEffect x:Key="NeonRedGlow" Color="#FF3B5C" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
-    <DropShadowEffect x:Key="NeonCyanGlowStrong" Color="#00E5FF" BlurRadius="20" ShadowDepth="0" Opacity="1.0" />
     <DropShadowEffect x:Key="NeonRedGlowStrong" Color="#FF3B5C" BlurRadius="20" ShadowDepth="0" Opacity="1.0" />
-    <DropShadowEffect x:Key="SoftNeonGlow" Color="#00E5FF" BlurRadius="8" ShadowDepth="0" Opacity="0.5" />
-    <DropShadowEffect x:Key="TextGlow" Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.6" />
 
     <!-- ============================================================ -->
-    <!-- PULSING ANIMATION (for neon borders) -->
+    <!-- TYPOGRAPHY                                                    -->
     <!-- ============================================================ -->
-    <Storyboard x:Key="NeonPulse" RepeatBehavior="Forever">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1.0" Duration="0:0:2" AutoReverse="True" />
-    </Storyboard>
+    <FontFamily x:Key="NeonFont">Segoe UI Variable, Segoe UI, Roboto, Helvetica, Arial, sans-serif</FontFamily>
 
     <!-- ============================================================ -->
-    <!-- TYPOGRAPHY -->
-    <!-- ============================================================ -->
-    <FontFamily x:Key="NeonFont">Segoe UI, Roboto, Helvetica, Arial, sans-serif</FontFamily>
-
-    <!-- ============================================================ -->
-    <!-- MAIN BACKGROUND TEMPLATE (for window root) -->
-    <!-- ============================================================ -->
-    <Style x:Key="NeonBackground" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource BgDeepBrush}" />
-    </Style>
-
-    <!-- ============================================================ -->
-    <!-- NEON CARD STYLE (glass panel with neon border) -->
+    <!-- NEON CARD STYLE (glass panel with accent gradient border)     -->
     <!-- ============================================================ -->
     <Style x:Key="NeonCard" TargetType="Border">
         <Setter Property="Background">
             <Setter.Value>
-                <SolidColorBrush Color="{StaticResource BgGlassColor}" Opacity="0.9" />
+                <SolidColorBrush Color="{DynamicResource BgGlassColor}" Opacity="0.9" />
             </Setter.Value>
         </Setter>
-        <Setter Property="BorderBrush" Value="{StaticResource NeonBorderGradientBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NeonBorderGradientBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="20,16" />
         <Setter Property="Margin" Value="0,0,0,16" />
-        <Setter Property="Effect" Value="{StaticResource SoftNeonGlow}" />
-    </Style>
-
-    <Style x:Key="NeonCardStatic" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <SolidColorBrush Color="{StaticResource BgGlassColor}" Opacity="0.9" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="{StaticResource NeonBorderGradientBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="20,16" />
-        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON PRIMARY BUTTON (cyan glow) -->
+    <!-- NEON PRIMARY BUTTON (accent glow)                             -->
     <!-- ============================================================ -->
     <Style x:Key="NeonPrimaryButton" TargetType="Button">
         <Setter Property="Foreground" Value="#000000" />
@@ -137,28 +54,28 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="btnBorder"
-                            Background="{StaticResource NeonCyanBrush}"
+                            Background="{DynamicResource NeonCyanBrush}"
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}"
-                            Effect="{StaticResource NeonCyanGlow}">
+                            Effect="{DynamicResource NeonCyanGlow}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="btnBorder" Property="Effect" Value="{StaticResource NeonCyanGlowStrong}" />
+                            <Setter TargetName="btnBorder" Property="Effect" Value="{DynamicResource NeonCyanGlowStrong}" />
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#33EAFF" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanHoverColor}" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00B8CC" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanPressedColor}" />
                                 </Setter.Value>
                             </Setter>
-                            <Setter TargetName="btnBorder" Property="Effect" Value="{StaticResource SoftNeonGlow}" />
+                            <Setter TargetName="btnBorder" Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="btnBorder" Property="Opacity" Value="0.4" />
@@ -171,7 +88,7 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON DANGER BUTTON (red glow) -->
+    <!-- NEON DANGER BUTTON (red glow)                                 -->
     <!-- ============================================================ -->
     <Style x:Key="NeonDangerButton" TargetType="Button">
         <Setter Property="Foreground" Value="#FFFFFF" />
@@ -217,10 +134,10 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON OUTLINE BUTTON -->
+    <!-- NEON OUTLINE BUTTON                                           -->
     <!-- ============================================================ -->
     <Style x:Key="NeonOutlineButton" TargetType="Button">
-        <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Padding" Value="16,8" />
         <Setter Property="Cursor" Value="Hand" />
@@ -229,7 +146,7 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="btnBorder"
                             Background="Transparent"
-                            BorderBrush="{StaticResource NeonCyanBrush}"
+                            BorderBrush="{DynamicResource NeonCyanBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}">
@@ -239,15 +156,15 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.1" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.1" />
                                 </Setter.Value>
                             </Setter>
-                            <Setter TargetName="btnBorder" Property="Effect" Value="{StaticResource SoftNeonGlow}" />
+                            <Setter TargetName="btnBorder" Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.2" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.2" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -262,10 +179,10 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON FLAT BUTTON (text only, no border) -->
+    <!-- NEON FLAT BUTTON (text only, no border)                       -->
     <!-- ============================================================ -->
     <Style x:Key="NeonFlatButton" TargetType="Button">
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Padding" Value="12,6" />
         <Setter Property="Cursor" Value="Hand" />
@@ -283,15 +200,15 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.08" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.08" />
                                 </Setter.Value>
                             </Setter>
-                            <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="btnBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.15" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.15" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -305,71 +222,16 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON DRIVE CARD (for Scan page drive buttons) -->
-    <!-- ============================================================ -->
-    <Style x:Key="NeonDriveCard" TargetType="Button">
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Padding" Value="0" />
-        <Setter Property="Margin" Value="0,0,12,12" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="driveBorder"
-                            Width="110" Height="100"
-                            CornerRadius="12"
-                            Padding="12"
-                            Background="{StaticResource BgCardBrush}"
-                            BorderBrush="#1E2D3D"
-                            BorderThickness="1">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock x:Name="driveLetter"
-                                       Text="{TemplateBinding Content}"
-                                       FontSize="28" FontWeight="Bold"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{StaticResource NeonCyanBrush}" />
-                            <TextBlock x:Name="driveKind"
-                                       Text="{TemplateBinding Tag}"
-                                       FontSize="11"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       Margin="0,4,0,0" />
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="driveBorder" Property="BorderBrush" Value="{StaticResource NeonCyanBrush}" />
-                            <Setter TargetName="driveBorder" Property="Effect" Value="{StaticResource NeonCyanGlow}" />
-                            <Setter TargetName="driveBorder" Property="Background">
-                                <Setter.Value>
-                                    <SolidColorBrush Color="#1A2840" />
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="driveBorder" Property="Background">
-                                <Setter.Value>
-                                    <SolidColorBrush Color="#0D1B2E" />
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- ============================================================ -->
-    <!-- NEON TEXTBOX -->
+    <!-- NEON TEXTBOX                                                  -->
     <!-- ============================================================ -->
     <Style x:Key="NeonTextBox" TargetType="TextBox">
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Background" Value="{StaticResource BgCardBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource BgCardBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="10,8" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="CaretBrush" Value="{StaticResource NeonCyanBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource NeonCyanBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -383,13 +245,13 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource NeonCyanBrush}" />
-                            <Setter TargetName="border" Property="Effect" Value="{StaticResource SoftNeonGlow}" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
+                            <Setter TargetName="border" Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="border" Property="BorderBrush">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.5" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.5" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -403,10 +265,66 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON CHECKBOX -->
+    <!-- NEON TOGGLE SWITCH                                           -->
+    <!-- ============================================================ -->
+    <Style x:Key="NeonToggleSwitch" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid>
+                        <Border x:Name="track"
+                                Width="64" Height="28"
+                                CornerRadius="14"
+                                Background="{DynamicResource BgCardBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Ellipse x:Name="knob"
+                                         Width="20" Height="20"
+                                         HorizontalAlignment="Left"
+                                         Margin="4,0,0,0"
+                                         Fill="{DynamicResource TextSecondaryBrush}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
+                            <Setter TargetName="track" Property="Background">
+                                <Setter.Value>
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.25" />
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource NeonCyanBrush}" />
+                            <Setter TargetName="knob" Property="Effect" Value="{DynamicResource NeonCyanGlow}" />
+                            <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- NEON COMBOBOX (based on the MaterialDesign implicit style)    -->
+    <!-- ============================================================ -->
+    <Style x:Key="NeonComboBox" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource BgCardBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- NEON CHECKBOX                                                 -->
     <!-- ============================================================ -->
     <Style x:Key="NeonCheckBox" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="Margin" Value="0,4,24,4" />
@@ -417,13 +335,13 @@
                         <Border x:Name="checkBoxBorder"
                                 Width="20" Height="20"
                                 CornerRadius="4"
-                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1.5"
-                                Background="{StaticResource BgCardBrush}"
+                                Background="{DynamicResource BgCardBrush}"
                                 Margin="0,0,8,0">
                             <Path x:Name="checkMark"
                                   Data="M2,7 L7,12 L16,2"
-                                  Stroke="{StaticResource NeonCyanBrush}"
+                                  Stroke="{DynamicResource NeonCyanBrush}"
                                   StrokeThickness="2.5"
                                   Fill="Transparent"
                                   Visibility="Collapsed"
@@ -437,16 +355,16 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="checkMark" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="checkBoxBorder" Property="BorderBrush" Value="{StaticResource NeonCyanBrush}" />
+                            <Setter TargetName="checkBoxBorder" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
                             <Setter TargetName="checkBoxBorder" Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.15" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.15" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="checkBoxBorder" Property="BorderBrush" Value="{StaticResource NeonCyanBrush}" />
-                            <Setter TargetName="checkBoxBorder" Property="Effect" Value="{StaticResource SoftNeonGlow}" />
+                            <Setter TargetName="checkBoxBorder" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
+                            <Setter TargetName="checkBoxBorder" Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -455,24 +373,20 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON DATAGRID -->
+    <!-- NEON DATAGRID                                                 -->
     <!-- ============================================================ -->
     <Style x:Key="NeonDataGrid" TargetType="DataGrid">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="GridLinesVisibility" Value="Horizontal" />
-        <Setter Property="HorizontalGridLinesBrush">
-            <Setter.Value>
-                <SolidColorBrush Color="{StaticResource BorderColor}" />
-            </Setter.Value>
-        </Setter>
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="RowBackground" Value="Transparent" />
-        <Setter Property="AlternatingRowBackground" Value="{StaticResource BgCardBrush}" />
+        <Setter Property="AlternatingRowBackground" Value="{DynamicResource BgCardBrush}" />
         <Setter Property="HeadersVisibility" Value="Column" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontFamily" Value="{StaticResource NeonFont}" />
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="CanUserResizeRows" Value="False" />
         <Setter Property="RowHeight" Value="36" />
         <Setter Property="CellStyle">
@@ -480,7 +394,7 @@
                 <Style TargetType="DataGridCell">
                     <Setter Property="Padding" Value="8,0" />
                     <Setter Property="BorderThickness" Value="0" />
-                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="DataGridCell">
@@ -495,7 +409,7 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background">
                                 <Setter.Value>
-                                    <SolidColorBrush Color="#00E5FF" Opacity="0.12" />
+                                    <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.12" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -509,9 +423,9 @@
                     <Setter Property="Padding" Value="12,10" />
                     <Setter Property="FontWeight" Value="SemiBold" />
                     <Setter Property="FontSize" Value="13" />
-                    <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
-                    <Setter Property="Background" Value="{StaticResource BgCardBrush}" />
-                    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgCardBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                     <Setter Property="BorderThickness" Value="0,0,0,1" />
                     <Setter Property="HorizontalContentAlignment" Value="Left" />
                 </Style>
@@ -520,15 +434,7 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON SCROLLVIEWER -->
-    <!-- ============================================================ -->
-    <Style x:Key="NeonScrollViewer" TargetType="ScrollViewer">
-        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-    </Style>
-
-    <!-- ============================================================ -->
-    <!-- NEON LISTBOX (for nav sidebar) -->
+    <!-- NEON LISTBOX (for nav sidebar)                                -->
     <!-- ============================================================ -->
     <Style x:Key="NeonNavListBox" TargetType="ListBox">
         <Setter Property="Background" Value="Transparent" />
@@ -540,7 +446,7 @@
                     <Setter Property="Padding" Value="16,12" />
                     <Setter Property="Margin" Value="8,2" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                     <Setter Property="FontSize" Value="14" />
                     <Setter Property="Cursor" Value="Hand" />
                     <Setter Property="Template">
@@ -565,20 +471,20 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="navBorder" Property="Background">
                                             <Setter.Value>
-                                                <SolidColorBrush Color="#00E5FF" Opacity="0.06" />
+                                                <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.06" />
                                             </Setter.Value>
                                         </Setter>
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="navBorder" Property="Background">
                                             <Setter.Value>
-                                                <SolidColorBrush Color="#00E5FF" Opacity="0.1" />
+                                                <SolidColorBrush Color="{DynamicResource NeonCyanColor}" Opacity="0.1" />
                                             </Setter.Value>
                                         </Setter>
-                                        <Setter TargetName="navIndicator" Property="Background" Value="{StaticResource NeonCyanBrush}" />
-                                        <Setter TargetName="navIndicator" Property="Effect" Value="{StaticResource NeonCyanGlow}" />
-                                        <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
+                                        <Setter TargetName="navIndicator" Property="Background" Value="{DynamicResource NeonCyanBrush}" />
+                                        <Setter TargetName="navIndicator" Property="Effect" Value="{DynamicResource NeonCyanGlow}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -590,33 +496,25 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON SECTION TITLE -->
+    <!-- NEON CARD TITLE                                               -->
     <!-- ============================================================ -->
-    <Style x:Key="NeonSectionTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-        <Setter Property="Margin" Value="0,0,0,12" />
-        <Setter Property="FontFamily" Value="{StaticResource NeonFont}" />
-    </Style>
-
     <Style x:Key="NeonCardTitle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
-        <Setter Property="Effect" Value="{StaticResource TextGlow}" />
+        <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
+        <Setter Property="Effect" Value="{DynamicResource TextGlow}" />
         <Setter Property="Margin" Value="0,0,0,12" />
         <Setter Property="FontFamily" Value="{StaticResource NeonFont}" />
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON PROGRESSBAR -->
+    <!-- NEON PROGRESSBAR                                              -->
     <!-- ============================================================ -->
     <Style x:Key="NeonProgressBar" TargetType="ProgressBar">
         <Setter Property="Height" Value="6" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Background" Value="{StaticResource BgCardBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource NeonCyanBrush}" />
+        <Setter Property="Background" Value="{DynamicResource BgCardBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource NeonCyanBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
@@ -627,7 +525,7 @@
                                 Background="{TemplateBinding Foreground}"
                                 CornerRadius="3"
                                 HorizontalAlignment="Left"
-                                Effect="{StaticResource NeonCyanGlow}" />
+                                Effect="{DynamicResource NeonCyanGlow}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -635,35 +533,19 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- NEON INFO BORDER (for info panels) -->
+    <!-- NEON INFO BORDER (for info panels)                            -->
     <!-- ============================================================ -->
     <Style x:Key="NeonInfoBorder" TargetType="Border">
         <Setter Property="Background">
             <Setter.Value>
-                <SolidColorBrush Color="#0D1B2E" Opacity="0.8" />
+                <SolidColorBrush Color="{DynamicResource BgGlassColor}" Opacity="0.8" />
             </Setter.Value>
         </Setter>
-        <Setter Property="BorderBrush" Value="{StaticResource NeonBorderGradientBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NeonBorderGradientBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="Padding" Value="20,16" />
-        <Setter Property="Effect" Value="{StaticResource SoftNeonGlow}" />
-    </Style>
-
-    <!-- ============================================================ -->
-    <!-- NEON TABLE HEADER (for standalone table headers) -->
-    <!-- ============================================================ -->
-    <Style x:Key="NeonTableHeader" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <SolidColorBrush Color="{StaticResource BgCardColor}" Opacity="0.95" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="{StaticResource NeonBorderGradientBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10,10,0,0" />
-        <Setter Property="Padding" Value="16,12" />
-        <Setter Property="Margin" Value="0,0,0,0" />
+        <Setter Property="Effect" Value="{DynamicResource SoftNeonGlow}" />
     </Style>
 
 </ResourceDictionary>

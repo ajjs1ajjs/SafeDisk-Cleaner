@@ -31,6 +31,9 @@
         <DataTemplate DataType="{x:Type vm:ScanViewModel}">
             <views:ScanView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DuplicatesViewModel}">
             <views:DuplicatesView />
         </DataTemplate>
@@ -143,7 +146,7 @@
                 <!-- UPDATE BANNER -->
                 <Border Grid.Row="1"
                         Padding="16,10"
-                        Background="#0D1B2E"
+                        Background="{DynamicResource BgDeepBrush}"
                         BorderBrush="{StaticResource NeonBorderGradientBrush}"
                         BorderThickness="0,0,0,1"
                         Visibility="{Binding IsUpdateBannerVisible, Converter={StaticResource BoolToVis}}">

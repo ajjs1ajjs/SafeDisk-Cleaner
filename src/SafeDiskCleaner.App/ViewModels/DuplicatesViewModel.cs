@@ -135,9 +135,32 @@ public sealed partial class DuplicatesViewModel : ObservableObject
         _batchUpdating = true;
         try
         {
-            foreach (var row in Candidates.Where(c => c.IsSelectable))
+            if (select)
             {
-                row.IsSelected = select;
+                foreach (var row in Candidates.Where(c => c.IsSelectable))
+                {
+                    row.IsSelected = true;
+                }
+
+                // Always keep the newest copy of every duplicate group so the
+                // user can never accidentally delete the last copy of a file.
+                foreach (var group in Candidates
+                             .Where(c => c.GroupId.Length > 0)
+                             .GroupBy(c => c.GroupId))
+                {
+                    var keeper = group
+                        .OrderBy(c => c.LastAccessDays ?? uint.MaxValue)
+                        .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
+                        .First();
+                    keeper.IsSelected = false;
+                }
+            }
+            else
+            {
+                foreach (var row in Candidates)
+                {
+                    row.IsSelected = false;
+                }
             }
         }
         finally

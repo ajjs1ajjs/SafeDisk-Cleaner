@@ -474,6 +474,7 @@ public sealed class Scanner
                             LastModified = info.LastWriteTimeUtc.ToString("yyyy-MM-dd"),
                             LastAccessDays = ConfidenceEngine.ElapsedDays(info.LastAccessTimeUtc),
                             RiskLevel = RiskLevel.Advanced,
+                            GroupId = Convert.ToHexString(hash),
                         });
                     }
                     catch

@@ -7,6 +7,7 @@
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
         <converters:InverseBooleanConverter x:Key="InverseBoolConverter" />
         <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -26,7 +27,7 @@
                         <TextBlock FontSize="12"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
-                                   Text="Файли, які SafeDisk перемістив перед видаленням. Тут їх можна відновити або видалити остаточно. Плотнектиє, іхюо порушення в файли, які SafeDisk перемістив файл: видалення, файли кокіх пранелизує карантинам. Тут їх можна відновити або видалити остаточно." />
+                                   Text="Файли, які SafeDisk перемістив перед видаленням, щоб їх можна було відновити. Тут їх можна повернути на місце або видалити остаточно. Термін зберігання налаштовується у «Налаштуваннях»." />
                     </StackPanel>
 
                     <Button Grid.Column="1"
@@ -48,36 +49,59 @@
 
             <!-- ===== QUARANTINE TABLE ===== -->
             <Border Style="{StaticResource NeonCard}" Padding="0">
-                <DataGrid ItemsSource="{Binding Entries}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
-                          MaxHeight="600"
-                          Style="{StaticResource NeonDataGrid}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
-                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
-                        <DataGridTextColumn Header="Дата" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
-                        <DataGridTemplateColumn Header="Дії" Width="220">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button Style="{StaticResource NeonFlatButton}"
-                                                Content="Відновити"
-                                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                Foreground="{StaticResource NeonCyanBrush}" />
-                                        <Button Style="{StaticResource NeonFlatButton}"
-                                                Content="Видалити"
-                                                Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                Foreground="#FF3B5C" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <!-- Empty state -->
+                    <StackPanel Margin="32,48"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        <materialDesign:PackIcon Kind="ShieldCheckOutline"
+                                                 Width="48" Height="48"
+                                                 HorizontalAlignment="Center"
+                                                 Foreground="{StaticResource NeonGreenBrush}"
+                                                 Opacity="0.8" />
+                        <TextBlock Text="Карантин порожній"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="Тут з'являться файли, переміщені перед остаточним видаленням."
+                                   FontSize="12"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding Entries}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              MaxHeight="600"
+                              Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}"
+                              Style="{StaticResource NeonDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
+                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+                            <DataGridTextColumn Header="Дата" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                            <DataGridTemplateColumn Header="Дії" Width="220">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Style="{StaticResource NeonFlatButton}"
+                                                    Content="Відновити"
+                                                    Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Foreground="{StaticResource NeonCyanBrush}" />
+                                            <Button Style="{StaticResource NeonFlatButton}"
+                                                    Content="Видалити"
+                                                    Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Foreground="{StaticResource NeonRedBrush}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
         </StackPanel>
     </ScrollViewer>

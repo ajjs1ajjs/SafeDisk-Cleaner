@@ -11,6 +11,9 @@ public sealed class Candidate
     public string? LastModified { get; init; }
     public uint? LastAccessDays { get; init; }
     public RiskLevel RiskLevel { get; init; }
+
+    /// <summary>Identifies the duplicate group (same content hash) for duplicate candidates.</summary>
+    public string? GroupId { get; init; }
 }
 
 public sealed class CategoryStats

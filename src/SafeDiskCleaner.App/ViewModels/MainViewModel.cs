@@ -23,20 +23,26 @@ public sealed partial class MainViewModel : ObservableObject
 
     private readonly AppSettings _settings;
     private readonly AutoUpdater _updater;
+    private readonly INavigationService _nav;
+    private readonly DashboardViewModel _dashboard;
     private readonly DispatcherTimer _updateTimer;
 
     public MainViewModel(
         AppSettings settings,
         IAppEventBus eventBus,
         AutoUpdater updater,
+        INavigationService nav,
         ScanViewModel scan,
         DuplicatesViewModel duplicates,
         QuarantineViewModel quarantine,
         AuditViewModel audit,
-        SettingsViewModel settingsVm)
+        SettingsViewModel settingsVm,
+        DashboardViewModel dashboard)
     {
         _settings = settings;
         _updater = updater;
+        _nav = nav;
+        _dashboard = dashboard;
         Scan = scan;
         Duplicates = duplicates;
         Quarantine = quarantine;
@@ -45,6 +51,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         NavItems =
         [
+            new NavItem { Title = "Огляд", IconKind = "ViewDashboardOutline", Target = dashboard },
             new NavItem { Title = "Сканування", IconKind = "MagnifyScan", Target = scan },
             new NavItem { Title = "Дублікати", IconKind = "ContentCopy", Target = duplicates },
             new NavItem { Title = "Карантин", IconKind = "ShieldLock", Target = quarantine },
@@ -52,12 +59,25 @@ public sealed partial class MainViewModel : ObservableObject
             new NavItem { Title = "Налаштування", IconKind = "CogOutline", Target = settingsVm },
         ];
 
+        _nav.NavigateRequested += OnNavigateRequested;
+
         SelectedNavItem = NavItems[0];
 
         eventBus.DataChanged += OnDataChangedAsync;
 
         _updateTimer = new DispatcherTimer { Interval = UpdateCheckInterval };
         _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
+    }
+
+    public DashboardViewModel Dashboard => _dashboard;
+
+    private void OnNavigateRequested(object target)
+    {
+        var navItem = NavItems.FirstOrDefault(n => ReferenceEquals(n.Target, target));
+        if (navItem is not null)
+        {
+            SelectedNavItem = navItem;
+        }
     }
 
     public ScanViewModel Scan { get; }
@@ -73,9 +93,15 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedNavItemChanged(NavItem? value)
     {
-        if (value is not null)
+        if (value is null)
         {
-            CurrentPage = value.Target;
+            return;
+        }
+
+        CurrentPage = value.Target;
+        if (ReferenceEquals(value.Target, _dashboard))
+        {
+            _ = _dashboard.RefreshAsync();
         }
     }
 
@@ -110,8 +136,10 @@ public sealed partial class MainViewModel : ObservableObject
     {
         _settings.Load();
         Scan.LoadSavedOptions();
+        Settings.ApplyLoadedTheme();
         await Quarantine.RefreshAsync();
         await Audit.RefreshAsync();
+        await _dashboard.RefreshAsync();
 
         _updateTimer.Start();
         await CheckForUpdateAsync();

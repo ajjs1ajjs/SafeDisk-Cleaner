@@ -6,6 +6,7 @@ public interface IDialogService
 {
     Task<string[]?> PickFoldersAsync(string title);
     Task<bool> ConfirmAsync(string title, string message, string confirmButton = "OK");
+    Task<string?> PickSaveFileAsync(string title, string defaultFileName, string filter);
 }
 
 public sealed class DialogService : IDialogService
@@ -29,6 +30,20 @@ public sealed class DialogService : IDialogService
         };
         var result = await MaterialDesignThemes.Wpf.DialogHost.Show(content, "RootDialogHost");
         return result is true;
+    }
+
+    public Task<string?> PickSaveFileAsync(string title, string defaultFileName, string filter)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = title,
+            FileName = defaultFileName,
+            Filter = filter,
+            AddExtension = true,
+            DefaultExt = ".csv",
+        };
+
+        return Task.FromResult(dialog.ShowDialog() == true ? dialog.FileName : null);
     }
 }
 

@@ -141,6 +141,38 @@ public sealed class ClassificationEngineTests
     }
 
     [Fact]
+    public void DeliveryOptimizationCache_IsDetected()
+    {
+        var result = ClassificationEngine.Classify(@"C:\Windows\SoftwareDistribution\DeliveryOptimization\1\abc.tmp");
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.DeliveryOptimization);
+    }
+
+    [Fact]
+    public void WindowsErrorReporting_IsDetected()
+    {
+        var result = ClassificationEngine.Classify(@"C:\ProgramData\Microsoft\Windows\WER\ReportQueue\1\report.wer");
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.WindowsErrorReporting);
+    }
+
+    [Fact]
+    public void InternetCache_IsDetected()
+    {
+        var result = ClassificationEngine.Classify(@"C:\Users\u\AppData\Local\Microsoft\Windows\INetCache\IE\abc.htm");
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.InternetCache);
+    }
+
+    [Fact]
+    public void Prefetch_IsDetected()
+    {
+        var result = ClassificationEngine.Classify(@"C:\Windows\Prefetch\APPLAUNCH.EXE-12345.pf");
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.Prefetch);
+    }
+
+    [Fact]
     public void BaseConfidence_IsWithinRange()
     {
         foreach (var category in Enum.GetValues<Category>())

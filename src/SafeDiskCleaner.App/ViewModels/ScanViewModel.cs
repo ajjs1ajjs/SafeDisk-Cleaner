@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -67,6 +68,144 @@ public sealed partial class ScanViewModel : ObservableObject
 
     public ObservableCollection<CandidateRow> Candidates { get; } = [];
 
+    public ObservableCollection<CandidateRow> FilteredCandidates { get; } = [];
+
+    public IReadOnlyList<string> CategoryFilterOptions { get; } =
+        new[] { "Усі категорії" }
+            .Concat(Enum.GetValues<Category>().Select(c => c.Label()))
+            .ToArray();
+
+    public IReadOnlyList<string> RiskFilterOptions { get; } = ["Усі ризики", "Safe", "Medium", "Advanced"];
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private string _categoryFilter = "Усі категорії";
+
+    [ObservableProperty]
+    private string _riskFilter = "Усі ризики";
+
+    partial void OnSearchTextChanged(string value) => ApplyFilters();
+    partial void OnCategoryFilterChanged(string value) => ApplyFilters();
+    partial void OnRiskFilterChanged(string value) => ApplyFilters();
+
+    private void ApplyFilters()
+    {
+        FilteredCandidates.Clear();
+        foreach (var row in Candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(SearchText) &&
+                !row.Path.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (CategoryFilter is not null && CategoryFilter != "Усі категорії" &&
+                row.CategoryLabel != CategoryFilter)
+            {
+                continue;
+            }
+
+            if (RiskFilter is not null && RiskFilter != "Усі ризики" &&
+                row.RiskLevel.Label() != RiskFilter)
+            {
+                continue;
+            }
+
+            FilteredCandidates.Add(row);
+        }
+
+        OnPropertyChanged(nameof(FilteredCount));
+        OnPropertyChanged(nameof(FilteredSize));
+        NotifySelectionChanged();
+    }
+
+    public int FilteredCount => FilteredCandidates.Count;
+    public long FilteredSize => FilteredCandidates.Where(c => c.IsSelected).Sum(c => c.Size);
+
+    [RelayCommand]
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        CategoryFilter = "Усі категорії";
+        RiskFilter = "Усі ризики";
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void SelectOnlySafe()
+    {
+        _batchUpdating = true;
+        try
+        {
+            foreach (var row in Candidates)
+            {
+                row.IsSelected = row.RiskLevel == RiskLevel.Safe && row.IsSelectable;
+            }
+        }
+        finally
+        {
+            _batchUpdating = false;
+        }
+
+        ApplyFilters();
+        NotifySelectionChanged();
+    }
+
+    [RelayCommand]
+    private async Task ExportAsync()
+    {
+        var path = await _dialogs.PickSaveFileAsync(
+            "Зберегти звіт про кандидатів",
+            $"SafeDisk-report-{DateTime.Now:yyyyMMdd-HHmm}.csv",
+            "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json");
+
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var rows = FilteredCandidates.Count > 0 ? FilteredCandidates : Candidates;
+            if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(
+                    rows.Select(r => new
+                    {
+                        r.Path,
+                        Category = r.CategoryLabel,
+                        Risk = r.RiskLevel.Label(),
+                        r.Size,
+                        r.Confidence,
+                        r.Recommendation,
+                        r.Reason,
+                        LastAccessDays = r.LastAccessDays,
+                    }),
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(path, json);
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("Path,Category,Risk,SizeBytes,Confidence,Recommendation,Reason");
+                foreach (var r in rows)
+                {
+                    sb.AppendLine($"\"{r.Path}\",{r.CategoryLabel},{r.RiskLevel.Label()},{r.Size},{r.Confidence},\"{r.Recommendation}\",\"{r.Reason}\"");
+                }
+
+                await System.IO.File.WriteAllTextAsync(path, sb.ToString());
+            }
+
+            Message = $"Звіт збережено: {path}";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Помилка експорту: {ex.Message}";
+        }
+    }
+
     public long SelectedSize => Candidates.Where(c => c.IsSelected).Sum(c => c.Size);
     public int SelectedCount => Candidates.Count(c => c.IsSelected);
 
@@ -129,6 +268,8 @@ public sealed partial class ScanViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(SelectedSize));
         OnPropertyChanged(nameof(SelectedCount));
+        OnPropertyChanged(nameof(FilteredCount));
+        OnPropertyChanged(nameof(FilteredSize));
     }
 
     public void ToggleCandidateSelection(CandidateRow row) => NotifySelectionChanged();
@@ -212,6 +353,8 @@ public sealed partial class ScanViewModel : ObservableObject
                 row.PropertyChanged += OnCandidatePropertyChanged;
                 Candidates.Add(row);
             }
+
+            ApplyFilters();
 
             Message = result.Candidates.Count == 0
                 ? "Не знайдено кандидатів на очищення."

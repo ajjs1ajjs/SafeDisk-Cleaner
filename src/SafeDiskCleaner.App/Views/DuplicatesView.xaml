@@ -23,7 +23,7 @@
                     <TextBlock FontSize="12"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap"
-                               Text="Аналізуються файли розміром понад 4 КБ за BLAKE3-хешем. Шлях аналізу: шляхи з вкладки «Сканування» або всі диски, якщо не вказано. Карантинюються якщо не вказано. Знайтикти дублікатов." />
+                               Text="Аналізуються файли розміром понад 4 КБ за BLAKE3-хешем. Шлях аналізу: шляхи з вкладки «Сканування» або всі диски, якщо не вказано. При виборі «Вибрати все» завжди зберігається одна найновіша копія кожної групи." />
                     <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
                         <Button Command="{Binding ScanDuplicatesCommand}">
                             <Button.Content>
@@ -73,9 +73,9 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Padding="16,12"
-                            Background="#161D2E"
+                            Background="{DynamicResource BgCardBrush}"
                             CornerRadius="12,12,0,0"
-                            BorderBrush="#1E2D3D"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -86,11 +86,8 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock FontSize="16" FontWeight="SemiBold"
                                            Foreground="{StaticResource NeonCyanBrush}"
-                                           Text="Дублікати" Margin="0,0,16,0">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
-                                    </TextBlock.Effect>
-                                </TextBlock>
+                                           Text="Дублікати" Margin="0,0,16,0"
+                                           Effect="{DynamicResource TextGlow}" />
                                 <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}">
                                     <Run Text="{Binding SelectedCount, Mode=OneWay}" />
                                     <Run Text=" вибрано · " />
@@ -138,11 +135,20 @@
                             <DataGridTemplateColumn Header="Confidence" Width="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="6" Padding="6,3"
-                                                HorizontalAlignment="Left"
-                                                Background="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}">
-                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}" FontSize="12" Foreground="White" FontWeight="SemiBold" />
-                                        </Border>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    ToolTip="{Binding Recommendation}">
+                                            <ProgressBar Width="72"
+                                                         Height="6"
+                                                         Maximum="100"
+                                                         Value="{Binding Confidence}"
+                                                         Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}"
+                                                         Style="{StaticResource NeonProgressBar}" />
+                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -163,17 +169,14 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Padding="16,12"
-                            Background="#161D2E"
+                            Background="{DynamicResource BgCardBrush}"
                             CornerRadius="12,12,0,0"
-                            BorderBrush="#1E2D3D"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1">
                         <TextBlock FontSize="16" FontWeight="SemiBold"
                                    Foreground="{StaticResource NeonCyanBrush}"
-                                   Text="Результат очищення">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
-                            </TextBlock.Effect>
-                        </TextBlock>
+                                   Text="Результат очищення"
+                                   Effect="{DynamicResource TextGlow}" />
                     </Border>
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding CleanupResult.Entries}"

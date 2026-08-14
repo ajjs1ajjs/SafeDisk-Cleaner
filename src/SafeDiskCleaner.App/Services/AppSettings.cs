@@ -15,6 +15,7 @@ public sealed class AppSettings
     private string? _filePath;
 
     public bool IsDarkTheme { get; set; } = true;
+    public string AccentPreset { get; set; } = "Cyan";
     public uint QuarantineRetentionDays { get; set; } = 14;
     public byte AutoThreshold { get; set; } = 95;
     public byte MinConfidence { get; set; } = 50;
@@ -47,6 +48,7 @@ public sealed class AppSettings
             }
 
             IsDarkTheme = loaded.IsDarkTheme;
+            AccentPreset = loaded.AccentPreset;
             QuarantineRetentionDays = loaded.QuarantineRetentionDays;
             AutoThreshold = loaded.AutoThreshold;
             MinConfidence = loaded.MinConfidence;

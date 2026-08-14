@@ -16,6 +16,8 @@ public static class AppServices
         services.AddSingleton<AppSettings>();
         services.AddSingleton<IDialogService, DialogService>();
         services.AddSingleton<IAppEventBus, AppEventBus>();
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<ThemeService>();
         services.AddSingleton<AutoUpdater>();
 
         services.AddSingleton<SignatureInspector>();
@@ -28,6 +30,7 @@ public static class AppServices
         services.AddSingleton<QuarantineViewModel>();
         services.AddSingleton<DuplicatesViewModel>();
         services.AddSingleton<ScanViewModel>();
+        services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<MainViewModel>();
 
         services.AddSingleton<MainWindow>();

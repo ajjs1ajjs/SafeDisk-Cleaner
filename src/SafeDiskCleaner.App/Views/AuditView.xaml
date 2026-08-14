@@ -6,6 +6,8 @@
     <UserControl.Resources>
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
         <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanConverter x:Key="InverseBool" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -45,20 +47,43 @@
 
             <!-- ===== AUDIT TABLE ===== -->
             <Border Style="{StaticResource NeonCard}" Padding="0">
-                <DataGrid ItemsSource="{Binding Entries}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
-                          MaxHeight="600"
-                          Style="{StaticResource NeonDataGrid}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
-                        <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="130" />
-                        <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
-                        <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
-                        <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="200" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <!-- Empty state -->
+                    <StackPanel Margin="32,48"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        <materialDesign:PackIcon Kind="TextBoxSearchOutline"
+                                                 Width="48" Height="48"
+                                                 HorizontalAlignment="Center"
+                                                 Foreground="{StaticResource NeonCyanBrush}"
+                                                 Opacity="0.8" />
+                        <TextBlock Text="Журнал порожній"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="Тут з'являться всі виконані операції очищення."
+                                   FontSize="12"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding Entries}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              MaxHeight="600"
+                              Visibility="{Binding IsEmpty, Converter={StaticResource InverseBool}}"
+                              Style="{StaticResource NeonDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                            <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="130" />
+                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+                            <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
+                            <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="200" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
         </StackPanel>
     </ScrollViewer>

@@ -33,12 +33,16 @@ public sealed partial class AuditViewModel : ObservableObject
             {
                 Entries.Add(entry);
             }
+
+            OnPropertyChanged(nameof(IsEmpty));
         }
         catch (Exception ex)
         {
             Message = $"Помилка: {ex.Message}";
         }
     }
+
+    public bool IsEmpty => Entries.Count == 0;
 
     [RelayCommand]
     private async Task ClearAsync()

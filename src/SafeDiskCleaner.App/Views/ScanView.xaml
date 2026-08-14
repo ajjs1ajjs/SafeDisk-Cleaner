@@ -52,25 +52,20 @@
                                     <Border x:Name="driveBorder"
                                             Width="110" Height="100"
                                             CornerRadius="12"
-                                            Background="#161D2E"
-                                            BorderBrush="#1E2D3D"
-                                            BorderThickness="1.5">
-                                        <Border.Effect>
-                                            <DropShadowEffect Color="#7B2FFF" BlurRadius="6" ShadowDepth="0" Opacity="0.3" />
-                                        </Border.Effect>
+                                            Background="{DynamicResource BgCardBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1.5"
+                                            Effect="{DynamicResource SoftNeonGlow}">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Letter}"
                                                        FontSize="28" FontWeight="Bold"
                                                        HorizontalAlignment="Center"
-                                                       Foreground="#00E5FF">
-                                                <TextBlock.Effect>
-                                                    <DropShadowEffect Color="#00E5FF" BlurRadius="6" ShadowDepth="0" Opacity="0.7" />
-                                                </TextBlock.Effect>
-                                            </TextBlock>
+                                                       Foreground="{DynamicResource NeonCyanBrush}"
+                                                       Effect="{DynamicResource NeonCyanGlow}" />
                                             <TextBlock Text="{Binding Kind}"
                                                        FontSize="11"
                                                        HorizontalAlignment="Center"
-                                                       Foreground="#8B949E"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
@@ -95,18 +90,14 @@
                                                 <Binding Path="DataContext.CustomRoots" ElementName="Root" />
                                             </MultiBinding>
                                         </DataTrigger.Binding>
-                                        <Setter TargetName="driveBorder" Property="BorderBrush" Value="#00E5FF" />
+                                        <Setter TargetName="driveBorder" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
                                         <Setter TargetName="driveBorder" Property="BorderThickness" Value="2" />
                                         <Setter TargetName="driveBorder" Property="Background">
                                             <Setter.Value>
-                                                <SolidColorBrush Color="#0D1B2E" />
+                                                <SolidColorBrush Color="{DynamicResource BgDeepColor}" />
                                             </Setter.Value>
                                         </Setter>
-                                        <Setter TargetName="driveBorder" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#00E5FF" BlurRadius="16" ShadowDepth="0" Opacity="0.9" />
-                                            </Setter.Value>
-                                        </Setter>
+                                        <Setter TargetName="driveBorder" Property="Effect" Value="{DynamicResource NeonCyanGlow}" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
@@ -140,6 +131,10 @@
                         <CheckBox Style="{StaticResource NeonCheckBox}"
                                   Content="Advanced (DriverStore, Windows.old)"
                                   IsChecked="{Binding IncludeAdvanced}" />
+                        <CheckBox Style="{StaticResource NeonCheckBox}"
+                                  Content="У кошик"
+                                  ToolTip="Малі файли переміщуються в кошик Windows замість остаточного видалення. Великі файли завжди йдуть у карантин."
+                                  IsChecked="{Binding MoveToRecycleBin}" />
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
                             <TextBlock Text="Min confidence:" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" />
                             <TextBox Width="56"
@@ -185,6 +180,12 @@
                                 Margin="12,0,0,0"
                                 Command="{Binding CancelScanCommand}"
                                 Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
+
+                        <Button Style="{StaticResource NeonOutlineButton}"
+                                Content="Очистити кошик"
+                                Margin="12,0,0,0"
+                                ToolTip="Назавжди видалити всі файли з кошика Windows"
+                                Command="{Binding EmptyRecycleBinCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -241,11 +242,8 @@
                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
                         <TextBlock FontSize="24" FontWeight="SemiBold"
                                    Foreground="{StaticResource NeonCyanBrush}"
-                                   Text="{Binding ScanResult.Summary.TotalPotential, Converter={StaticResource BytesToHuman}}">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.5" />
-                            </TextBlock.Effect>
-                        </TextBlock>
+                                   Text="{Binding ScanResult.Summary.TotalPotential, Converter={StaticResource BytesToHuman}}"
+                                   Effect="{DynamicResource TextGlow}" />
                         <TextBlock Text="Потенційно звільниться" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,12,0">
@@ -281,67 +279,128 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Padding="16,12"
-                            Background="#161D2E"
+                            Background="{DynamicResource BgCardBrush}"
                             CornerRadius="12,12,0,0"
-                            BorderBrush="#1E2D3D"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource NeonCyanBrush}"
-                                           Text="Кандидати" Margin="0,0,16,0">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
-                                    </TextBlock.Effect>
-                                </TextBlock>
-                                <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}">
-                                    <Run Text="{Binding SelectedCount, Mode=OneWay}" />
-                                    <Run Text=" вибрано · " />
-                                    <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
-                                </TextBlock>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button Style="{StaticResource NeonFlatButton}"
-                                        Content="Вибрати все"
-                                        Command="{Binding ToggleAllSelectionCommand}">
-                                    <Button.CommandParameter>
-                                        <sys:Boolean>True</sys:Boolean>
-                                    </Button.CommandParameter>
-                                </Button>
-                                <Button Style="{StaticResource NeonFlatButton}"
-                                        Content="Зняти"
-                                        Command="{Binding ToggleAllSelectionCommand}">
-                                    <Button.CommandParameter>
-                                        <sys:Boolean>False</sys:Boolean>
-                                    </Button.CommandParameter>
-                                </Button>
-                                <Button Style="{StaticResource NeonOutlineButton}"
-                                        Content="Dry Run"
-                                        Margin="4,0,0,0"
-                                        Command="{Binding CleanCommand}"
-                                        CommandParameter="dry-run" />
-                                <Button Style="{StaticResource NeonOutlineButton}"
-                                        Content="Авто-очищення"
-                                        Margin="4,0,0,0"
-                                        Command="{Binding CleanCommand}"
-                                        CommandParameter="auto" />
-                                <Button Style="{StaticResource NeonPrimaryButton}"
-                                        Content="Очистити вибране"
-                                        Margin="8,0,0,0"
-                                        Command="{Binding CleanCommand}"
-                                        CommandParameter="interactive" />
-                            </StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{StaticResource NeonCyanBrush}"
+                                               Text="Кандидати" Margin="0,0,16,0"
+                                               Effect="{DynamicResource TextGlow}" />
+                                    <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}">
+                                        <Run Text="{Binding SelectedCount, Mode=OneWay}" />
+                                        <Run Text=" вибрано · " />
+                                        <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="Вибрати все"
+                                            Command="{Binding ToggleAllSelectionCommand}">
+                                        <Button.CommandParameter>
+                                            <sys:Boolean>True</sys:Boolean>
+                                        </Button.CommandParameter>
+                                    </Button>
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="Зняти"
+                                            Command="{Binding ToggleAllSelectionCommand}">
+                                        <Button.CommandParameter>
+                                            <sys:Boolean>False</sys:Boolean>
+                                        </Button.CommandParameter>
+                                    </Button>
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="Тільки безпечні"
+                                            ToolTip="Вибрати лише кандидатів із рівнем ризику Safe"
+                                            Command="{Binding SelectOnlySafeCommand}" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="Експорт CSV"
+                                            Margin="4,0,0,0"
+                                            ToolTip="Зберегти звіт про кандидатів у файл CSV"
+                                            Command="{Binding ExportCommand}" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="Dry Run"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="dry-run" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="Авто-очищення"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="auto" />
+                                    <Button Style="{StaticResource NeonPrimaryButton}"
+                                            Content="Очистити вибране"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="interactive" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- FILTER BAR -->
+                            <Grid Grid.Row="1" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="FilterVariant" Width="16" Height="16" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Text="Фільтри:" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+
+                                <ComboBox Grid.Column="1"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Center"
+                                          ItemsSource="{Binding CategoryFilterOptions}"
+                                          SelectedItem="{Binding CategoryFilter}"
+                                          materialDesign:HintAssist.Hint="Категорія"
+                                          Style="{StaticResource NeonComboBox}" />
+
+                                <ComboBox Grid.Column="2"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Center"
+                                          ItemsSource="{Binding RiskFilterOptions}"
+                                          SelectedItem="{Binding RiskFilter}"
+                                          materialDesign:HintAssist.Hint="Ризик"
+                                          Style="{StaticResource NeonComboBox}" />
+
+                                <Grid Grid.Column="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Style="{StaticResource NeonTextBox}"
+                                             materialDesign:HintAssist.Hint="Пошук за шляхом..."
+                                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource NeonFlatButton}"
+                                            Content="Скинути фільтри"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding ResetFiltersCommand}"
+                                            VerticalAlignment="Center" />
+                                </Grid>
+                            </Grid>
                         </Grid>
                     </Border>
 
                     <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Candidates}"
+                              ItemsSource="{Binding FilteredCandidates}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="True"
@@ -359,12 +418,20 @@
                             <DataGridTemplateColumn Header="Confidence" Width="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="6" Padding="6,3"
-                                                HorizontalAlignment="Left"
-                                                Background="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}"
-                                                ToolTip="{Binding Recommendation}">
-                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}" FontSize="12" Foreground="White" FontWeight="SemiBold" />
-                                        </Border>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    ToolTip="{Binding Recommendation}">
+                                            <ProgressBar Width="72"
+                                                         Height="6"
+                                                         Maximum="100"
+                                                         Value="{Binding Confidence}"
+                                                         Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}"
+                                                         Style="{StaticResource NeonProgressBar}" />
+                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -385,17 +452,14 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Padding="16,12"
-                            Background="#161D2E"
+                            Background="{DynamicResource BgCardBrush}"
                             CornerRadius="12,12,0,0"
-                            BorderBrush="#1E2D3D"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,0,0,1">
                         <TextBlock FontSize="16" FontWeight="SemiBold"
                                    Foreground="{StaticResource NeonCyanBrush}"
-                                   Text="Результат очищення">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
-                            </TextBlock.Effect>
-                        </TextBlock>
+                                   Text="Результат очищення"
+                                   Effect="{DynamicResource TextGlow}" />
                     </Border>
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding CleanupResult.Entries}"

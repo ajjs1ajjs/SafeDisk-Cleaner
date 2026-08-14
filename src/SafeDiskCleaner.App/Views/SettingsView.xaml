@@ -11,9 +11,35 @@
                 <StackPanel>
                     <TextBlock Text="Інтерфейс"
                                Style="{StaticResource NeonCardTitle}" />
-                    <CheckBox Style="{StaticResource NeonCheckBox}"
-                              Content="Темна тема"
-                              IsChecked="{Binding IsDarkTheme}" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Тема:"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="13" />
+                        <ToggleButton Grid.Column="1"
+                                      IsChecked="{Binding IsDarkTheme}"
+                                      Width="64" Height="28"
+                                      Style="{StaticResource NeonToggleSwitch}" />
+                    </Grid>
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="200" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Акцентний колір:"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="13" />
+                        <ComboBox Grid.Column="1"
+                                  Style="{StaticResource NeonComboBox}"
+                                  ItemsSource="{Binding AccentOptions}"
+                                  SelectedItem="{Binding AccentPreset}"
+                                  VerticalAlignment="Center" />
+                    </Grid>
                 </StackPanel>
             </Border>
 
