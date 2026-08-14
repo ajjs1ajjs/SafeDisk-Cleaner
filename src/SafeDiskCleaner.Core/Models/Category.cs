@@ -5,6 +5,7 @@ public enum Category
     Temp,
     CrashDump,
     BrowserCache,
+    AppCache,
     RecycleBin,
     Logs,
     WindowsUpdateCache,
@@ -27,6 +28,7 @@ public static class CategoryExtensions
         Category.Temp => "Temp files",
         Category.CrashDump => "Crash dumps",
         Category.BrowserCache => "Browser cache",
+        Category.AppCache => "App cache",
         Category.RecycleBin => "Recycle Bin",
         Category.Logs => "Logs",
         Category.WindowsUpdateCache => "Windows Update cache",
@@ -45,7 +47,7 @@ public static class CategoryExtensions
 
     public static RiskLevel RiskLevel(this Category category) => category switch
     {
-        Category.Temp or Category.CrashDump or Category.BrowserCache or Category.RecycleBin
+        Category.Temp or Category.CrashDump or Category.BrowserCache or Category.AppCache or Category.RecycleBin
             or Category.Logs or Category.ThumbnailCache or Category.DeliveryOptimization
             or Category.WindowsErrorReporting or Category.InternetCache => global::SafeDiskCleaner.Core.Models.RiskLevel.Safe,
         Category.WindowsUpdateCache or Category.DriverCache or Category.PackageCache

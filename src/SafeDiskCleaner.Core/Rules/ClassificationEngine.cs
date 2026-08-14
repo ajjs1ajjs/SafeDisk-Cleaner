@@ -88,7 +88,10 @@ public static class ClassificationEngine
 
         var isChromium = lower.Contains(@"\google\chrome\user data", StringComparison.Ordinal)
             || lower.Contains(@"\microsoft\edge\user data", StringComparison.Ordinal)
-            || lower.Contains(@"\chromium\user data", StringComparison.Ordinal);
+            || lower.Contains(@"\chromium\user data", StringComparison.Ordinal)
+            || lower.Contains(@"\brave-browser\user data", StringComparison.Ordinal)
+            || lower.Contains(@"\vivaldi\user data", StringComparison.Ordinal)
+            || lower.Contains(@"\opera stable\", StringComparison.Ordinal);
         var isBrowserCacheDir = lower.Contains(@"\cache", StringComparison.Ordinal) || lower.Contains("code cache", StringComparison.Ordinal);
         if (isChromium && isBrowserCacheDir)
         {
@@ -96,8 +99,19 @@ public static class ClassificationEngine
                 ? "Chromium/Chrome"
                 : lower.Contains(@"\microsoft\edge\user data", StringComparison.Ordinal)
                     ? "Edge"
-                    : "Chromium";
+                    : lower.Contains(@"\brave-browser\user data", StringComparison.Ordinal)
+                        ? "Brave"
+                        : lower.Contains(@"\vivaldi\user data", StringComparison.Ordinal)
+                            ? "Vivaldi"
+                            : lower.Contains(@"\opera stable\", StringComparison.Ordinal)
+                                ? "Opera"
+                                : "Chromium";
             return ClassificationResult.CandidateResult(Category.BrowserCache, 97, $"{engine} browser cache");
+        }
+
+        if (IsAppCachePath(lower))
+        {
+            return ClassificationResult.CandidateResult(Category.AppCache, 90, "Application cache");
         }
 
         if (lower.Contains(@"softwaredistribution\download", StringComparison.Ordinal))
@@ -172,5 +186,29 @@ public static class ClassificationEngine
         || lower.Contains(@"\.bun\", StringComparison.Ordinal)
         || lower.Contains(@"\.cargo\registry\cache", StringComparison.Ordinal)
         || lower.Contains(@"\.gradle\caches", StringComparison.Ordinal)
+        || lower.Contains(@"\uv\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\go-build", StringComparison.Ordinal)
+        || lower.Contains(@"\composer\cache", StringComparison.Ordinal)
         || lower.Contains("packagecache", StringComparison.Ordinal);
+
+    private static bool IsAppCachePath(string lower) =>
+        lower.Contains(@"\discord\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\discord\code cache", StringComparison.Ordinal)
+        || lower.Contains(@"\discord\gpucache", StringComparison.Ordinal)
+        || lower.Contains(@"\discord\dawncache", StringComparison.Ordinal)
+        || lower.Contains(@"\discord\service worker", StringComparison.Ordinal)
+        || lower.Contains(@"\slack\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\slack\code cache", StringComparison.Ordinal)
+        || lower.Contains(@"\slack\gpucache", StringComparison.Ordinal)
+        || lower.Contains(@"\microsoft\teams\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\microsoft\teams\code cache", StringComparison.Ordinal)
+        || lower.Contains(@"\microsoft\teams\gpucache", StringComparison.Ordinal)
+        || lower.Contains(@"\microsoft\teams\service worker", StringComparison.Ordinal)
+        || lower.Contains(@"\whatsapp\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\whatsapp\code cache", StringComparison.Ordinal)
+        || lower.Contains(@"\whatsapp\gpucache", StringComparison.Ordinal)
+        || lower.Contains(@"\postman\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\postman\code cache", StringComparison.Ordinal)
+        || lower.Contains(@"\figma\cache", StringComparison.Ordinal)
+        || lower.Contains(@"\figma\code cache", StringComparison.Ordinal);
 }

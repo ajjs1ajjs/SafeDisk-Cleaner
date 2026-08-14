@@ -34,14 +34,65 @@ public sealed class Scanner
                 @"\Microsoft\Edge\User Data\Default\Cache",
                 @"\Microsoft\Edge\User Data\Default\Code Cache",
                 @"\Microsoft\Edge\User Data\Crashpad\reports",
+                @"\BraveSoftware\Brave-Browser\User Data\Default\Cache",
+                @"\BraveSoftware\Brave-Browser\User Data\Default\Code Cache",
+                @"\Vivaldi\User Data\Default\Cache",
+                @"\Vivaldi\User Data\Default\Code Cache",
                 @"\Microsoft\Windows\Explorer",
                 @"\NuGet\Cache",
                 @"\npm-cache",
                 @"\pip\cache",
                 @"\Mozilla\Firefox\Profiles",
+                @"\Yarn\Cache",
+                @"\pnpm",
+                @"\uv\cache",
+                @"\go-build",
             })
             {
                 roots.Add(local + sub);
+            }
+        }
+
+        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        if (!string.IsNullOrWhiteSpace(roaming))
+        {
+            foreach (var sub in new[]
+            {
+                @"\discord\cache",
+                @"\discord\code cache",
+                @"\discord\gpucache",
+                @"\discord\service worker",
+                @"\slack\cache",
+                @"\slack\code cache",
+                @"\slack\gpucache",
+                @"\microsoft\teams\cache",
+                @"\microsoft\teams\code cache",
+                @"\microsoft\teams\gpucache",
+                @"\microsoft\teams\service worker",
+                @"\whatsapp\cache",
+                @"\whatsapp\code cache",
+                @"\whatsapp\gpucache",
+                @"\postman\cache",
+                @"\figma\cache",
+                @"\Opera Software\Opera Stable\Cache",
+            })
+            {
+                roots.Add(roaming + sub);
+            }
+        }
+
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrWhiteSpace(profile))
+        {
+            foreach (var sub in new[]
+            {
+                @"\.cargo\registry\cache",
+                @"\.gradle\caches",
+                @"\.yarn\berry",
+                @"\.bun\install\cache",
+            })
+            {
+                roots.Add(profile + sub);
             }
         }
 

@@ -57,6 +57,46 @@ public sealed class ClassificationEngineTests
         result.Category.Should().Be(Category.BrowserCache);
     }
 
+    [Theory]
+    [InlineData(@"C:\Users\u\AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\Cache\f_00001", "Brave")]
+    [InlineData(@"C:\Users\u\AppData\Local\Vivaldi\User Data\Default\Cache\f_00001", "Vivaldi")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\Opera Software\Opera Stable\Cache\f_00001", "Opera")]
+    public void ExtendedBrowsers_AreBrowserCache(string path, string engine)
+    {
+        var result = ClassificationEngine.Classify(path);
+        result.Category.Should().Be(Category.BrowserCache);
+        result.Reason.Should().Contain(engine);
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\u\AppData\Roaming\discord\Cache\f_00001")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\discord\Code Cache\js\1.js")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\slack\cache\f_00001")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\Microsoft\Teams\Cache\f_00001")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage\1\2")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\WhatsApp\Cache\f_00001")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\Postman\Cache\f_00001")]
+    [InlineData(@"C:\Users\u\AppData\Roaming\Figma\Cache\f_00001")]
+    public void AppCaches_AreDetected(string path)
+    {
+        var result = ClassificationEngine.Classify(path);
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.AppCache);
+        result.Category!.Value.RiskLevel().Should().Be(Core.Models.RiskLevel.Safe);
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\u\AppData\Local\Yarn\Cache\abc")]
+    [InlineData(@"C:\Users\u\AppData\Local\uv\cache\abc")]
+    [InlineData(@"C:\Users\u\AppData\Local\go-build\123\abc")]
+    [InlineData(@"C:\Users\u\AppData\Local\Composer\cache\abc")]
+    public void AdditionalPackageCaches_AreDetected(string path)
+    {
+        var result = ClassificationEngine.Classify(path);
+        result.Kind.Should().Be(MatchKind.Candidate);
+        result.Category.Should().Be(Category.PackageCache);
+    }
+
     [Fact]
     public void WindowsUpdateDownload_IsUpdateCache()
     {
