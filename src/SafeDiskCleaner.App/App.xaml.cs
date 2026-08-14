@@ -20,10 +20,16 @@ public partial class App : Application
         DispatcherUnhandledException += (_, e) =>
         {
             try { File.WriteAllText(errorLog, e.Exception.ToString()); } catch { }
+            e.Handled = true;
         };
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
             try { File.WriteAllText(errorLog, e.ExceptionObject.ToString()); } catch { }
+        };
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            try { File.WriteAllText(errorLog, e.Exception.ToString()); } catch { }
+            e.SetObserved();
         };
 
         _host = Host.CreateDefaultBuilder()

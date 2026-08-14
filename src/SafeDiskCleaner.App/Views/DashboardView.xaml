@@ -168,7 +168,7 @@
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <ProgressBar Height="8"
                                                      Maximum="100"
-                                                     Value="{Binding UsedPercent}"
+                                                     Value="{Binding UsedPercent, Mode=OneWay}"
                                                      Style="{StaticResource NeonProgressBar}" />
                                     </StackPanel>
 

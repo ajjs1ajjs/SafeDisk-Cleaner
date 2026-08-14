@@ -140,7 +140,7 @@
                                             <ProgressBar Width="72"
                                                          Height="6"
                                                          Maximum="100"
-                                                         Value="{Binding Confidence}"
+                                                         Value="{Binding Confidence, Mode=OneWay}"
                                                          Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}"
                                                          Style="{StaticResource NeonProgressBar}" />
                                             <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}"
