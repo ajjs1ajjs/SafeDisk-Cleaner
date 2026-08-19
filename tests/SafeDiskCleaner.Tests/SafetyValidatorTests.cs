@@ -25,7 +25,8 @@ public sealed class SafetyValidatorTests
     [Fact]
     public void PathWithoutFilename_IsDenied()
     {
-        Validator.Validate(@"C:\", Category.Temp, 0).Allowed.Should().BeFalse();
+        var path = OperatingSystem.IsWindows() ? @"C:\" : Path.GetTempPath();
+        Validator.Validate(path, Category.Temp, 0).Allowed.Should().BeFalse();
     }
 
     [Fact]

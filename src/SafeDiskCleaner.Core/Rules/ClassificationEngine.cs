@@ -26,6 +26,12 @@ public static class ClassificationEngine
 {
     private static readonly string[] ProtectedExtensions = ["dll", "sys", "exe", "cat", "inf", "msi", "msp"];
 
+    /// <summary>The OS temp dir in backslash form (Unix only); used to classify temp files cross-platform.</summary>
+    private static readonly string NormalizedTempRoot =
+        OperatingSystem.IsWindows()
+            ? string.Empty
+            : Path.GetTempPath().Replace('/', '\\').TrimEnd('\\');
+
     public static bool IsProtectedExtension(string path) =>
         IsProtectedExtension((ReadOnlySpan<char>)Path.GetExtension(path));
 
@@ -62,7 +68,7 @@ public static class ClassificationEngine
         }
 
         var lower = path.Replace('/', '\\').ToLowerInvariant();
-        var name = Path.GetFileName(lower);
+        var name = lower[(lower.LastIndexOf('\\') + 1)..];
 
         if (name is "memdmp.dmp" or "memory.dmp")
         {
@@ -152,7 +158,9 @@ public static class ClassificationEngine
         // treated as cleanable cache — it holds installed driver packages. Removing
         // it here prevents offering installed drivers for deletion.
 
-        if (lower.Contains(@"\windowstemp", StringComparison.Ordinal) || lower.Contains(@"\temp\", StringComparison.Ordinal))
+        if (lower.Contains(@"\windowstemp", StringComparison.Ordinal)
+            || lower.Contains(@"\temp\", StringComparison.Ordinal)
+            || (NormalizedTempRoot.Length > 0 && lower.StartsWith(NormalizedTempRoot + "\\", StringComparison.Ordinal)))
         {
             return ClassificationResult.CandidateResult(Category.Temp, 99, "Temporary file");
         }
