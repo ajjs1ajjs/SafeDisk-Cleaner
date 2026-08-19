@@ -30,7 +30,7 @@ public static class ClassificationEngine
     private static readonly string NormalizedTempRoot =
         OperatingSystem.IsWindows()
             ? string.Empty
-            : Path.GetTempPath().Replace('/', '\\').TrimEnd('\\');
+            : Path.GetTempPath().Replace('/', '\\').TrimEnd('\\').ToLowerInvariant();
 
     public static bool IsProtectedExtension(string path) =>
         IsProtectedExtension((ReadOnlySpan<char>)Path.GetExtension(path));
