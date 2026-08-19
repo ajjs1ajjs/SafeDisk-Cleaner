@@ -39,10 +39,18 @@ jobs:
           }
 
       - name: Restore
-        run: dotnet restore ${{ steps.targets.outputs.targets }}
+        shell: pwsh
+        run: |
+          foreach ($t in "${{ steps.targets.outputs.targets }}".Split(' ')) {
+            if ($t) { dotnet restore $t }
+          }
 
       - name: Build
-        run: dotnet build ${{ steps.targets.outputs.targets }} -c Release --no-restore
+        shell: pwsh
+        run: |
+          foreach ($t in "${{ steps.targets.outputs.targets }}".Split(' ')) {
+            if ($t) { dotnet build $t -c Release --no-restore }
+          }
 
       - name: Test
         run: dotnet test tests/SafeDiskCleaner.Tests -c Release --no-build --collect:"XPlat Code Coverage"
