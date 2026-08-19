@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Refit;
 using SafeDiskCleaner.Core.Abstractions;
+using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Infrastructure.Data;
 using SafeDiskCleaner.Infrastructure.Services;
 using Serilog;
@@ -14,6 +15,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddSafeDiskInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<IDriveService>(PlatformServices.Drives);
+        services.AddSingleton<IRecycleBin>(PlatformServices.RecycleBin);
+
         services.AddSingleton<IAppPaths, AppPaths>();
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<IReportWriter, ReportWriter>();

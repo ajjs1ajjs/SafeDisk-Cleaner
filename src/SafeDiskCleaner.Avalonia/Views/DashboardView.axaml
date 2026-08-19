@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SafeDiskCleaner.App.Views.DashboardView">
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <!-- STAT CARDS -->
+      <Grid ColumnDefinitions="*,*,*,*">
+        <Border Classes="NeonCard" Margin="0,0,8,0">
+          <StackPanel>
+            <TextBlock Text="Звільнено всього"
+                       Classes="NeonSection" />
+            <TextBlock Text="{Binding TotalFreed}"
+                       FontSize="26"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AccentBrush}"
+                       Margin="0,6,0,0" />
+          </StackPanel>
+        </Border>
+        <Border Classes="NeonCard" Grid.Column="1" Margin="8,0,8,0">
+          <StackPanel>
+            <TextBlock Text="Операцій очищено"
+                       Classes="NeonSection" />
+            <TextBlock Text="{Binding TotalCleanedEntries}"
+                       FontSize="26"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       Margin="0,6,0,0" />
+          </StackPanel>
+        </Border>
+        <Border Classes="NeonCard" Grid.Column="2" Margin="8,0,8,0">
+          <StackPanel>
+            <TextBlock Text="Карантин"
+                       Classes="NeonSection" />
+            <TextBlock Text="{Binding QuarantineSize}"
+                       FontSize="26"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource WarningBrush}"
+                       Margin="0,6,0,0" />
+            <TextBlock Text="{Binding QuarantineCount, StringFormat={}{0} файлів}"
+                       Classes="NeonHint" />
+          </StackPanel>
+        </Border>
+        <Border Classes="NeonCard" Grid.Column="3" Margin="8,0,0,0">
+          <StackPanel>
+            <TextBlock Text="Останнє сканування"
+                       Classes="NeonSection" />
+            <TextBlock Text="{Binding LastScanPotential}"
+                       FontSize="26"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       Margin="0,6,0,0" />
+            <TextBlock Text="{Binding LastScanCandidates, StringFormat={}{0} кандидатів}"
+                       Classes="NeonHint" />
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- QUICK ACTIONS -->
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Швидкі дії"
+                     Classes="NeonTitle" />
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
+            <Button Classes="NeonPrimary"
+                    Content="Аналізувати зараз"
+                    Command="{Binding GoScanNowCommand}" />
+            <Button Classes="NeonOutline"
+                    Content="Дублікати"
+                    Command="{Binding GoDuplicatesCommand}" />
+            <Button Classes="NeonOutline"
+                    Content="Карантин"
+                    Command="{Binding GoQuarantineCommand}" />
+            <Button Classes="NeonOutline"
+                    Content="Audit Log"
+                    Command="{Binding GoAuditCommand}" />
+            <Button Classes="NeonOutline"
+                    Content="Налаштування"
+                    Command="{Binding GoSettingsCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- DRIVES -->
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Диски та розділи"
+                     Classes="NeonTitle" />
+          <ItemsControl ItemsSource="{Binding Drives}" Margin="0,14,0,0">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="12" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="NeonInfo" Width="230">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*">
+                      <TextBlock Text="{Binding Letter}"
+                                 FontSize="20"
+                                 FontWeight="Bold"
+                                 Foreground="{DynamicResource AccentBrush}" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding Kind}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 VerticalAlignment="Center"
+                                 Margin="8,0,0,0" />
+                    </Grid>
+                    <Grid Margin="0,10,0,0" ColumnDefinitions="*,Auto">
+                      <ProgressBar Maximum="100"
+                                   Value="{Binding UsedPercent}"
+                                   Classes="NeonProgress"
+                                   Height="8" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding UsedPercent, StringFormat={}{0:0}%}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 Margin="10,0,0,0" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,8,0,0"
+                                Spacing="12">
+                      <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
+                        <Run Text="Вільно " />
+                        <Run Text="{Binding FreeText}" Foreground="{DynamicResource SuccessBrush}" />
+                      </TextBlock>
+                      <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
+                        <Run Text="· Всього " />
+                        <Run Text="{Binding TotalText}" />
+                      </TextBlock>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

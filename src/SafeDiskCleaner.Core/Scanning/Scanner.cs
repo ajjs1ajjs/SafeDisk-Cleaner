@@ -1,5 +1,6 @@
 using SafeDiskCleaner.Core.Confidence;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Rules;
 using SafeDiskCleaner.Core.Windows;
 
@@ -12,10 +13,35 @@ public sealed class Scanner
 
     private const long DuplicateMinSize = 4096;
 
+    private readonly IRecycleBin _recycleBin;
+
+    public Scanner(IRecycleBin? recycleBin = null)
+    {
+        _recycleBin = recycleBin ?? PlatformServices.RecycleBin;
+    }
+
     public static IReadOnlyList<string> DefaultScanRoots(bool includeMedium, bool includeAdvanced)
     {
-        var roots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var roots = new HashSet<string>(comparer);
 
+        if (OperatingSystem.IsWindows())
+        {
+            AddWindowsScanRoots(roots, includeMedium, includeAdvanced);
+        }
+        else
+        {
+            AddUnixScanRoots(roots, includeMedium);
+        }
+
+        return roots
+            .Where(r => Directory.Exists(r))
+            .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddWindowsScanRoots(HashSet<string> roots, bool includeMedium, bool includeAdvanced)
+    {
         var temp = Environment.GetEnvironmentVariable("TEMP") ?? Environment.GetEnvironmentVariable("TMP");
         if (!string.IsNullOrWhiteSpace(temp))
         {
@@ -121,11 +147,62 @@ public sealed class Scanner
                 }
             }
         }
+    }
 
-        return roots
-            .Where(r => Directory.Exists(r))
-            .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+    private static void AddUnixScanRoots(HashSet<string> roots, bool includeMedium)
+    {
+        var temp = Environment.GetEnvironmentVariable("TMPDIR")
+            ?? Environment.GetEnvironmentVariable("TEMP")
+            ?? Environment.GetEnvironmentVariable("TMP");
+        if (!string.IsNullOrWhiteSpace(temp))
+        {
+            roots.Add(temp);
+        }
+
+        roots.Add("/tmp");
+        if (includeMedium)
+        {
+            roots.Add("/var/tmp");
+        }
+
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrWhiteSpace(home))
+        {
+            return;
+        }
+
+        var cache = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+        if (string.IsNullOrWhiteSpace(cache))
+        {
+            cache = OperatingSystem.IsMacOS()
+                ? Path.Combine(home, "Library", "Caches")
+                : Path.Combine(home, ".cache");
+        }
+
+        foreach (var sub in new[]
+        {
+            "npm/_cacache",
+            "pip",
+            "yarn",
+            "pnpm",
+            "go-build",
+            "ms-playwright",
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "microsoft-edge",
+            "brave-browser",
+            "vivaldi",
+            "mozilla/firefox",
+            "com.apple.Safari",
+            ".cargo/registry/cache",
+            ".gradle/caches",
+            ".bun/install/cache",
+            "pypa",
+        })
+        {
+            roots.Add(Path.Combine(cache, sub));
+        }
     }
 
     public static bool ShouldPrune(string directory) =>
@@ -220,6 +297,11 @@ public sealed class Scanner
 
     private static string GetSystemDriveRoot()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return "/";
+        }
+
         var windows = Environment.GetEnvironmentVariable("WINDIR")
             ?? Path.GetDirectoryName(Environment.SystemDirectory);
         return string.IsNullOrWhiteSpace(windows) ? @"C:\" : Path.GetPathRoot(windows) ?? @"C:\";
@@ -390,11 +472,11 @@ public sealed class Scanner
         };
     }
 
-    private static List<Candidate> SpecialCandidates(ScanOptions options, string systemDriveRoot)
+    private List<Candidate> SpecialCandidates(ScanOptions options, string systemDriveRoot)
     {
         var outList = new List<Candidate>();
 
-        var rb = WindowsApi.QueryRecycleBin();
+        var rb = _recycleBin.Query();
         if (rb is { Size: > 0 } or { Count: > 0 })
         {
             const byte confidence = 99;

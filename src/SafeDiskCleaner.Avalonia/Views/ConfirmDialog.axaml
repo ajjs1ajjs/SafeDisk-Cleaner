@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SafeDiskCleaner.App.Views.ConfirmDialog"
+        Width="520"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="{DynamicResource BgSurfaceBrush}">
+  <StackPanel Margin="28,24">
+    <TextBlock x:Name="TitleText"
+               FontSize="18"
+               FontWeight="SemiBold"
+               Foreground="{DynamicResource TextPrimaryBrush}" />
+    <TextBlock x:Name="MessageText"
+               FontSize="13"
+               Foreground="{DynamicResource TextSecondaryBrush}"
+               TextWrapping="Wrap"
+               Margin="0,12,0,0" />
+    <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="10"
+                Margin="0,24,0,0">
+      <Button x:Name="CancelButton"
+              Classes="NeonOutline"
+              Content="Скасувати"
+              Click="Cancel_Click" />
+      <Button x:Name="ConfirmButton"
+              Classes="NeonPrimary"
+              Content="OK"
+              Click="Confirm_Click" />
+    </StackPanel>
+  </StackPanel>
+</Window>

@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:SafeDiskCleaner.App"
+             x:Class="SafeDiskCleaner.App.Views.QuarantineView"
+             x:Name="Root">
+  <UserControl.Resources>
+    <c:NullToVisibleConverter x:Key="NullToVisible" />
+    <c:CountToVisibleConverter x:Key="HasEntries" />
+    <c:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+  </UserControl.Resources>
+
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Карантин" Classes="NeonTitle" />
+          <TextBlock Text="Великі та підозрілі файли переміщуються сюди перед видаленням."
+                     Classes="NeonHint"
+                     Margin="0,4,0,0" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+            <Button Classes="NeonDanger"
+                    Content="Очистити карантин"
+                    Command="{Binding EmptyCommand}"
+                    IsVisible="{Binding HasEntries}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border IsVisible="{Binding Message, Converter={StaticResource NullToVisible}}"
+              Classes="NeonInfo">
+        <TextBlock Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="13"
+                   Foreground="{DynamicResource TextPrimaryBrush}" />
+      </Border>
+
+      <Border Classes="NeonCard"
+              Padding="0"
+              IsVisible="{Binding HasEntries}">
+        <DataGrid ItemsSource="{Binding Entries}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  MaxHeight="560"
+                  Classes="NeonGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
+            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="110" />
+            <DataGridTextColumn Header="Поміщено" Binding="{Binding QuarantinedAt, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTextColumn Header="Завершується" Binding="{Binding ExpiresAt, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTemplateColumn Header="Дії" Width="200">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="NeonOutline"
+                            Content="Відновити"
+                            Command="{Binding DataContext.RestoreCommand, ElementName=Root}"
+                            CommandParameter="{Binding}" />
+                    <Button Classes="NeonDanger"
+                            Content="Видалити"
+                            Command="{Binding DataContext.RemoveCommand, ElementName=Root}"
+                            CommandParameter="{Binding}" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

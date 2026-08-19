@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SafeDiskCleaner.App.Views.SettingsView">
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Зовнішній вигляд" Classes="NeonTitle" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="40">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Тема" Classes="NeonSection" />
+              <StackPanel Orientation="Horizontal" Spacing="16">
+                <CheckBox Content="Темна тема"
+                          IsChecked="{Binding IsDarkTheme}" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Text="Акцент" Classes="NeonSection" />
+              <ComboBox ItemsSource="{Binding AccentOptions}"
+                        SelectedItem="{Binding AccentPreset}"
+                        Width="160" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Очищення" Classes="NeonTitle" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="40">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Карантин (днів зберігання)" Classes="NeonSection" />
+              <TextBox Width="80"
+                       Classes="NeonTextBox"
+                       Text="{Binding QuarantineRetentionDays}" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Text="Поріг авто-очищення (MB)" Classes="NeonSection" />
+              <TextBox Width="80"
+                       Classes="NeonTextBox"
+                       Text="{Binding AutoThreshold}" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Система" Classes="NeonTitle" />
+          <Grid ColumnDefinitions="Auto,*" Margin="0,12,0,0">
+            <TextBlock Text="Папка даних:"
+                       Classes="NeonSection"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding DataRoot}"
+                       Classes="NeonHint"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center" />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*" Margin="0,12,0,0">
+            <TextBlock Text="Версія:"
+                       Classes="NeonSection"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Version}"
+                       Classes="NeonHint"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="12">
+            <Button Classes="NeonOutline"
+                    Content="Перевірити оновлення"
+                    Command="{Binding CheckUpdateCommand}" />
+            <TextBlock Text="{Binding UpdateText}"
+                       Classes="NeonHint"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

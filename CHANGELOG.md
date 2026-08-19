@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.0 — Кросплатформенний застосунок (Linux + macOS)
+
+- **Новий GUI на Avalonia** (`src/SafeDiskCleaner.Avalonia`): той самий функціонал і ViewModels, але працює на Windows, Ubuntu/Debian та macOS — Linux і macOS тепер збираються як self-contained застосунки
+- **Абстракція платформи** у Core: `IDriveService` (список дисків/томів) та `IRecycleBin` (кошик) з реалізаціями для Windows (Win32/shell32) та Unix (mount points, XDG Trash); сканер і CleanupEngine працюють через інтерфейси
+- **Виправлення шляхів дисків на Unix**: коректні корені `/`, `/home` тощо замість `X:\`
+- **CI на 3 ОС**: build + test на Windows, Ubuntu, macOS; release-артефакти для Windows (portable + installer), Linux (linux-x64 tar.gz) та macOS (osx-x64 tar.gz)
+- Windows-версія продовжує збиратися на WPF зі всіма наявними функціями
+
 ## v1.2.0 — Глибше очищення кешів
 
 - **Нова категорія «App cache»** — кеші популярних застосунків (Discord, Slack, Teams, WhatsApp, Postman, Figma) тепер скануються та пропонуються до очищення (Safe-ризик, потрапляють у звичайне сканування)

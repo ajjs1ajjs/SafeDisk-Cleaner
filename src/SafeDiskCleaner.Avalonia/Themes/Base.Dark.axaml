@@ -1,0 +1,14 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="BgDeepBrush" Color="#0B0F1A" />
+  <SolidColorBrush x:Key="BgSurfaceBrush" Color="#111826" />
+  <SolidColorBrush x:Key="BgCardBrush" Color="#161F30" />
+  <SolidColorBrush x:Key="BgHoverBrush" Color="#1D2940" />
+  <SolidColorBrush x:Key="BorderBrush" Color="#223048" />
+  <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E8EEF9" />
+  <SolidColorBrush x:Key="TextSecondaryBrush" Color="#93A2BC" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="#34C08A" />
+  <SolidColorBrush x:Key="WarningBrush" Color="#E0B34A" />
+  <SolidColorBrush x:Key="DangerBrush" Color="#E05B5B" />
+  <SolidColorBrush x:Key="ProgressTrackBrush" Color="#223048" />
+</ResourceDictionary>

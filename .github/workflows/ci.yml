@@ -14,7 +14,11 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -24,16 +28,27 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Select targets
+        id: targets
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_OS -eq 'Windows') {
+            "targets=SafeDiskCleaner.slnx" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "targets=src/SafeDiskCleaner.Core src/SafeDiskCleaner.Infrastructure src/SafeDiskCleaner.Cli src/SafeDiskCleaner.Avalonia tests/SafeDiskCleaner.Tests" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - name: Restore
-        run: dotnet restore SafeDiskCleaner.slnx
+        run: dotnet restore ${{ steps.targets.outputs.targets }}
 
       - name: Build
-        run: dotnet build SafeDiskCleaner.slnx -c Release --no-restore
+        run: dotnet build ${{ steps.targets.outputs.targets }} -c Release --no-restore
 
       - name: Test
-        run: dotnet test SafeDiskCleaner.slnx -c Release --no-build --collect:"XPlat Code Coverage"
+        run: dotnet test tests/SafeDiskCleaner.Tests -c Release --no-build --collect:"XPlat Code Coverage"
 
       - name: Upload coverage
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -43,8 +58,21 @@ jobs:
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build-and-test
-    runs-on: windows-latest
-    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: portable-win64
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: linux-x64
+          - os: macos-latest
+            rid: osx-x64
+            artifact: macos-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -55,38 +83,57 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Publish portable
+      - name: Compute version
+        id: version
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
-          dotnet publish src/SafeDiskCleaner.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$version -p:AssemblyVersion=$version.0 -p:FileVersion=$version.0 -o BUILD/ci/portable
+          $v = $env:GITHUB_REF_NAME -replace '^v', ''
+          "version=$v" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
-      - name: Stage artifacts
+      - name: Publish WPF app (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          dotnet publish src/SafeDiskCleaner.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/windows
+
+      - name: Publish Avalonia app (Unix)
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: |
+          dotnet publish src/SafeDiskCleaner.Avalonia -c Release -r ${{ matrix.rid }} --self-contained true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/unix
+
+      - name: Stage Windows artifacts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
           $final = "BUILD/ci/final"
           New-Item -ItemType Directory -Path $final -Force | Out-Null
-          Copy-Item BUILD/ci/portable/SafeDiskCleaner.exe "$final/SafeDiskCleaner-$version-portable-win64.exe" -Force
+          Copy-Item BUILD/ci/windows/SafeDiskCleaner.exe "$final/SafeDiskCleaner-$env:version-portable-win64.exe" -Force
           Copy-Item scripts/run.cmd "$final/run.cmd" -Force
           Get-ChildItem $final -File | ForEach-Object { Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue }
-          Compress-Archive -Path "$final/*" -DestinationPath "BUILD/ci/SafeDiskCleaner-$version-portable-win64.zip" -Force
-          "version=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+          Compress-Archive -Path "$final/*" -DestinationPath "BUILD/ci/SafeDiskCleaner-$env:version-portable-win64.zip" -Force
 
       - name: Install Inno Setup
+        if: runner.os == 'Windows'
         shell: pwsh
         run: choco install innosetup --no-progress -y
 
-      - name: Build installer
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
           if (-not $iscc) { $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" }
-          & $iscc "scripts/installer.iss" /DMyAppVersion=$version /Qp
+          & $iscc "scripts/installer.iss" /DMyAppVersion=$env:version /Qp
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
 
-      - name: Upload release artifacts
+      - name: Package Unix artifacts
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: |
+          tar -czf "BUILD/ci/SafeDiskCleaner-$env:version-${{ matrix.artifact }}.tar.gz" -C BUILD/ci/unix .
+
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -94,3 +141,5 @@ jobs:
             BUILD/ci/final/SafeDiskCleaner-${{ env.version }}-portable-win64.exe
             BUILD/ci/final/run.cmd
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-setup-win64.exe
+            BUILD/ci/SafeDiskCleaner-${{ env.version }}-linux-x64.tar.gz
+            BUILD/ci/SafeDiskCleaner-${{ env.version }}-macos-x64.tar.gz

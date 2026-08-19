@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:SafeDiskCleaner.App"
+             x:Class="SafeDiskCleaner.App.Views.AuditView">
+  <UserControl.Resources>
+    <c:NullToVisibleConverter x:Key="NullToVisible" />
+    <c:CountToVisibleConverter x:Key="HasEntries" />
+    <c:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+  </UserControl.Resources>
+
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="Audit Log" Classes="NeonTitle" />
+          <TextBlock Text="Історія всіх операцій очищення та карантину."
+                     Classes="NeonHint"
+                     Margin="0,4,0,0" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+            <Button Classes="NeonDanger"
+                    Content="Очистити лог"
+                    Command="{Binding ClearCommand}"
+                    IsVisible="{Binding HasEntries}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border IsVisible="{Binding Message, Converter={StaticResource NullToVisible}}"
+              Classes="NeonInfo">
+        <TextBlock Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="13"
+                   Foreground="{DynamicResource TextPrimaryBrush}" />
+      </Border>
+
+      <Border Classes="NeonCard"
+              Padding="0"
+              IsVisible="{Binding HasEntries}">
+        <DataGrid ItemsSource="{Binding Entries}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  MaxHeight="560"
+                  Classes="NeonGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Час" Binding="{Binding Timestamp, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="140" />
+            <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
+            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+            <DataGridTextColumn Header="Статус" Binding="{Binding Success, StringFormat={}{0}}" Width="80" />
+            <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="220" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

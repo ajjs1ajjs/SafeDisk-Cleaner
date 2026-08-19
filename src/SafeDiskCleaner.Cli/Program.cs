@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SafeDiskCleaner.Core.Cleanup;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Safety;
 using SafeDiskCleaner.Core.Scanning;
 using SafeDiskCleaner.Core.Utils;
@@ -42,6 +43,7 @@ static async Task<int> RunAsync(IServiceProvider services, string[] args)
 
     var scanner = services.GetRequiredService<Scanner>();
     var cleanup = services.GetRequiredService<CleanupEngine>();
+    var drives = services.GetRequiredService<IDriveService>();
     var quarantine = services.GetRequiredService<SafeDiskCleaner.Core.Abstractions.IQuarantineService>();
     var audit = services.GetRequiredService<SafeDiskCleaner.Core.Abstractions.IAuditService>();
     var update = services.GetRequiredService<SafeDiskCleaner.Core.Abstractions.IUpdateService>();
@@ -52,7 +54,7 @@ static async Task<int> RunAsync(IServiceProvider services, string[] args)
         "analyze" => await AnalyzeAsync(scanner, reports, args[1..]),
         "clean" => await CleanAsync(scanner, cleanup, reports, args[1..]),
         "duplicates" => await DuplicatesAsync(scanner, args[1..]),
-        "drives" => ListDrives(),
+        "drives" => ListDrives(drives),
         "audit" => await ShowAuditAsync(audit),
         "quarantine" => await QuarantineAsync(quarantine, args[1..]),
         "update" => await CheckUpdateAsync(update),
@@ -232,9 +234,9 @@ static async Task<int> DuplicatesAsync(Scanner scanner, string[] args)
     return 0;
 }
 
-static int ListDrives()
+static int ListDrives(IDriveService drives)
 {
-    foreach (var drive in WindowsApi.ListDrives())
+    foreach (var drive in drives.ListDrives())
     {
         Console.WriteLine($"{drive.Letter,-3} {drive.Kind,-10} total={HumanSize.Format((long)drive.Total),12} free={HumanSize.Format((long)drive.Free),12}");
     }

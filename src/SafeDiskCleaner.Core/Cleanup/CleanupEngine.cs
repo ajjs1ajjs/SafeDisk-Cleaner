@@ -1,7 +1,7 @@
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Safety;
-using SafeDiskCleaner.Core.Windows;
 
 namespace SafeDiskCleaner.Core.Cleanup;
 
@@ -13,12 +13,14 @@ public sealed class CleanupEngine
     private readonly SafetyValidator _safety;
     private readonly IQuarantineService _quarantine;
     private readonly IAuditService _audit;
+    private readonly IRecycleBin _recycleBin;
 
-    public CleanupEngine(SafetyValidator safety, IQuarantineService quarantine, IAuditService audit)
+    public CleanupEngine(SafetyValidator safety, IQuarantineService quarantine, IAuditService audit, IRecycleBin? recycleBin = null)
     {
         _safety = safety;
         _quarantine = quarantine;
         _audit = audit;
+        _recycleBin = recycleBin ?? PlatformServices.RecycleBin;
     }
 
     private const int AuditBatchSize = 50;
@@ -189,7 +191,7 @@ public sealed class CleanupEngine
 
         if (candidate.Category == Category.RecycleBin && candidate.Path == RecycleBinSentinel)
         {
-            return WindowsApi.EmptyRecycleBin()
+            return _recycleBin.Empty()
                 ? CleanupOutcome.Success(CleanupStatus.Deleted)
                 : CleanupOutcome.Failed("Failed to empty Recycle Bin");
         }
@@ -210,7 +212,7 @@ public sealed class CleanupEngine
 
         try
         {
-            WindowsApi.MoveToRecycleBin(candidate.Path);
+            _recycleBin.MoveToRecycleBin(candidate.Path);
             return CleanupOutcome.Success(CleanupStatus.Recycled);
         }
         catch
