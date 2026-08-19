@@ -102,7 +102,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          dotnet publish src/SafeDiskCleaner.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/windows
+          dotnet publish src/SafeDiskCleaner.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/portable
 
       - name: Publish Avalonia app (Unix)
         if: runner.os != 'Windows'
@@ -116,7 +116,7 @@ jobs:
         run: |
           $final = "BUILD/ci/final"
           New-Item -ItemType Directory -Path $final -Force | Out-Null
-          Copy-Item BUILD/ci/windows/SafeDiskCleaner.exe "$final/SafeDiskCleaner-$env:version-portable-win64.exe" -Force
+          Copy-Item BUILD/ci/portable/SafeDiskCleaner.exe "$final/SafeDiskCleaner-$env:version-portable-win64.exe" -Force
           Copy-Item scripts/run.cmd "$final/run.cmd" -Force
           Get-ChildItem $final -File | ForEach-Object { Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue }
           Compress-Archive -Path "$final/*" -DestinationPath "BUILD/ci/SafeDiskCleaner-$env:version-portable-win64.zip" -Force
