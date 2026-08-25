@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.4.0 — Асинхронність, локалізація, спільні ViewModels та нові функції
+
+- **Асинхронний сканер**: `Scanner.ScanAsync` / `ScanDuplicatesAsync` / `HashFileAsync` — обхід ФС через `await foreach` (стрімінг на Channel), скасування на рівні елемента; UI не блокується на великих дисках
+
+- **Treemap-візуалізація результатів** («Сканування» → «Карта результатів»): власний алгоритм Squarified treemap (Bruls et al.) у Core з тестами пропорцій/меж/співвідношення сторін; рендеринг на Canvas у WPF і Avalonia, тултипи з розміром категорії
+- **Сторінка «Застосунки»** (Windows): перелік встановлених програм з реєстру Windows (HKLM 64/32 + HKCU), запуск офіційних деінсталяторів — тихий режим (`QuietUninstallString`) за наявності, підтвердження перед запуском; парсер командних рядків з лапками/MsiExec покритий тестами
+- **Планувальник авто-очищення**: налаштування «Розклад» (увімкнути/щодня/щотижня/час) реєструє завдання ОС — `schtasks` на Windows, systemd user timer на Linux, launchd agent на macOS; платформенні білдери (аргументи schtasks, unit-файли, plist) покриті тестами
+- **CI: опціональний Authenticode-підпис** Windows-артефактів — крок активується автоматично, коли в секретах репозиторію з'являться `CERT_PFX_B64`/`CERT_PFX_PASSWORD`
+- **Виключення (exclusions)**: нова картка в «Налаштуваннях» — список шляхів/шаблонів (`*`, `?`), які ніколи не скануються і не потрапляють у дублікати; зберігаються у `settings.json`; матчер `PathExclusions` у Core з повним набором тестів (межі префікса, wildcards, регістр/сепаратори)
+- **Графік звільненого** на «Огляді»: стовпчикова діаграма за останні 14 днів з audit-логу SQLite, без зовнішніх бібліотек, у обох хостах (WPF + Avalonia)
+- **Self-update: перевірка SHA-256**: якщо реліз містить `<asset>.sha256`, завантажений інсталятор звіряється з ним перед запуском; при невідповідності файл видаляється й оновлення переривається
+- **Edge-case тести (+20)**: дублікати (неіснуючі корені, межа мінімального розміру 4096, виключення), restore-конфлікт карантину (відмова перезапису), матчер виключень, SHA-256 парсер/обчислення
+- **Декларативні правила сканування** (`Rules/scan-roots.json`, embedded-ресурс Core): корені сканування більше не захардкоджені в `Scanner` — групи описуються в JSON (base-токени `$TEMP`/`$LOCALAPPDATA`/`$APPDATA`/`$PROFILE`/`$WINDIR`/`$SYSTEMDRIVE`/`$CACHE`, tier always/medium/advanced, фільтр за ОС); хости підхоплюють override-файл `rules.json` у каталозі даних (групи зливаються за `id`), CLI — прапорець `--rules <path>`; +7 тестів каталогу
+- **Спільні ViewModels** (`src/SafeDiskCleaner.ViewModels`, новий проєкт): усі 8 ViewModel'ів + CandidateRow винесено з дубльованих WPF/Avalonia-копій у спільний код; хости лишили тільки Views та thin-адаптери (`IDispatcher`, `IUiTimer`, `IAppLifecycle`, `IThemeService`). `AppSettings`, `AppEventBus` та інтерфейси `IDialogService`/`INavigationService`/`IUpdateInstaller` теж спільні; WPF-версія тепер використовує кросплатформені `IDriveService`/`IRecycleBin` замість Win32-статик
+- **Локалізація CLI**: консольні повідомлення переведено на `Loc.T()/Loc.F()` (+15 ключів `Cli.*`) — UA/EN/PL працюють і в терміналі
+- **Локалізація UI (UA / EN / PL)**: усі рядки інтерфейсу WPF та Avalonia винесено до спільних каталогів у `SafeDiskCleaner.Core.Localization` (понад 130 ключів на мову); новий `ILocalizationService` + `Loc.T()/Loc.F()` для ViewModel'ів і markup-розширення `{loc:Loc Key}` для XAML обох фреймворків
+- **Живе перемикання мови** у «Налаштуваннях» (Українська / English / Polski) зі збереженням у `settings.json`; навігація та всі прив'язані рядки оновлюються без перезапуску
+- **Асинхронний сканер**: `Scanner.ScanAsync` та `ScanDuplicatesAsync` тепер виконують обхід файлової системи через `await foreach` (стрімінгова асинхронна енумерація на Channel) — UI не блокується на великих дисках, скасування працює на рівні кожного елемента; `HashFileAsync` читає файли справжнім async I/O. Синхронні `Scan`/`ScanDuplicates`/`HashFile` збережено як тонкі обгортки
+- CLI, WPF та Avalonia ViewModel'и переведено з `Task.Run(...)`-обгорток на прямі `await scanner.ScanAsync(...)` / `ScanDuplicatesAsync(...)`
+- +11 тестів: парність sync/async результатів, скасування, async-дублікати, детермінованість хеша; парність ключів каталогів локалізації, fallback, перемикання мови
+
 ## v1.3.0 — Кросплатформенний застосунок (Linux + macOS)
 
 - **Новий GUI на Avalonia** (`src/SafeDiskCleaner.Avalonia`): той самий функціонал і ViewModels, але працює на Windows, Ubuntu/Debian та macOS — Linux і macOS тепер збираються як self-contained застосунки
