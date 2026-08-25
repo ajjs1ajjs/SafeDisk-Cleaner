@@ -1,6 +1,7 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:SafeDiskCleaner.App.ViewModels"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+        xmlns:vm="clr-namespace:SafeDiskCleaner.ViewModels;assembly=SafeDiskCleaner.ViewModels"
         xmlns:views="using:SafeDiskCleaner.App.Views"
         xmlns:c="using:SafeDiskCleaner.App"
         x:Class="SafeDiskCleaner.App.Views.MainWindow"
@@ -33,7 +34,10 @@
     <DataTemplate DataType="{x:Type vm:AuditViewModel}">
       <views:AuditView />
     </DataTemplate>
-    <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+    <DataTemplate DataType="{x:Type vm:AppsViewModel}">
+<views:AppsView />
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:SettingsViewModel}">
       <views:SettingsView />
     </DataTemplate>
   </Window.DataTemplates>
@@ -64,7 +68,7 @@
                        FontSize="20"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}" />
-            <TextBlock Text="Безпечний аналіз і очищення дисків"
+            <TextBlock Text="{loc:Loc MainWindow.SubtitleShort}"
                        FontSize="11"
                        Foreground="{DynamicResource TextSecondaryBrush}"
                        Opacity="0.8" />
@@ -107,7 +111,7 @@
                      Margin="0,0,8,0" />
           <TextBlock VerticalAlignment="Center"
                      Foreground="{DynamicResource TextPrimaryBrush}">
-            <Run Text="Доступна версія " />
+            <Run Text="{loc:Loc Update.AvailablePrefix}" />
             <Run Text="{Binding LatestVersionText}"
                  FontWeight="SemiBold"
                  Foreground="{DynamicResource AccentBrush}" />
@@ -131,7 +135,7 @@
                      VerticalAlignment="Center"
                      Margin="0,0,12,0"
                      IsVisible="{Binding IsDownloading}" />
-          <Button Content="Оновити"
+          <Button Content="{loc:Loc Update.Install}"
                   Classes="NeonFlat"
                   Command="{Binding UpdateCommand}"
                   IsEnabled="{Binding IsDownloading, Converter={StaticResource InverseBool}}"

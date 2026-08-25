@@ -1,15 +1,10 @@
-namespace SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
+
+namespace SafeDiskCleaner.ViewModels.Services;
 
 /// <summary>
-/// Lightweight in-process event bus used to refresh shared state
-/// (quarantine, audit log, drives) after a cleanup cycle completes.
+/// In-process event bus implementation shared by the WPF and Avalonia hosts.
 /// </summary>
-public interface IAppEventBus
-{
-    event Func<Task>? DataChanged;
-    Task RaiseDataChangedAsync();
-}
-
 public sealed class AppEventBus : IAppEventBus
 {
     public event Func<Task>? DataChanged;

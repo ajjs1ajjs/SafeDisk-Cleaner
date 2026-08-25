@@ -1,20 +1,39 @@
+﻿using SafeDiskCleaner.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
-public sealed class NavItem
+public sealed class NavItem : System.ComponentModel.INotifyPropertyChanged
 {
-    public required string Title { get; init; }
-    public required string IconKind { get; init; }
-    public required object Target { get; init; }
+    private string _title;
+
+    public NavItem(string titleKey, string iconKind, object target)
+    {
+        _title = Loc.T(titleKey);
+        IconKind = iconKind;
+        Target = target;
+
+        LocalizationService.Instance.LanguageChanged += (_, _) =>
+        {
+            _title = Loc.T(titleKey);
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Title)));
+        };
+    }
+
+    public string Title => _title;
+
+    public string IconKind { get; }
+
+    public object Target { get; }
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 }
 
 public sealed partial class MainViewModel : ObservableObject
@@ -22,41 +41,48 @@ public sealed partial class MainViewModel : ObservableObject
     private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromMinutes(30);
 
     private readonly AppSettings _settings;
-    private readonly AutoUpdater _updater;
+    private readonly IUpdateInstaller _updater;
     private readonly INavigationService _nav;
     private readonly DashboardViewModel _dashboard;
-    private readonly DispatcherTimer _updateTimer;
+    private readonly IUiTimer _updateTimer;
+    private readonly IAppLifecycle _lifecycle;
 
     public MainViewModel(
         AppSettings settings,
         IAppEventBus eventBus,
-        AutoUpdater updater,
+        IUpdateInstaller updater,
+        IUiTimer updateTimer,
+        IAppLifecycle lifecycle,
         INavigationService nav,
         ScanViewModel scan,
         DuplicatesViewModel duplicates,
         QuarantineViewModel quarantine,
         AuditViewModel audit,
+        AppsViewModel apps,
         SettingsViewModel settingsVm,
         DashboardViewModel dashboard)
     {
         _settings = settings;
         _updater = updater;
+        _updateTimer = updateTimer;
+        _lifecycle = lifecycle;
         _nav = nav;
         _dashboard = dashboard;
         Scan = scan;
         Duplicates = duplicates;
         Quarantine = quarantine;
         Audit = audit;
+        Apps = apps;
         Settings = settingsVm;
 
         NavItems =
         [
-            new NavItem { Title = "Огляд", IconKind = "ViewDashboardOutline", Target = dashboard },
-            new NavItem { Title = "Сканування", IconKind = "MagnifyScan", Target = scan },
-            new NavItem { Title = "Дублікати", IconKind = "ContentCopy", Target = duplicates },
-            new NavItem { Title = "Карантин", IconKind = "ShieldLock", Target = quarantine },
-            new NavItem { Title = "Audit Log", IconKind = "TextBoxSearch", Target = audit },
-            new NavItem { Title = "Налаштування", IconKind = "CogOutline", Target = settingsVm },
+            new NavItem("Nav.Dashboard", "ViewDashboardOutline", dashboard),
+            new NavItem("Nav.Scan", "MagnifyScan", scan),
+            new NavItem("Nav.Duplicates", "ContentCopy", duplicates),
+            new NavItem("Nav.Quarantine", "ShieldLock", quarantine),
+            new NavItem("Nav.AuditLog", "TextBoxSearch", audit),
+            new NavItem("Nav.Settings", "CogOutline", settingsVm),
         ];
 
         _nav.NavigateRequested += OnNavigateRequested;
@@ -65,7 +91,6 @@ public sealed partial class MainViewModel : ObservableObject
 
         eventBus.DataChanged += OnDataChangedAsync;
 
-        _updateTimer = new DispatcherTimer { Interval = UpdateCheckInterval };
         _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
     }
 
@@ -84,6 +109,7 @@ public sealed partial class MainViewModel : ObservableObject
     public DuplicatesViewModel Duplicates { get; }
     public QuarantineViewModel Quarantine { get; }
     public AuditViewModel Audit { get; }
+    public AppsViewModel Apps { get; }
     public SettingsViewModel Settings { get; }
 
     public ObservableCollection<NavItem> NavItems { get; }
@@ -135,13 +161,14 @@ public sealed partial class MainViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         _settings.Load();
+        LocalizationService.Instance.SetLanguage(_settings.Language);
         Scan.LoadSavedOptions();
         Settings.ApplyLoadedTheme();
         await Quarantine.RefreshAsync();
         await Audit.RefreshAsync();
         await _dashboard.RefreshAsync();
 
-        _updateTimer.Start();
+        _updateTimer.Start(UpdateCheckInterval);
         await CheckForUpdateAsync();
     }
 
@@ -193,7 +220,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         IsDownloading = true;
         DownloadProgress = 0;
-        UpdateStatus = "Завантаження...";
+        UpdateStatus = Loc.T("Update.Checking");
         try
         {
             var destination = Path.Combine(
@@ -203,17 +230,25 @@ public sealed partial class MainViewModel : ObservableObject
 
             await _updater.DownloadAsync(asset, destination, progress);
 
-            UpdateStatus = "Встановлення...";
+            // Integrity: when the release ships a "<asset>.sha256" companion,
+            // the download must match before anything is executed.
+            if (_updater.SelectChecksumAsset(UpdateInfo) is { } checksumAsset)
+            {
+                var checksum = await _updater.DownloadTextAsync(checksumAsset);
+                _updater.VerifySha256(destination, checksum);
+            }
+
+            UpdateStatus = Loc.T("Update.Installing");
             await Task.Delay(300);
 
             _updater.LaunchInstaller(destination);
 
             // The current executable is being replaced — close the app.
-            await Application.Current.Dispatcher.InvokeAsync(() => Application.Current.Shutdown());
+            await _lifecycle.ShutdownAsync();
         }
         catch (Exception ex)
         {
-            UpdateStatus = $"Помилка: {ex.Message}";
+            UpdateStatus = Loc.F("Common.Error", ex.Message);
         }
         finally
         {

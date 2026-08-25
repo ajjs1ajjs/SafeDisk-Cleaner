@@ -1,5 +1,6 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
              xmlns:c="using:SafeDiskCleaner.App"
              x:Class="SafeDiskCleaner.App.Views.ScanView"
              x:Name="Root">
@@ -39,7 +40,7 @@
       <!-- ===== ANALYSIS AREA CARD ===== -->
       <Border Classes="NeonCard">
         <StackPanel>
-          <TextBlock Text="Область аналізу" Classes="NeonTitle" />
+          <TextBlock Text="{loc:Loc Scan.AreaTitle}" Classes="NeonTitle" />
 
           <ItemsControl ItemsSource="{Binding Drives}" Margin="0,14,0,0">
             <ItemsControl.ItemsPanel>
@@ -77,11 +78,11 @@
 
           <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
             <TextBox Classes="NeonTextBox"
-                     Watermark="Додаткові шляхи для аналізу (через кому)..."
+                     Watermark="{loc:Loc Scan.CustomRootsHint}"
                      Text="{Binding CustomRoots}" />
             <Button Grid.Column="1"
                     Classes="NeonOutline"
-                    Content="Огляд..."
+                    Content="{loc:Loc Common.Browse}"
                     Margin="8,0,0,0"
                     Command="{Binding PickFoldersCommand}" />
           </Grid>
@@ -89,12 +90,12 @@
           <StackPanel Orientation="Horizontal"
                       Margin="0,16,0,0"
                       Spacing="18">
-            <CheckBox Content="Medium (оновлення, пакети)"
+            <CheckBox Content="{loc:Loc Scan.MediumCheckbox}"
                       IsChecked="{Binding IncludeMedium}" />
             <CheckBox Content="Advanced (DriverStore, Windows.old)"
                       IsChecked="{Binding IncludeAdvanced}" />
-            <CheckBox Content="У кошик"
-                      ToolTip.Tip="Малі файли переміщуються у кошик замість остаточного видалення. Великі файли завжди йдуть у карантин."
+            <CheckBox Content="{loc:Loc Scan.ToRecycleBin}"
+                      ToolTip.Tip="{loc:Loc Scan.ToRecycleBinTooltip}"
                       IsChecked="{Binding MoveToRecycleBin}" />
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
               <TextBlock Text="Min confidence:"
@@ -108,7 +109,7 @@
                        Text="{Binding MinConfidence}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <TextBlock Text="Не використано днів:"
+              <TextBlock Text="{loc:Loc Scan.NotUsedDays}"
                          VerticalAlignment="Center"
                          Foreground="{DynamicResource TextSecondaryBrush}"
                          FontSize="13" />
@@ -122,16 +123,16 @@
 
           <StackPanel Orientation="Horizontal" Margin="0,20,0,0" Spacing="12">
             <Button Classes="NeonPrimary"
-                    Content="Аналізувати"
+                    Content="{loc:Loc Scan.Analyze}"
                     Command="{Binding ScanCommand}"
                     IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}" />
             <Button Classes="NeonOutline"
-                    Content="Скасувати"
+                    Content="{loc:Loc Common.Cancel}"
                     Command="{Binding CancelScanCommand}"
                     IsVisible="{Binding IsScanning}" />
             <Button Classes="NeonOutline"
-                    Content="Очистити кошик"
-                    ToolTip.Tip="Назавжди видалити всі файли з кошика"
+                    Content="{loc:Loc Scan.CleanRecycleBin}"
+                    ToolTip.Tip="{loc:Loc Scan.CleanRecycleBinTooltip}"
                     Command="{Binding EmptyRecycleBinCommand}" />
           </StackPanel>
         </StackPanel>
@@ -144,9 +145,9 @@
                      Classes="NeonProgress" />
         <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
           <Run Text="{Binding ScanProgress.FilesScanned, Mode=OneWay, StringFormat={}{0:N0}}" />
-          <Run Text=" файлів · " />
+          <Run Text="{loc:Loc Frag.Files}" />
           <Run Text="{Binding ScanProgress.CandidatesFound, Mode=OneWay}" />
-          <Run Text=" кандидатів" />
+          <Run Text="{loc:Loc Frag.Candidates}" />
         </TextBlock>
       </StackPanel>
 
@@ -179,7 +180,7 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource AccentBrush}"
                        Text="{Binding ScanResult.Summary.TotalPotential, Converter={StaticResource BytesToHuman}}" />
-            <TextBlock Text="Потенційно звільниться"
+            <TextBlock Text="{loc:Loc Scan.Potential}"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
           </StackPanel>
@@ -188,7 +189,7 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="{Binding ScanResult.Summary.ScannedFiles, StringFormat={}{0:N0}}" />
-            <TextBlock Text="Файлів проскановано"
+            <TextBlock Text="{loc:Loc Scan.FilesScanned}"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
           </StackPanel>
@@ -197,7 +198,7 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="{Binding ScanResult.Candidates.Count}" />
-            <TextBlock Text="Кандидатів"
+            <TextBlock Text="{loc:Loc Scan.CandidatesCount}"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
           </StackPanel>
@@ -206,7 +207,7 @@
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="{Binding ScanResult.Summary.ElapsedMs, StringFormat={}{0} ms}" />
-            <TextBlock Text="Час аналізу"
+            <TextBlock Text="{loc:Loc Scan.ElapsedTime}"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
           </StackPanel>
@@ -232,30 +233,33 @@
                   <TextBlock FontSize="16"
                              FontWeight="SemiBold"
                              Foreground="{DynamicResource AccentBrush}"
-                             Text="Кандидати" />
+                             Text="{loc:Loc Scan.Candidates}" />
                   <TextBlock VerticalAlignment="Center"
                              Foreground="{DynamicResource TextSecondaryBrush}">
                     <Run Text="{Binding SelectedCount, Mode=OneWay}" />
-                    <Run Text=" вибрано · " />
+                    <Run Text="{loc:Loc Frag.Selected}" />
                     <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
                   </TextBlock>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                   <Button Classes="NeonFlat"
-                          Content="Вибрати все"
+                          Content="{loc:Loc Common.SelectAll}"
                           Command="{Binding ToggleAllSelectionCommand}" />
                   <Button Classes="NeonFlat"
-                          Content="Зняти"
+                          Content="{loc:Loc Common.Deselect}"
                           Command="{Binding ClearSelectionCommand}" />
                   <Button Classes="NeonFlat"
-                          Content="Тільки безпечні"
-                          ToolTip.Tip="Вибрати лише кандидатів із рівнем ризику Safe"
+                          Content="{loc:Loc Scan.OnlySafe}"
+                          ToolTip.Tip="{loc:Loc Scan.OnlySafeTooltip}"
                           Command="{Binding SelectOnlySafeCommand}" />
+                  <Button Classes="NeonFlat"
+                          Content="{loc:Loc Scan.TreemapToggle}"
+                          Command="{Binding ToggleTreemapCommand}" />
                   <Button Classes="NeonOutline"
-                          Content="Експорт CSV"
+                          Content="{loc:Loc Common.ExportCsv}"
                           Margin="4,0,0,0"
-                          ToolTip.Tip="Зберегти звіт про кандидатів у файл"
+                          ToolTip.Tip="{loc:Loc Common.ExportTooltip}"
                           Command="{Binding ExportCommand}" />
                   <Button Classes="NeonOutline"
                           Content="Dry Run"
@@ -263,12 +267,12 @@
                           Command="{Binding CleanCommand}"
                           CommandParameter="dry-run" />
                   <Button Classes="NeonOutline"
-                          Content="Авто-очищення"
+                          Content="{loc:Loc Scan.AutoClean}"
                           Margin="4,0,0,0"
                           Command="{Binding CleanCommand}"
                           CommandParameter="auto" />
                   <Button Classes="NeonPrimary"
-                          Content="Очистити вибране"
+                          Content="{loc:Loc Scan.CleanSelected}"
                           Margin="8,0,0,0"
                           Command="{Binding CleanCommand}"
                           CommandParameter="interactive" />
@@ -281,7 +285,7 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0">
-                  <TextBlock Text="Фільтри:"
+                  <TextBlock Text="{loc:Loc Scan.Filters}"
                              FontSize="12"
                              VerticalAlignment="Center"
                              Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -303,11 +307,11 @@
 
                 <Grid Grid.Column="3" ColumnDefinitions="*,Auto">
                   <TextBox Classes="NeonTextBox"
-                           Watermark="Пошук за шляхом..."
+                           Watermark="{loc:Loc Scan.SearchHint}"
                            Text="{Binding SearchText}" />
                   <Button Grid.Column="1"
                           Classes="NeonFlat"
-                          Content="Скинути фільтри"
+                          Content="{loc:Loc Scan.ResetFilters}"
                           Margin="8,0,0,0"
                           Command="{Binding ResetFiltersCommand}"
                           VerticalAlignment="Center" />
@@ -326,10 +330,10 @@
               <DataGridCheckBoxColumn Header=""
                                       IsReadOnly="False"
                                       Binding="{Binding IsSelected}" />
-              <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
-              <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryLabel}" Width="160" />
-              <DataGridTextColumn Header="Розмір" Binding="{Binding SizeText}" Width="90" />
-              <DataGridTextColumn Header="Останній доступ" Binding="{Binding LastAccessText}" Width="110" />
+              <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+              <DataGridTextColumn Header="{loc:Loc Col.Category}" Binding="{Binding CategoryLabel}" Width="160" />
+              <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding SizeText}" Width="90" />
+              <DataGridTextColumn Header="{loc:Loc Common.LastAccess}" Binding="{Binding LastAccessText}" Width="110" />
               <DataGridTemplateColumn Header="Confidence" Width="120">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
@@ -351,7 +355,7 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTextColumn Header="Рекомендація" Binding="{Binding Recommendation}" Width="120" />
+              <DataGridTextColumn Header="{loc:Loc Col.Recommendation}" Binding="{Binding Recommendation}" Width="120" />
             </DataGrid.Columns>
           </DataGrid>
         </Grid>
@@ -371,7 +375,7 @@
             <TextBlock FontSize="16"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource AccentBrush}"
-                       Text="Результат очищення" />
+                       Text="{loc:Loc Common.CleanupResult}" />
           </Border>
           <DataGrid Grid.Row="1"
                     ItemsSource="{Binding CleanupResult.Entries}"
@@ -380,13 +384,45 @@
                     MaxHeight="360"
                     Classes="NeonGrid">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120" />
-              <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
-              <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
-              <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="240" />
+              <DataGridTextColumn Header="{loc:Loc Common.Status}" Binding="{Binding Status}" Width="120" />
+              <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+              <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+              <DataGridTextColumn Header="{loc:Loc Common.Details}" Binding="{Binding Detail}" Width="240" />
             </DataGrid.Columns>
           </DataGrid>
         </Grid>
+      </Border>
+
+      <!-- RESULTS TREEMAP -->
+      <Border Classes="NeonCard" IsVisible="{Binding ShowTreemap}">
+        <ItemsControl ItemsSource="{Binding TreemapTiles}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <Canvas Width="800" Height="320" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Width="{Binding Width}"
+                      Height="{Binding Height}"
+                      Canvas.Left="{Binding X}"
+                      Canvas.Top="{Binding Y}"
+                      Background="{DynamicResource BgHoverBrush}"
+                      BorderBrush="{DynamicResource BorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="4"
+                      ToolTip.Tip="{Binding SizeText}">
+                <TextBlock Text="{Binding Label}"
+                           FontSize="11"
+                           Margin="6,4,2,0"
+                           VerticalAlignment="Top"
+                           HorizontalAlignment="Left"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </Border>
     </StackPanel>
   </ScrollViewer>

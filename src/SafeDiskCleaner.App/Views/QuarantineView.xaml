@@ -1,6 +1,7 @@
-<UserControl x:Class="SafeDiskCleaner.App.Views.QuarantineView"
+﻿<UserControl x:Class="SafeDiskCleaner.App.Views.QuarantineView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.App.Localization"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:SafeDiskCleaner.App">
     <UserControl.Resources>
@@ -22,17 +23,17 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Text="Карантин"
+                        <TextBlock Text="{loc:Loc Nav.Quarantine}"
                                    Style="{StaticResource NeonCardTitle}" />
                         <TextBlock FontSize="12"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
-                                   Text="Файли, які SafeDisk перемістив перед видаленням, щоб їх можна було відновити. Тут їх можна повернути на місце або видалити остаточно. Термін зберігання налаштовується у «Налаштуваннях»." />
+                                   Text="{loc:Loc Quarantine.Description}" />
                     </StackPanel>
 
                     <Button Grid.Column="1"
                             Style="{StaticResource NeonDangerButton}"
-                            Content="Очистити карантин"
+                            Content="{loc:Loc Quarantine.Clear}"
                             VerticalAlignment="Center"
                             Command="{Binding EmptyCommand}"
                             IsEnabled="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}" />
@@ -58,12 +59,12 @@
                                                  HorizontalAlignment="Center"
                                                  Foreground="{StaticResource NeonGreenBrush}"
                                                  Opacity="0.8" />
-                        <TextBlock Text="Карантин порожній"
+                        <TextBlock Text="{loc:Loc Quarantine.EmptyTitle}"
                                    FontSize="16" FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    Margin="0,16,0,0"
                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="Тут з'являться файли, переміщені перед остаточним видаленням."
+                        <TextBlock Text="{loc:Loc Quarantine.EmptyText}"
                                    FontSize="12"
                                    HorizontalAlignment="Center"
                                    Margin="0,6,0,0"
@@ -78,20 +79,20 @@
                               Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}"
                               Style="{StaticResource NeonDataGrid}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Оригінальний шлях" Binding="{Binding OriginalPath}" Width="*" />
-                            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
-                            <DataGridTextColumn Header="Дата" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
-                            <DataGridTemplateColumn Header="Дії" Width="220">
+                            <DataGridTextColumn Header="{loc:Loc Common.OriginalPath}" Binding="{Binding OriginalPath}" Width="*" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Date}" Binding="{Binding QuarantinedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="150" />
+                            <DataGridTemplateColumn Header="{loc:Loc Common.Actions}" Width="220">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <Button Style="{StaticResource NeonFlatButton}"
-                                                    Content="Відновити"
+                                                    Content="{loc:Loc Common.Restore}"
                                                     Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                     CommandParameter="{Binding}"
                                                     Foreground="{StaticResource NeonCyanBrush}" />
                                             <Button Style="{StaticResource NeonFlatButton}"
-                                                    Content="Видалити"
+                                                    Content="{loc:Loc Common.Delete}"
                                                     Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                     CommandParameter="{Binding}"
                                                     Foreground="{StaticResource NeonRedBrush}" />

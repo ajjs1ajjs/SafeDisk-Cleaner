@@ -1,10 +1,11 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Utils;
 
 namespace SafeDiskCleaner.App.Services;
 
@@ -13,7 +14,7 @@ namespace SafeDiskCleaner.App.Services;
 /// Downloads the portable exe and swaps it via an updater script
 /// (the running exe cannot be replaced while running).
 /// </summary>
-public sealed class AutoUpdater
+public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdateInstaller
 {
     private readonly IUpdateService _update;
     private readonly IHttpClientFactory _httpFactory;
@@ -194,4 +195,52 @@ public sealed class AutoUpdater
     /// </summary>
     private static string EscapeForBatch(string path) =>
         path.Replace("%", "%%").Replace("^", "^^");
+
+    /// <summary>Finds the "<asset>.sha256" companion asset, or null when the release ships none.</summary>
+    public ReleaseAsset? SelectChecksumAsset(UpdateInfo info) =>
+        SelectAsset(info) is { } asset
+            ? info.Assets.FirstOrDefault(a =>
+                string.Equals(a.Name, asset.Name + ".sha256", StringComparison.OrdinalIgnoreCase))
+            : null;
+
+    /// <inheritdoc />
+    public async Task<string> DownloadTextAsync(ReleaseAsset asset, CancellationToken ct = default)
+    {
+        using var client = _httpFactory.CreateClient("downloads");
+        return await client.GetStringAsync(asset.DownloadUrl, ct);
+    }
+
+    /// <summary>
+    /// Verifies the SHA-256 of the downloaded file against a checksum-file
+    /// payload. Throws and deletes the file when verification fails — a
+    /// tampered or truncated download must never be executed.
+    /// </summary>
+    public void VerifySha256(string downloadedPath, string checksumPayload)
+    {
+        var expected = Sha256Checksum.Parse(checksumPayload);
+        if (expected is null)
+        {
+            throw new InvalidOperationException("Checksum payload did not contain a valid SHA-256 digest");
+        }
+
+        var actual = Sha256Checksum.ComputeFile(downloadedPath);
+        if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+        {
+            TryDeleteQuietly(downloadedPath);
+            throw new InvalidOperationException(
+                $"SHA-256 mismatch for the downloaded update (expected {expected}, got {actual}). The file was deleted.");
+        }
+    }
+
+    private static void TryDeleteQuietly(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+            // best effort — the temp file will be cleaned up by the OS
+        }
+    }
 }

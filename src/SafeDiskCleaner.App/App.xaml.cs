@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SafeDiskCleaner.App.Services;
-using SafeDiskCleaner.App.ViewModels;
+using SafeDiskCleaner.ViewModels;
 using SafeDiskCleaner.App.Views;
 using SafeDiskCleaner.Infrastructure;
 

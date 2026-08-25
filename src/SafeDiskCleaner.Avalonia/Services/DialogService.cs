@@ -1,14 +1,9 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 
-namespace SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
 
-public interface IDialogService
-{
-    Task<string[]?> PickFoldersAsync(string title);
-    Task<bool> ConfirmAsync(string title, string message, string confirmButton = "OK");
-    Task<string?> PickSaveFileAsync(string title, string defaultFileName, string filter);
-}
+namespace SafeDiskCleaner.App.Services;
 
 /// <summary>
 /// Avalonia-backed dialog service: uses the platform storage provider for

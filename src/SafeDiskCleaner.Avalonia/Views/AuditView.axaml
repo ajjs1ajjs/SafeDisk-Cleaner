@@ -1,5 +1,6 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
              xmlns:c="using:SafeDiskCleaner.App"
              x:Class="SafeDiskCleaner.App.Views.AuditView">
   <UserControl.Resources>
@@ -14,12 +15,12 @@
       <Border Classes="NeonCard">
         <StackPanel>
           <TextBlock Text="Audit Log" Classes="NeonTitle" />
-          <TextBlock Text="Історія всіх операцій очищення та карантину."
+          <TextBlock Text="{loc:Loc Audit.Hint}"
                      Classes="NeonHint"
                      Margin="0,4,0,0" />
           <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
             <Button Classes="NeonDanger"
-                    Content="Очистити лог"
+                    Content="{loc:Loc Audit.ClearLog}"
                     Command="{Binding ClearCommand}"
                     IsVisible="{Binding HasEntries}" />
           </StackPanel>
@@ -43,12 +44,12 @@
                   MaxHeight="560"
                   Classes="NeonGrid">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="Час" Binding="{Binding Timestamp, StringFormat={}{0:g}}" Width="160" />
-            <DataGridTextColumn Header="Дія" Binding="{Binding Action}" Width="140" />
-            <DataGridTextColumn Header="Шлях" Binding="{Binding Path}" Width="*" />
-            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
-            <DataGridTextColumn Header="Статус" Binding="{Binding Success, StringFormat={}{0}}" Width="80" />
-            <DataGridTextColumn Header="Деталі" Binding="{Binding Detail}" Width="220" />
+            <DataGridTextColumn Header="{loc:Loc Common.Time}" Binding="{Binding Timestamp, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTextColumn Header="{loc:Loc Common.Action}" Binding="{Binding Action}" Width="140" />
+            <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+            <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+            <DataGridTextColumn Header="{loc:Loc Common.Status}" Binding="{Binding Success, StringFormat={}{0}}" Width="80" />
+            <DataGridTextColumn Header="{loc:Loc Common.Details}" Binding="{Binding Detail}" Width="220" />
           </DataGrid.Columns>
         </DataGrid>
       </Border>

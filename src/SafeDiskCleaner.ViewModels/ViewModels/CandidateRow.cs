@@ -1,8 +1,9 @@
+﻿using SafeDiskCleaner.Core.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SafeDiskCleaner.Core.Models;
 using SafeDiskCleaner.Core.Utils;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 /// <summary>Wraps a scan candidate with a UI-selectable flag.</summary>
 public sealed class CandidateRow : ObservableObject
@@ -31,7 +32,7 @@ public sealed class CandidateRow : ObservableObject
     public byte Confidence => Item.Confidence;
     public string Recommendation => Core.Confidence.ConfidenceEngine.Recommendation(Item.Confidence);
     public string Reason => Item.Reason;
-    public string LastAccessText => Item.LastAccessDays is { } days && days != uint.MaxValue ? $"{days} дн." : "—";
+    public string LastAccessText => Item.LastAccessDays is { } days && days != uint.MaxValue ? string.Format(Loc.T("C.DaysShort"), days) : "—";
     public uint? LastAccessDays => Item.LastAccessDays;
     public string GroupId => Item.GroupId ?? string.Empty;
     public bool IsSelectable => Item.Action != CandidateAction.Keep;

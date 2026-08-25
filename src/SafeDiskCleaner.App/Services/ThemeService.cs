@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
 using MaterialDesignThemes.Wpf;
@@ -11,7 +11,7 @@ namespace SafeDiskCleaner.App.Services;
 /// Views reference the base/accent resources via DynamicResource, so the whole UI
 /// updates live.
 /// </summary>
-public sealed class ThemeService
+public sealed class ThemeService : SafeDiskCleaner.ViewModels.Abstractions.IThemeService
 {
     private const string BaseDarkUri = "pack://application:,,,/SafeDiskCleaner;component/Themes/Base/Dark.xaml";
     private const string BaseLightUri = "pack://application:,,,/SafeDiskCleaner;component/Themes/Base/Light.xaml";

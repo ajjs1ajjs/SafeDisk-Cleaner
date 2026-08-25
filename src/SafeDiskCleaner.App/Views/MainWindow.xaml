@@ -1,9 +1,10 @@
-<Window x:Class="SafeDiskCleaner.App.Views.MainWindow"
+﻿<Window x:Class="SafeDiskCleaner.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.App.Localization"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:vm="clr-namespace:SafeDiskCleaner.App.ViewModels"
+        xmlns:vm="clr-namespace:SafeDiskCleaner.ViewModels;assembly=SafeDiskCleaner.ViewModels"
         xmlns:views="clr-namespace:SafeDiskCleaner.App.Views"
         xmlns:converters="clr-namespace:SafeDiskCleaner.App"
         Title="SafeDisk Cleaner"
@@ -43,7 +44,10 @@
         <DataTemplate DataType="{x:Type vm:AuditViewModel}">
             <views:AuditView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+        <DataTemplate DataType="{x:Type vm:AppsViewModel}">
+<views:AppsView />
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>
     </Window.Resources>
@@ -89,7 +93,7 @@
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextPrimaryBrush}"
                                            Effect="{StaticResource TextGlow}" />
-                                <TextBlock Text="Безпечний аналіз і очищення дисків Windows"
+                                <TextBlock Text="{loc:Loc MainWindow.Subtitle}"
                                            FontSize="11"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Opacity="0.8" />
@@ -165,7 +169,7 @@
                                                      Margin="0,0,8,0" />
                             <TextBlock VerticalAlignment="Center"
                                        Foreground="{StaticResource TextPrimaryBrush}">
-                                <Run Text="Доступна версія " />
+                                <Run Text="{loc:Loc Update.AvailablePrefix}" />
                                 <Run Text="{Binding LatestVersionText, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource NeonCyanBrush}" />
                             </TextBlock>
                         </StackPanel>
@@ -188,7 +192,7 @@
                                        Margin="0,0,12,0"
                                        Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}" />
                             <Button Style="{StaticResource MaterialDesignFlatButton}"
-                                    Content="Оновити"
+                                    Content="{loc:Loc Update.Install}"
                                     Command="{Binding UpdateCommand}"
                                     IsEnabled="{Binding IsDownloading, Converter={StaticResource InverseBooleanConverter}}"
                                     Foreground="{StaticResource NeonCyanBrush}" />

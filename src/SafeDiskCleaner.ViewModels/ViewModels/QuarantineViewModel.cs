@@ -1,11 +1,13 @@
+﻿using SafeDiskCleaner.Core.Localization;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 public sealed partial class QuarantineViewModel : ObservableObject
 {
@@ -41,7 +43,7 @@ public sealed partial class QuarantineViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
     }
 
@@ -57,14 +59,14 @@ public sealed partial class QuarantineViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Message = $"Не вдалося відновити: {ex.Message}";
+            Message = Loc.F("Quarantine.RestoreFailed", ex.Message);
         }
     }
 
     [RelayCommand]
     private async Task RemoveAsync(QuarantineEntry entry)
     {
-        if (!await _dialogs.ConfirmAsync("Видалити з карантину", $"Файл буде видалено безповоротно:\n{entry.OriginalPath}", "Видалити"))
+        if (!await _dialogs.ConfirmAsync(Loc.T("Quarantine.DeleteConfirmTitle"), Loc.F("Quarantine.DeleteConfirmMsg", entry.OriginalPath), Loc.T("Common.Delete")))
         {
             return;
         }
@@ -76,14 +78,14 @@ public sealed partial class QuarantineViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
     }
 
     [RelayCommand]
     private async Task EmptyAsync()
     {
-        if (!await _dialogs.ConfirmAsync("Очистити карантин", "Усі карантинні файли буде видалено безповоротно. Продовжити?", "Очистити"))
+        if (!await _dialogs.ConfirmAsync(Loc.T("Quarantine.Clear"), Loc.T("Quarantine.ClearConfirmMsg"), Loc.T("Common.Clear")))
         {
             return;
         }
@@ -92,11 +94,11 @@ public sealed partial class QuarantineViewModel : ObservableObject
         {
             var count = await _quarantine.EmptyAsync();
             await RefreshAsync();
-            Message = $"Карантин очищено ({count} записів).";
+            Message = Loc.F("Quarantine.Cleared", count);
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
     }
 }

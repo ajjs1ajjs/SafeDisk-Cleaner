@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
@@ -13,7 +13,7 @@ namespace SafeDiskCleaner.App.Services;
 /// Views reference the base/accent resources via DynamicResource, so the whole UI
 /// updates live. The FluentTheme variant follows the dark/light choice.
 /// </summary>
-public sealed class ThemeService
+public sealed class ThemeService : SafeDiskCleaner.ViewModels.Abstractions.IThemeService
 {
     private const string BaseDark = "avares://SafeDiskCleaner/Themes/Base.Dark.axaml";
     private const string BaseLight = "avares://SafeDiskCleaner/Themes/Base.Light.axaml";

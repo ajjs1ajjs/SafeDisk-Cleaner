@@ -1,14 +1,16 @@
+﻿using SafeDiskCleaner.Core.Localization;
 using System.Collections.ObjectModel;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 using SafeDiskCleaner.Core.Cleanup;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Scanning;
 using SafeDiskCleaner.Core.Utils;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 public sealed partial class DuplicatesViewModel : ObservableObject
 {
@@ -66,12 +68,12 @@ public sealed partial class DuplicatesViewModel : ObservableObject
             .ToList();
         if (roots.Count == 0)
         {
-            roots.AddRange(_scan.Drives.Select(d => $"{d.Letter}\\"));
+            roots.AddRange(_scan.Drives.Select(d => d.RootPath()));
         }
 
         if (roots.Count == 0)
         {
-            Message = "Вкажіть шляхи для аналізу дублікатів.";
+            Message = Loc.T("Dup.NeedRoots");
             return;
         }
 
@@ -86,7 +88,7 @@ public sealed partial class DuplicatesViewModel : ObservableObject
 
         try
         {
-            var result = await Task.Run(() => _scanner.ScanDuplicates(roots, _cts.Token), _cts.Token);
+            var result = await _scanner.ScanDuplicatesAsync(roots, _cts.Token, _settings.Exclusions);
             DuplicateResult = result;
             foreach (var candidate in result.Candidates)
             {
@@ -96,16 +98,16 @@ public sealed partial class DuplicatesViewModel : ObservableObject
             }
 
             Message = result.Candidates.Count == 0
-                ? "Дублікатів не знайдено."
-                : $"Знайдено дублікатів: {result.Candidates.Count}.";
+                ? Loc.T("Dup.NotFound")
+                : Loc.F("Dup.Found", result.Candidates.Count);
         }
         catch (OperationCanceledException)
         {
-            Message = "Пошук дублікатів скасовано.";
+            Message = Loc.T("Dup.Cancelled");
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
         finally
         {
@@ -178,7 +180,7 @@ public sealed partial class DuplicatesViewModel : ObservableObject
         var selected = Candidates.Where(c => c.IsSelected).Select(c => c.Item).ToList();
         if (selected.Count == 0)
         {
-            Message = "Нічого не вибрано.";
+            Message = Loc.T("Common.NothingSelected");
             return;
         }
 
@@ -201,12 +203,12 @@ public sealed partial class DuplicatesViewModel : ObservableObject
                 () => _cleanup.RunAsync(selected, options, _ => { }, _cleanupCts.Token),
                 _cleanupCts.Token);
             CleanupResult = result;
-            Message = $"Оброблено {result.Processed}, звільнено {HumanSize.Format(result.FreedBytes)}.";
+            Message = Loc.F("Common.ProcessedFreed", result.Processed, HumanSize.Format(result.FreedBytes));
             await _eventBus.RaiseDataChangedAsync();
         }
         catch (Exception ex)
         {
-            Message = $"Помилка очищення: {ex.Message}";
+            Message = Loc.F("Cleanup.Error", ex.Message);
         }
         finally
         {

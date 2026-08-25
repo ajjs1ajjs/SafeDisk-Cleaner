@@ -1,5 +1,5 @@
-using System.Windows;
-using SafeDiskCleaner.App.ViewModels;
+﻿using System.Windows;
+using SafeDiskCleaner.ViewModels;
 
 namespace SafeDiskCleaner.App.Views;
 

@@ -1,11 +1,13 @@
+﻿using SafeDiskCleaner.Core.Localization;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 public sealed partial class AuditViewModel : ObservableObject
 {
@@ -38,7 +40,7 @@ public sealed partial class AuditViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
     }
 
@@ -47,7 +49,7 @@ public sealed partial class AuditViewModel : ObservableObject
     [RelayCommand]
     private async Task ClearAsync()
     {
-        if (!await _dialogs.ConfirmAsync("Очистити лог", "Всі записи аудиту буде видалено. Продовжити?", "Очистити"))
+        if (!await _dialogs.ConfirmAsync(Loc.T("Audit.ClearLog"), Loc.T("Audit.ConfirmClearMsg"), Loc.T("Common.Clear")))
         {
             return;
         }

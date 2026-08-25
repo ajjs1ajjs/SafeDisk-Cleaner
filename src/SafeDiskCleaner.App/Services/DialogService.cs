@@ -1,13 +1,8 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
+
+using SafeDiskCleaner.ViewModels.Abstractions;
 
 namespace SafeDiskCleaner.App.Services;
-
-public interface IDialogService
-{
-    Task<string[]?> PickFoldersAsync(string title);
-    Task<bool> ConfirmAsync(string title, string message, string confirmButton = "OK");
-    Task<string?> PickSaveFileAsync(string title, string defaultFileName, string filter);
-}
 
 public sealed class DialogService : IDialogService
 {

@@ -1,11 +1,12 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using SafeDiskCleaner.Core.Abstractions;
 
-namespace SafeDiskCleaner.App.Services;
+namespace SafeDiskCleaner.ViewModels.Services;
 
 /// <summary>
 /// User preferences persisted to <c>settings.json</c> under the data root.
+/// Shared by the WPF and Avalonia hosts.
 /// </summary>
 public sealed class AppSettings
 {
@@ -16,6 +17,7 @@ public sealed class AppSettings
 
     public bool IsDarkTheme { get; set; } = true;
     public string AccentPreset { get; set; } = "Cyan";
+    public string Language { get; set; } = "uk";
     public uint QuarantineRetentionDays { get; set; } = 14;
     public byte AutoThreshold { get; set; } = 95;
     public byte MinConfidence { get; set; } = 50;
@@ -24,6 +26,10 @@ public sealed class AppSettings
     public bool IncludeAdvanced { get; set; }
     public bool MoveToRecycleBin { get; set; } = true;
     public string CustomRoots { get; set; } = string.Empty;
+    public List<string> Exclusions { get; set; } = [];
+    public bool ScheduleEnabled { get; set; }
+    public string ScheduleFrequency { get; set; } = "daily";
+    public string ScheduleTime { get; set; } = "03:00";
 
     public AppSettings(IAppPaths paths)
     {
@@ -49,6 +55,7 @@ public sealed class AppSettings
 
             IsDarkTheme = loaded.IsDarkTheme;
             AccentPreset = loaded.AccentPreset;
+            Language = loaded.Language;
             QuarantineRetentionDays = loaded.QuarantineRetentionDays;
             AutoThreshold = loaded.AutoThreshold;
             MinConfidence = loaded.MinConfidence;
@@ -57,6 +64,10 @@ public sealed class AppSettings
             IncludeAdvanced = loaded.IncludeAdvanced;
             MoveToRecycleBin = loaded.MoveToRecycleBin;
             CustomRoots = loaded.CustomRoots;
+            Exclusions = loaded.Exclusions ?? [];
+            ScheduleEnabled = loaded.ScheduleEnabled;
+            ScheduleFrequency = loaded.ScheduleFrequency;
+            ScheduleTime = loaded.ScheduleTime;
         }
         catch
         {

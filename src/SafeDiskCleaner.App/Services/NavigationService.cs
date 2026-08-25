@@ -1,11 +1,6 @@
-namespace SafeDiskCleaner.App.Services;
+﻿using SafeDiskCleaner.ViewModels.Abstractions;
 
-/// <summary>Decouples page navigation from view models (MVVM-friendly).</summary>
-public interface INavigationService
-{
-    event Action<object>? NavigateRequested;
-    void NavigateTo(object target);
-}
+namespace SafeDiskCleaner.App.Services;
 
 public sealed class NavigationService : INavigationService
 {

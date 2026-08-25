@@ -1,6 +1,7 @@
-<UserControl x:Class="SafeDiskCleaner.App.Views.DashboardView"
+﻿<UserControl x:Class="SafeDiskCleaner.App.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.App.Localization"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -8,11 +9,11 @@
 
             <!-- ===== WELCOME ===== -->
             <StackPanel Margin="0,0,0,20">
-                <TextBlock Text="Огляд"
+                <TextBlock Text="{loc:Loc Nav.Dashboard}"
                            FontSize="24" FontWeight="SemiBold"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            Effect="{StaticResource TextGlow}" />
-                <TextBlock Text="Стан дисків і статистика очищення"
+                <TextBlock Text="{loc:Loc Dash.Subtitle}"
                            FontSize="12"
                            Margin="0,4,0,0"
                            Foreground="{StaticResource TextSecondaryBrush}" />
@@ -21,18 +22,17 @@
             <!-- ===== QUICK ACTIONS ===== -->
             <Border Style="{StaticResource NeonCard}">
                 <StackPanel>
-                    <TextBlock Text="Швидкі дії"
-                               Style="{StaticResource NeonCardTitle}" />
-                    <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{loc:Loc Dash.QuickActions}"
+                               Style="{StaticResource NeonCardTitle}" />                    <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource NeonPrimaryButton}"
-                                Content="Сканувати зараз"
+                                Content="{loc:Loc Dash.ScanNow}"
                                 Command="{Binding GoScanNowCommand}" />
                         <Button Style="{StaticResource NeonOutlineButton}"
-                                Content="Пошук дублікатів"
+                                Content="{loc:Loc Dup.Title}"
                                 Margin="10,0,0,0"
                                 Command="{Binding GoDuplicatesCommand}" />
                         <Button Style="{StaticResource NeonOutlineButton}"
-                                Content="Карантин"
+                                Content="{loc:Loc Nav.Quarantine}"
                                 Margin="10,0,0,0"
                                 Command="{Binding GoQuarantineCommand}" />
                         <Button Style="{StaticResource NeonOutlineButton}"
@@ -40,10 +40,44 @@
                                 Margin="10,0,0,0"
                                 Command="{Binding GoAuditCommand}" />
                         <Button Style="{StaticResource NeonOutlineButton}"
-                                Content="Налаштування"
+                                Content="{loc:Loc Nav.Settings}"
                                 Margin="10,0,0,0"
                                 Command="{Binding GoSettingsCommand}" />
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== FREED HISTORY CHART ===== -->
+            <Border Style="{StaticResource NeonCard}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="{loc:Loc Dash.FreedHistory}"
+                               Style="{StaticResource NeonCardTitle}" />
+                    <ItemsControl ItemsSource="{Binding FreedHistory}" Margin="0,12,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Width="34" Margin="3,0" VerticalAlignment="Bottom">
+                                    <Grid Height="72" VerticalAlignment="Bottom">
+                                        <Rectangle Fill="{DynamicResource NeonCyanBrush}"
+                                                   Opacity="0.8"
+                                                   RadiusX="3" RadiusY="3"
+                                                   VerticalAlignment="Bottom"
+                                                   Height="{Binding HeightPx}"
+                                                   ToolTip="{Binding SizeText}" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding Label}"
+                                               FontSize="9"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,4,0,0"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Border>
 
@@ -65,15 +99,14 @@
                                    FontSize="22" FontWeight="SemiBold"
                                    Margin="0,10,0,0"
                                    Foreground="{StaticResource NeonCyanBrush}" />
-                        <TextBlock Text="Звільнено за весь час"
+                        <TextBlock Text="{loc:Loc Dash.FreedTotal}"
                                    FontSize="12"
                                    Margin="0,2,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{Binding TotalCleanedEntries, StringFormat={}{0} операцій}"
-                                   FontSize="11"
-                                   Margin="0,2,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   Opacity="0.8" />
+                                   <TextBlock FontSize="11"
+                                       Margin="0,2,0,0"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Opacity="0.8"><Run Text="{Binding TotalCleanedEntries}" /><Run Text="{loc:Loc Frag.Operations}" /></TextBlock>
                     </StackPanel>
                 </Border>
 
@@ -86,15 +119,14 @@
                                    FontSize="22" FontWeight="SemiBold"
                                    Margin="0,10,0,0"
                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="У карантині"
+                        <TextBlock Text="{loc:Loc Dash.InQuarantine}"
                                    FontSize="12"
                                    Margin="0,2,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{Binding QuarantineCount, StringFormat={}{0} файлів}"
-                                   FontSize="11"
-                                   Margin="0,2,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   Opacity="0.8" />
+                                   <TextBlock FontSize="11"
+                                       Margin="0,2,0,0"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Opacity="0.8"><Run Text="{Binding QuarantineCount}" /><Run Text="{loc:Loc Frag.FilesWord}" /></TextBlock>
                     </StackPanel>
                 </Border>
 
@@ -107,15 +139,14 @@
                                    FontSize="22" FontWeight="SemiBold"
                                    Margin="0,10,0,0"
                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="Останнє сканування"
+                        <TextBlock Text="{loc:Loc Dash.LastScan}"
                                    FontSize="12"
                                    Margin="0,2,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{Binding LastScanCandidates, StringFormat={}{0} кандидатів}"
-                                   FontSize="11"
-                                   Margin="0,2,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   Opacity="0.8" />
+                                   <TextBlock FontSize="11"
+                                       Margin="0,2,0,0"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Opacity="0.8"><Run Text="{Binding LastScanCandidates}" /><Run Text="{loc:Loc Frag.CandidatesWord}" /></TextBlock>
                     </StackPanel>
                 </Border>
 
@@ -128,11 +159,11 @@
                                    FontSize="22" FontWeight="SemiBold"
                                    Margin="0,10,0,0"
                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="Дисків"
+                        <TextBlock Text="{loc:Loc Dash.DrivesCount}"
                                    FontSize="12"
                                    Margin="0,2,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="під аналізом"
+                        <TextBlock Text="{loc:Loc Dash.UnderAnalysis}"
                                    FontSize="11"
                                    Margin="0,2,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}"
@@ -144,7 +175,7 @@
             <!-- ===== DRIVES ===== -->
             <Border Style="{StaticResource NeonCard}">
                 <StackPanel>
-                    <TextBlock Text="Диски"
+                    <TextBlock Text="{loc:Loc Dash.Drives}"
                                Style="{StaticResource NeonCardTitle}" />
                     <ItemsControl ItemsSource="{Binding Drives}">
                         <ItemsControl.ItemTemplate>
@@ -177,13 +208,12 @@
                                                    FontSize="12"
                                                    Foreground="{StaticResource TextPrimaryBrush}">
                                             <Run Text="{Binding UsedText}" />
-                                            <Run Text=" з " />
+                                            <Run Text="{loc:Loc Frag.Of}" />
                                             <Run Text="{Binding TotalText}" />
                                         </TextBlock>
                                         <TextBlock HorizontalAlignment="Right"
                                                    FontSize="11"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                                   Text="{Binding FreeText, StringFormat=вільно: {0}}" />
+                                                   Foreground="{StaticResource TextSecondaryBrush}"><Run Text="{loc:Loc Dash.FreeValue}" /><Run Text="{Binding FreeText}" /></TextBlock>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

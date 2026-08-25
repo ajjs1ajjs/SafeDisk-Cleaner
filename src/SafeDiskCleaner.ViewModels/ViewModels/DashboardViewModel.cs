@@ -1,13 +1,14 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
 using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Utils;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 public sealed record DriveUsage(
     string Letter,
@@ -16,6 +17,9 @@ public sealed record DriveUsage(
     string FreeText,
     string TotalText,
     double UsedPercent);
+
+/// <summary>One bar of the "freed over time" chart.</summary>
+public sealed record FreedBar(string Label, string SizeText, double HeightPx);
 
 public sealed partial class DashboardViewModel : ObservableObject
 {
@@ -31,6 +35,9 @@ public sealed partial class DashboardViewModel : ObservableObject
     private readonly IDriveService _drives;
 
     public ObservableCollection<DriveUsage> Drives { get; } = [];
+
+    /// <summary>Daily freed-bytes bars for the dashboard chart (last 14 days).</summary>
+    public ObservableCollection<FreedBar> FreedHistory { get; } = [];
 
     [ObservableProperty]
     private string _totalFreed = "0 B";
@@ -137,6 +144,44 @@ public sealed partial class DashboardViewModel : ObservableObject
         var freed = entries.Where(e => e.Success).Sum(e => e.Size);
         TotalFreed = HumanSize.Format(freed);
         TotalCleanedEntries = entries.Count(e => e.Success);
+        RenderFreedHistory(entries);
+    }
+
+    private void RenderFreedHistory(IReadOnlyList<Core.Models.AuditEntry> entries)
+    {
+        const int days = 14;
+        var buckets = new SortedDictionary<DateTime, long>();
+        var today = DateTime.Today;
+        for (var i = days - 1; i >= 0; i--)
+        {
+            buckets[today.AddDays(-i)] = 0;
+        }
+
+        foreach (var entry in entries)
+        {
+            if (!entry.Success || entry.Size <= 0)
+            {
+                continue;
+            }
+
+            var day = entry.Timestamp.Kind == DateTimeKind.Utc
+                ? entry.Timestamp.ToLocalTime().Date
+                : entry.Timestamp.Date;
+            if (buckets.ContainsKey(day))
+            {
+                buckets[day] += entry.Size;
+            }
+        }
+
+        var max = Math.Max(1L, buckets.Values.Max());
+        FreedHistory.Clear();
+        foreach (var pair in buckets)
+        {
+            FreedHistory.Add(new FreedBar(
+                pair.Key.ToString("dd.MM"),
+                HumanSize.Format(pair.Value),
+                Math.Max(2.0, pair.Value * 72.0 / max)));
+        }
     }
 
     private async Task ReloadQuarantineStatsAsync()

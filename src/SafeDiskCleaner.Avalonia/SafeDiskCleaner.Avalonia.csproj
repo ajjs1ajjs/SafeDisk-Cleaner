@@ -1,8 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\SafeDiskCleaner.Core\SafeDiskCleaner.Core.csproj" />
     <ProjectReference Include="..\SafeDiskCleaner.Infrastructure\SafeDiskCleaner.Infrastructure.csproj" />
+    <ProjectReference Include="..\SafeDiskCleaner.ViewModels\SafeDiskCleaner.ViewModels.csproj" />
   </ItemGroup>
 
   <ItemGroup>

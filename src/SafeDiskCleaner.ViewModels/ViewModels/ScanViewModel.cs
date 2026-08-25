@@ -1,17 +1,18 @@
+﻿using DriveInfo = SafeDiskCleaner.Core.Models.DriveInfo;
+using SafeDiskCleaner.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Text;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SafeDiskCleaner.App.Services;
 using SafeDiskCleaner.Core.Cleanup;
 using SafeDiskCleaner.Core.Models;
 using SafeDiskCleaner.Core.Platform;
 using SafeDiskCleaner.Core.Scanning;
 using SafeDiskCleaner.Core.Utils;
-using DriveInfo = SafeDiskCleaner.Core.Models.DriveInfo;
+using SafeDiskCleaner.ViewModels.Abstractions;
+using SafeDiskCleaner.ViewModels.Services;
 
-namespace SafeDiskCleaner.App.ViewModels;
+namespace SafeDiskCleaner.ViewModels;
 
 public sealed partial class ScanViewModel : ObservableObject
 {
@@ -20,6 +21,7 @@ public sealed partial class ScanViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly IAppEventBus _eventBus;
     private readonly AppSettings _settings;
+    private readonly IDispatcher _dispatcher;
     private readonly IRecycleBin _recycleBin;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _cleanupCts;
@@ -74,20 +76,20 @@ public sealed partial class ScanViewModel : ObservableObject
     public ObservableCollection<CandidateRow> FilteredCandidates { get; } = [];
 
     public IReadOnlyList<string> CategoryFilterOptions { get; } =
-        new[] { "Усі категорії" }
+        new[] { Loc.T("Filter.AllCategories") }
             .Concat(Enum.GetValues<Category>().Select(c => c.Label()))
             .ToArray();
 
-    public IReadOnlyList<string> RiskFilterOptions { get; } = ["Усі ризики", "Safe", "Medium", "Advanced"];
+    public IReadOnlyList<string> RiskFilterOptions { get; } = [Loc.T("Filter.AllRisks"), "Safe", "Medium", "Advanced"];
 
     [ObservableProperty]
     private string _searchText = string.Empty;
 
     [ObservableProperty]
-    private string _categoryFilter = "Усі категорії";
+    private string _categoryFilter = Loc.T("Filter.AllCategories");
 
     [ObservableProperty]
-    private string _riskFilter = "Усі ризики";
+    private string _riskFilter = Loc.T("Filter.AllRisks");
 
     partial void OnSearchTextChanged(string value) => ApplyFilters();
     partial void OnCategoryFilterChanged(string value) => ApplyFilters();
@@ -104,13 +106,13 @@ public sealed partial class ScanViewModel : ObservableObject
                 continue;
             }
 
-            if (CategoryFilter is not null && CategoryFilter != "Усі категорії" &&
+            if (CategoryFilter is not null && CategoryFilter != Loc.T("Filter.AllCategories") &&
                 row.CategoryLabel != CategoryFilter)
             {
                 continue;
             }
 
-            if (RiskFilter is not null && RiskFilter != "Усі ризики" &&
+            if (RiskFilter is not null && RiskFilter != Loc.T("Filter.AllRisks") &&
                 row.RiskLevel.Label() != RiskFilter)
             {
                 continue;
@@ -131,8 +133,8 @@ public sealed partial class ScanViewModel : ObservableObject
     private void ResetFilters()
     {
         SearchText = string.Empty;
-        CategoryFilter = "Усі категорії";
-        RiskFilter = "Усі ризики";
+        CategoryFilter = Loc.T("Filter.AllCategories");
+        RiskFilter = Loc.T("Filter.AllRisks");
         ApplyFilters();
     }
 
@@ -160,7 +162,7 @@ public sealed partial class ScanViewModel : ObservableObject
     private async Task ExportAsync()
     {
         var path = await _dialogs.PickSaveFileAsync(
-            "Зберегти звіт про кандидатів",
+            Loc.T("Export.SaveReport"),
             $"SafeDisk-report-{DateTime.Now:yyyyMMdd-HHmm}.csv",
             "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json");
 
@@ -201,16 +203,56 @@ public sealed partial class ScanViewModel : ObservableObject
                 await System.IO.File.WriteAllTextAsync(path, sb.ToString());
             }
 
-            Message = $"Звіт збережено: {path}";
+            Message = Loc.F("Export.Saved", path);
         }
         catch (Exception ex)
         {
-            Message = $"Помилка експорту: {ex.Message}";
+            Message = Loc.F("Export.Error", ex.Message);
         }
     }
 
     public long SelectedSize => Candidates.Where(c => c.IsSelected).Sum(c => c.Size);
     public int SelectedCount => Candidates.Count(c => c.IsSelected);
+    /// <summary>One rectangle of the results treemap (category-sized).</summary>
+    public sealed record TreemapTileVm(string Label, string SizeText, double X, double Y, double Width, double Height);
+
+    public ObservableCollection<TreemapTileVm> TreemapTiles { get; } = [];
+
+    [ObservableProperty]
+    private bool _showTreemap;
+
+    partial void OnShowTreemapChanged(bool value)
+    {
+        if (value)
+        {
+            BuildTreemap();
+        }
+    }
+
+    private void BuildTreemap()
+    {
+        TreemapTiles.Clear();
+        if (ScanResult is null || ScanResult.Candidates.Count == 0)
+        {
+            return;
+        }
+
+        const double canvasWidth = 800;
+        const double canvasHeight = 320;
+
+        var groups = ScanResult.Candidates
+            .GroupBy(c => c.Category.Label())
+            .Select(g => (Label: g.Key, Size: (double)g.Sum(c => c.Size)))
+            .Where(g => g.Size > 0)
+            .ToList();
+
+        var inputs = groups.Select(g => new Core.Utils.TreemapInput(g.Label, g.Size)).ToList();
+        foreach (var tile in Core.Utils.SquarifiedTreemap.Layout(inputs, canvasWidth, canvasHeight))
+        {
+            var size = groups.First(g => g.Label == tile.Id).Size;
+            TreemapTiles.Add(new TreemapTileVm(tile.Id, HumanSize.Format((long)size), tile.X, tile.Y, tile.Width, tile.Height));
+        }
+    }
 
     public ScanViewModel(
         Scanner scanner,
@@ -219,6 +261,7 @@ public sealed partial class ScanViewModel : ObservableObject
         IAppEventBus eventBus,
         AppSettings settings,
         Core.Abstractions.IAppPaths paths,
+        IDispatcher dispatcher,
         IDriveService drives,
         IRecycleBin recycleBin)
     {
@@ -227,6 +270,7 @@ public sealed partial class ScanViewModel : ObservableObject
         _dialogs = dialogs;
         _eventBus = eventBus;
         _settings = settings;
+        _dispatcher = dispatcher;
         _recycleBin = recycleBin;
 
         _customRoots = settings.CustomRoots;
@@ -291,33 +335,14 @@ public sealed partial class ScanViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void ToggleAllSelection()
+    public void ToggleAllSelection(bool select)
     {
         _batchUpdating = true;
         try
         {
             foreach (var row in Candidates.Where(c => c.IsSelectable))
             {
-                row.IsSelected = true;
-            }
-        }
-        finally
-        {
-            _batchUpdating = false;
-        }
-
-        NotifySelectionChanged();
-    }
-
-    [RelayCommand]
-    public void ClearSelection()
-    {
-        _batchUpdating = true;
-        try
-        {
-            foreach (var row in Candidates)
-            {
-                row.IsSelected = false;
+                row.IsSelected = select;
             }
         }
         finally
@@ -345,6 +370,7 @@ public sealed partial class ScanViewModel : ObservableObject
             IncludeAdvanced = IncludeAdvanced,
             MinConfidence = MinConfidence,
             RecencyDays = RecencyDays,
+            Exclusions = _settings.Exclusions,
         };
 
         var validator = new Core.Validation.ScanOptionsValidator();
@@ -367,9 +393,7 @@ public sealed partial class ScanViewModel : ObservableObject
         try
         {
             var ct = _scanCts.Token;
-            var result = await Task.Run(
-                () => _scanner.Scan(options, OnScanProgress, ct),
-                ct);
+            var result = await _scanner.ScanAsync(options, OnScanProgress, ct);
 
             ScanResult = result;
             foreach (var candidate in result.Candidates)
@@ -381,17 +405,22 @@ public sealed partial class ScanViewModel : ObservableObject
 
             ApplyFilters();
 
-            Message = result.Candidates.Count == 0
-                ? "Не знайдено кандидатів на очищення."
-                : $"Проскановано {result.Summary.ScannedFiles:N0} файлів, знайдено кандидатів: {result.Candidates.Count}.";
+                        if (ShowTreemap)
+            {
+                BuildTreemap();
+            }
+
+Message = result.Candidates.Count == 0
+                ? Loc.T("Scan.NoCandidates")
+                : Loc.F("Scan.Completed", result.Summary.ScannedFiles, result.Candidates.Count);
         }
         catch (OperationCanceledException)
         {
-            Message = "Сканування скасовано.";
+            Message = Loc.T("Scan.Cancelled");
         }
         catch (Exception ex)
         {
-            Message = $"Помилка сканування: {ex.Message}";
+            Message = Loc.F("Scan.Error", ex.Message);
         }
         finally
         {
@@ -408,24 +437,24 @@ public sealed partial class ScanViewModel : ObservableObject
 
     private void OnScanProgress(ScanProgress progress)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             ScanProgress = progress;
             return;
         }
 
-        Dispatcher.UIThread.Invoke(() => ScanProgress = progress);
+        _dispatcher.Invoke(() => ScanProgress = progress);
     }
 
     private void OnCleanupProgress(CleanupProgress progress)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             CleanupProgress = progress;
             return;
         }
 
-        Dispatcher.UIThread.Invoke(() => CleanupProgress = progress);
+        _dispatcher.Invoke(() => CleanupProgress = progress);
     }
 
     [RelayCommand]
@@ -434,7 +463,7 @@ public sealed partial class ScanViewModel : ObservableObject
         var selected = Candidates.Where(c => c.IsSelected).Select(c => c.Item).ToList();
         if (selected.Count == 0)
         {
-            Message = "Нічого не вибрано.";
+            Message = Loc.T("Common.NothingSelected");
             return;
         }
 
@@ -448,9 +477,9 @@ public sealed partial class ScanViewModel : ObservableObject
         if (cleanMode == CleanMode.Interactive && !MoveToRecycleBin)
         {
             var confirmed = await _dialogs.ConfirmAsync(
-                "Видалення без кошика",
-                "Файли не будуть переміщені в кошик. Великі файли потраплять у карантин SafeDisk. Продовжити?",
-                "Продовжити");
+                Loc.T("Scan.DeleteWithoutBinTitle"),
+                Loc.T("Scan.DeleteWithoutBinMsg"),
+                Loc.T("Common.Continue"));
             if (!confirmed)
             {
                 return;
@@ -478,14 +507,14 @@ public sealed partial class ScanViewModel : ObservableObject
             CleanupResult = result;
 
             Message = result.Mode == CleanMode.DryRun
-                ? $"Dry-run: було б звільнено {HumanSize.Format(result.FreedBytes)}."
-                : $"Оброблено {result.Processed}, звільнено {HumanSize.Format(result.FreedBytes)}.";
+                ? Loc.F("Common.DryRunFreed", HumanSize.Format(result.FreedBytes))
+                : Loc.F("Common.ProcessedFreed", result.Processed, HumanSize.Format(result.FreedBytes));
 
             await _eventBus.RaiseDataChangedAsync();
         }
         catch (Exception ex)
         {
-            Message = $"Помилка очищення: {ex.Message}";
+            Message = Loc.F("Cleanup.Error", ex.Message);
         }
         finally
         {
@@ -497,7 +526,7 @@ public sealed partial class ScanViewModel : ObservableObject
     [RelayCommand]
     private async Task PickFoldersAsync()
     {
-        var folders = await _dialogs.PickFoldersAsync("Виберіть папки або диски для аналізу");
+        var folders = await _dialogs.PickFoldersAsync(Loc.T("Scan.PickFolders"));
         if (folders is null || folders.Length == 0)
         {
             return;
@@ -529,7 +558,7 @@ public sealed partial class ScanViewModel : ObservableObject
     [RelayCommand]
     private async Task EmptyRecycleBinAsync()
     {
-        if (!await _dialogs.ConfirmAsync("Очищення кошика", "Це назавжди видалить усі файли з кошика. Продовжити?", "Очистити"))
+        if (!await _dialogs.ConfirmAsync(Loc.T("RecycleBin.CleanConfirmTitle"), Loc.T("RecycleBin.CleanConfirmMsg"), Loc.T("Common.Clear")))
         {
             return;
         }
@@ -537,7 +566,7 @@ public sealed partial class ScanViewModel : ObservableObject
         try
         {
             var ok = await Task.Run(_recycleBin.Empty);
-            Message = ok ? "Кошик очищено." : "Не вдалося очистити кошик.";
+            Message = ok ? Loc.T("RecycleBin.Cleaned") : Loc.T("RecycleBin.CleanFailed");
             if (ok)
             {
                 await _eventBus.RaiseDataChangedAsync();
@@ -545,7 +574,7 @@ public sealed partial class ScanViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Message = $"Помилка: {ex.Message}";
+            Message = Loc.F("Common.Error", ex.Message);
         }
     }
 
