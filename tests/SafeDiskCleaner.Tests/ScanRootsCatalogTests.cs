@@ -21,9 +21,7 @@ public sealed class ScanRootsCatalogTests
         var catalog = ScanRootsCatalog.Embedded;
         var roots = catalog.Resolve(includeMedium: false, includeAdvanced: false);
         roots.Should().NotBeEmpty("at least the temp directory must resolve on any OS");
-        roots.Should().Contain(r => r.EndsWith("emp", StringComparison.OrdinalIgnoreCase) &&
-                (r.EndsWith("Temp", StringComparison.OrdinalIgnoreCase) || r.EndsWith("tmp", StringComparison.OrdinalIgnoreCase)),
-            "the user temp dir is an always-tier root");
+        roots.Should().Contain(r => IsTempDir(r), "the user temp dir is an always-tier root");
     }
 
     [Fact]
@@ -126,5 +124,13 @@ public sealed class ScanRootsCatalogTests
         ScanRootsCatalog.ResolveBase("$PROFILE").Should().NotBeNullOrEmpty();
         ScanRootsCatalog.ResolveBase("$UNKNOWN_TOKEN").Should().BeNull();
         ScanRootsCatalog.ResolveBase("").Should().BeNull();
+    }
+    private static bool IsTempDir(string path)
+    {
+        var clean = path.TrimEnd('/', '\\');
+        return clean.EndsWith("tmp", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("temp", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("/t", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("\\T", StringComparison.OrdinalIgnoreCase);
     }
 }
