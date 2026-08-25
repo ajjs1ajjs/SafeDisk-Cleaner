@@ -190,13 +190,14 @@ public sealed class ScanRootsCatalog
             switch (trimmed.ToUpperInvariant())
             {
                 case "$TEMP":
-                    return Environment.GetEnvironmentVariable("TEMP")
-                        ?? Environment.GetEnvironmentVariable("TMP")
-                        ?? Environment.GetEnvironmentVariable("TMPDIR");
+                    // Path.GetTempPath honors TMPDIR/TEMP/TMP per OS and always
+                    // yields an existing directory (env vars are absent on CI/Linux)
+                    return Path.GetTempPath();
                 case "$TMPDIR":
                     return Environment.GetEnvironmentVariable("TMPDIR")
                         ?? Environment.GetEnvironmentVariable("TEMP")
-                        ?? Environment.GetEnvironmentVariable("TMP");
+                        ?? Environment.GetEnvironmentVariable("TMP")
+                        ?? Path.GetTempPath();
                 case "$LOCALAPPDATA":
                     return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) is { Length: > 0 } local
                         ? local

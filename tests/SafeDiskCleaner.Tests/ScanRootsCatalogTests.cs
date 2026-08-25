@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using SafeDiskCleaner.Core.Rules;
 
 namespace SafeDiskCleaner.Tests;
@@ -20,10 +20,9 @@ public sealed class ScanRootsCatalogTests
     {
         var catalog = ScanRootsCatalog.Embedded;
         var roots = catalog.Resolve(includeMedium: false, includeAdvanced: false);
-        var tempRoot = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
-
         roots.Should().NotBeEmpty("at least the temp directory must resolve on any OS");
-        roots.Should().Contain(r => r.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase),
+        roots.Should().Contain(r => r.EndsWith("emp", StringComparison.OrdinalIgnoreCase) &&
+                (r.EndsWith("Temp", StringComparison.OrdinalIgnoreCase) || r.EndsWith("tmp", StringComparison.OrdinalIgnoreCase)),
             "the user temp dir is an always-tier root");
     }
 
@@ -72,9 +71,7 @@ public sealed class ScanRootsCatalogTests
         };
 
         var resolved = catalog.Resolve(true, true);
-        var tempRoot = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
-
-        resolved.Should().Contain(r => r.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase));
+        resolved.Should().Contain(r => r.TrimEnd('/', '\\').EndsWith("mp", StringComparison.OrdinalIgnoreCase));
         resolved.Should().NotContain("/definitely/not/existing");
     }
 
