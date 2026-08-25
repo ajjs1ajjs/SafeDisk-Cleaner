@@ -21,9 +21,11 @@ public static class AppServices
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IUpdateInstaller, AutoUpdater>();
-        services.AddSingleton(AvaloniaDispatcher.Instance);
+        services.AddSingleton<AvaloniaDispatcher>();
+        services.AddSingleton<SafeDiskCleaner.ViewModels.Abstractions.IDispatcher>(sp => sp.GetRequiredService<AvaloniaDispatcher>());
         services.AddSingleton<IUiTimer, AvaloniaUiTimer>();
-        services.AddSingleton(AvaloniaAppLifecycle.Instance);
+        services.AddSingleton<AvaloniaAppLifecycle>();
+        services.AddSingleton<SafeDiskCleaner.ViewModels.Abstractions.IAppLifecycle>(sp => sp.GetRequiredService<AvaloniaAppLifecycle>());
 
         services.AddSingleton<SignatureInspector>();
         services.AddSingleton<SafetyValidator>();

@@ -21,9 +21,9 @@ public static class AppServices
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IUpdateInstaller, AutoUpdater>();
-        services.AddSingleton(WpfDispatcher.Instance);
+        services.AddSingleton<SafeDiskCleaner.ViewModels.Abstractions.IDispatcher>(WpfDispatcher.Instance);
         services.AddSingleton<IUiTimer, WpfUiTimer>();
-        services.AddSingleton(WpfAppLifecycle.Instance);
+        services.AddSingleton<SafeDiskCleaner.ViewModels.Abstractions.IAppLifecycle>(WpfAppLifecycle.Instance);
 
         services.AddSingleton<SignatureInspector>();
         services.AddSingleton<SafetyValidator>();
