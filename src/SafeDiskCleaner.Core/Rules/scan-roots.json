@@ -1,0 +1,149 @@
+{
+  // Declarative default scan roots. Hosts may override/extend via rules.json
+  // in the data directory: groups are matched by "id" (same id replaces the
+  // built-in group, new ids are appended) — no recompile needed.
+  //
+  // base tokens: $TEMP $TMPDIR $LOCALAPPDATA $APPDATA $PROFILE $WINDIR
+  //              $SYSTEMDRIVE $CACHE (or a literal path).
+  // tier:        always | medium | advanced
+  // join:        append (base + sub as-is) | combine (Path.Combine)
+  "groups": [
+    {
+      "id": "win-user-temp",
+      "os": [ "windows" ],
+      "base": "$TEMP",
+      "subdirectories": [ "" ]
+    },
+    {
+      "id": "win-localappdata",
+      "os": [ "windows" ],
+      "base": "$LOCALAPPDATA",
+      "subdirectories": [
+        "\\CrashDumps",
+        "\\Google\\Chrome\\User Data\\Default\\Cache",
+        "\\Google\\Chrome\\User Data\\Default\\Code Cache",
+        "\\Google\\Chrome\\User Data\\Crashpad\\reports",
+        "\\Microsoft\\Edge\\User Data\\Default\\Cache",
+        "\\Microsoft\\Edge\\User Data\\Default\\Code Cache",
+        "\\Microsoft\\Edge\\User Data\\Crashpad\\reports",
+        "\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache",
+        "\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Code Cache",
+        "\\Vivaldi\\User Data\\Default\\Cache",
+        "\\Vivaldi\\User Data\\Default\\Code Cache",
+        "\\Microsoft\\Windows\\Explorer",
+        "\\NuGet\\Cache",
+        "\\npm-cache",
+        "\\pip\\cache",
+        "\\Mozilla\\Firefox\\Profiles",
+        "\\Yarn\\Cache",
+        "\\pnpm",
+        "\\uv\\cache",
+        "\\go-build"
+      ]
+    },
+    {
+      "id": "win-roaming-apps",
+      "os": [ "windows" ],
+      "base": "$APPDATA",
+      "subdirectories": [
+        "\\discord\\cache",
+        "\\discord\\code cache",
+        "\\discord\\gpucache",
+        "\\discord\\service worker",
+        "\\slack\\cache",
+        "\\slack\\code cache",
+        "\\slack\\gpucache",
+        "\\microsoft\\teams\\cache",
+        "\\microsoft\\teams\\code cache",
+        "\\microsoft\\teams\\gpucache",
+        "\\microsoft\\teams\\service worker",
+        "\\whatsapp\\cache",
+        "\\whatsapp\\code cache",
+        "\\whatsapp\\gpucache",
+        "\\postman\\cache",
+        "\\figma\\cache",
+        "\\Opera Software\\Opera Stable\\Cache"
+      ]
+    },
+    {
+      "id": "win-profile-dev-caches",
+      "os": [ "windows" ],
+      "base": "$PROFILE",
+      "subdirectories": [
+        "\\.cargo\\registry\\cache",
+        "\\.gradle\\caches",
+        "\\.yarn\\berry",
+        "\\.bun\\install\\cache"
+      ]
+    },
+    {
+      "id": "win-windir-temp",
+      "os": [ "windows" ],
+      "base": "$WINDIR",
+      "join": "combine",
+      "subdirectories": [ "Temp" ]
+    },
+    {
+      "id": "win-wu-download",
+      "os": [ "windows" ],
+      "base": "$WINDIR",
+      "join": "combine",
+      "tier": "medium",
+      "subdirectories": [ "SoftwareDistribution\\Download" ]
+    },
+    {
+      "id": "win-old-install",
+      "os": [ "windows" ],
+      "base": "$SYSTEMDRIVE",
+      "join": "combine",
+      "tier": "advanced",
+      "subdirectories": [ "Windows.old", "Windows~old" ]
+    },
+
+    {
+      "id": "unix-env-temp",
+      "os": [ "linux", "macos" ],
+      "base": "$TEMP",
+      "subdirectories": [ "" ]
+    },
+    {
+      "id": "unix-tmp",
+      "os": [ "linux", "macos" ],
+      "base": "/tmp",
+      "subdirectories": [ "" ]
+    },
+    {
+      "id": "unix-var-tmp",
+      "os": [ "linux", "macos" ],
+      "base": "/var/tmp",
+      "tier": "medium",
+      "subdirectories": [ "" ]
+    },
+    {
+      "id": "unix-xdg-cache",
+      "os": [ "linux", "macos" ],
+      "base": "$CACHE",
+      "join": "combine",
+      "subdirectories": [
+        "npm/_cacache",
+        "pip",
+        "yarn",
+        "pnpm",
+        "go-build",
+        "ms-playwright",
+        "google-chrome",
+        "google-chrome-stable",
+        "chromium",
+        "microsoft-edge",
+        "brave-browser",
+        "vivaldi",
+        "mozilla/firefox",
+        "com.apple.Safari",
+        ".cargo/registry/cache",
+        ".gradle/caches",
+        ".bun/install/cache",
+        "pypa"
+      ]
+    }
+  ]
+}

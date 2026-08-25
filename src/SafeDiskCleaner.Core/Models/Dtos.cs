@@ -132,6 +132,12 @@ public sealed class ScanOptions
     public bool IncludeAdvanced { get; init; }
     public byte MinConfidence { get; init; } = 50;
     public uint RecencyDays { get; init; } = 7;
+
+    /// <summary>
+    /// Paths or wildcard patterns (* ?) that must never be scanned, matched
+    /// case-insensitively against the full path. Empty = no exclusions.
+    /// </summary>
+    public IReadOnlyList<string> Exclusions { get; init; } = Array.Empty<string>();
 }
 
 public sealed class CleanupOptions

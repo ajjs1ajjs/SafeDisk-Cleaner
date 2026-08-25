@@ -1,3 +1,5 @@
+﻿using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using SafeDiskCleaner.Core.Confidence;
 using SafeDiskCleaner.Core.Models;
 using SafeDiskCleaner.Core.Platform;
@@ -14,201 +16,32 @@ public sealed class Scanner
     private const long DuplicateMinSize = 4096;
 
     private readonly IRecycleBin _recycleBin;
+    private readonly ScanRootsCatalog _rootsCatalog;
 
-    public Scanner(IRecycleBin? recycleBin = null)
+    public Scanner(IRecycleBin? recycleBin = null, ScanRootsCatalog? rootsCatalog = null)
     {
         _recycleBin = recycleBin ?? PlatformServices.RecycleBin;
+        _rootsCatalog = rootsCatalog ?? ScanRootsCatalog.Embedded;
     }
 
-    public static IReadOnlyList<string> DefaultScanRoots(bool includeMedium, bool includeAdvanced)
-    {
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        var roots = new HashSet<string>(comparer);
+    /// <summary>
+    /// Default roots from the embedded declarative catalog
+    /// (see Rules/scan-roots.json). Prefer <see cref="ResolveScanRoots"/> with a
+    /// loaded catalog when host overrides are in play.
+    /// </summary>
+    public static IReadOnlyList<string> DefaultScanRoots(bool includeMedium, bool includeAdvanced) =>
+        ScanRootsCatalog.Embedded.Resolve(includeMedium, includeAdvanced);
 
-        if (OperatingSystem.IsWindows())
-        {
-            AddWindowsScanRoots(roots, includeMedium, includeAdvanced);
-        }
-        else
-        {
-            AddUnixScanRoots(roots, includeMedium);
-        }
-
-        return roots
-            .Where(r => Directory.Exists(r))
-            .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static void AddWindowsScanRoots(HashSet<string> roots, bool includeMedium, bool includeAdvanced)
-    {
-        var temp = Environment.GetEnvironmentVariable("TEMP") ?? Environment.GetEnvironmentVariable("TMP");
-        if (!string.IsNullOrWhiteSpace(temp))
-        {
-            roots.Add(temp);
-        }
-
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        if (!string.IsNullOrWhiteSpace(local))
-        {
-            foreach (var sub in new[]
-            {
-                @"\CrashDumps",
-                @"\Google\Chrome\User Data\Default\Cache",
-                @"\Google\Chrome\User Data\Default\Code Cache",
-                @"\Google\Chrome\User Data\Crashpad\reports",
-                @"\Microsoft\Edge\User Data\Default\Cache",
-                @"\Microsoft\Edge\User Data\Default\Code Cache",
-                @"\Microsoft\Edge\User Data\Crashpad\reports",
-                @"\BraveSoftware\Brave-Browser\User Data\Default\Cache",
-                @"\BraveSoftware\Brave-Browser\User Data\Default\Code Cache",
-                @"\Vivaldi\User Data\Default\Cache",
-                @"\Vivaldi\User Data\Default\Code Cache",
-                @"\Microsoft\Windows\Explorer",
-                @"\NuGet\Cache",
-                @"\npm-cache",
-                @"\pip\cache",
-                @"\Mozilla\Firefox\Profiles",
-                @"\Yarn\Cache",
-                @"\pnpm",
-                @"\uv\cache",
-                @"\go-build",
-            })
-            {
-                roots.Add(local + sub);
-            }
-        }
-
-        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        if (!string.IsNullOrWhiteSpace(roaming))
-        {
-            foreach (var sub in new[]
-            {
-                @"\discord\cache",
-                @"\discord\code cache",
-                @"\discord\gpucache",
-                @"\discord\service worker",
-                @"\slack\cache",
-                @"\slack\code cache",
-                @"\slack\gpucache",
-                @"\microsoft\teams\cache",
-                @"\microsoft\teams\code cache",
-                @"\microsoft\teams\gpucache",
-                @"\microsoft\teams\service worker",
-                @"\whatsapp\cache",
-                @"\whatsapp\code cache",
-                @"\whatsapp\gpucache",
-                @"\postman\cache",
-                @"\figma\cache",
-                @"\Opera Software\Opera Stable\Cache",
-            })
-            {
-                roots.Add(roaming + sub);
-            }
-        }
-
-        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (!string.IsNullOrWhiteSpace(profile))
-        {
-            foreach (var sub in new[]
-            {
-                @"\.cargo\registry\cache",
-                @"\.gradle\caches",
-                @"\.yarn\berry",
-                @"\.bun\install\cache",
-            })
-            {
-                roots.Add(profile + sub);
-            }
-        }
-
-        var windows = Environment.GetEnvironmentVariable("WINDIR")
-            ?? Path.GetDirectoryName(Environment.SystemDirectory)
-            ?? @"C:\Windows";
-        var systemDrive = Path.GetPathRoot(windows) ?? @"C:\";
-
-        roots.Add(Path.Combine(windows, "Temp"));
-        if (includeMedium)
-        {
-            roots.Add(Path.Combine(windows, "SoftwareDistribution", "Download"));
-        }
-
-        if (includeAdvanced)
-        {
-            foreach (var old in new[]
-            {
-                Path.Combine(systemDrive, "Windows.old"),
-                Path.Combine(systemDrive, "Windows~old"),
-            })
-            {
-                if (Directory.Exists(old))
-                {
-                    roots.Add(old);
-                }
-            }
-        }
-    }
-
-    private static void AddUnixScanRoots(HashSet<string> roots, bool includeMedium)
-    {
-        var temp = Environment.GetEnvironmentVariable("TMPDIR")
-            ?? Environment.GetEnvironmentVariable("TEMP")
-            ?? Environment.GetEnvironmentVariable("TMP");
-        if (!string.IsNullOrWhiteSpace(temp))
-        {
-            roots.Add(temp);
-        }
-
-        roots.Add("/tmp");
-        if (includeMedium)
-        {
-            roots.Add("/var/tmp");
-        }
-
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (string.IsNullOrWhiteSpace(home))
-        {
-            return;
-        }
-
-        var cache = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
-        if (string.IsNullOrWhiteSpace(cache))
-        {
-            cache = OperatingSystem.IsMacOS()
-                ? Path.Combine(home, "Library", "Caches")
-                : Path.Combine(home, ".cache");
-        }
-
-        foreach (var sub in new[]
-        {
-            "npm/_cacache",
-            "pip",
-            "yarn",
-            "pnpm",
-            "go-build",
-            "ms-playwright",
-            "google-chrome",
-            "google-chrome-stable",
-            "chromium",
-            "microsoft-edge",
-            "brave-browser",
-            "vivaldi",
-            "mozilla/firefox",
-            "com.apple.Safari",
-            ".cargo/registry/cache",
-            ".gradle/caches",
-            ".bun/install/cache",
-            "pypa",
-        })
-        {
-            roots.Add(Path.Combine(cache, sub));
-        }
-    }
+    public IReadOnlyList<string> ResolveScanRoots(bool includeMedium, bool includeAdvanced) =>
+        _rootsCatalog.Resolve(includeMedium, includeAdvanced);
 
     public static bool ShouldPrune(string directory) =>
         PathProtection.IsProtectedPath(directory);
 
-    public ScanResult Scan(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct)
+    public ScanResult Scan(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct) =>
+        ScanAsync(options, onProgress, ct).GetAwaiter().GetResult();
+
+    public async Task<ScanResult> ScanAsync(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct)
     {
         var started = System.Diagnostics.Stopwatch.StartNew();
         var roots = options.Roots.Count > 0 ? options.Roots.ToList() : DefaultScanRoots(options.IncludeMedium, options.IncludeAdvanced).ToList();
@@ -216,14 +49,13 @@ public sealed class Scanner
 
         var results = new System.Collections.Concurrent.ConcurrentBag<(List<Candidate> Candidates, ulong Files, ulong Dirs)>();
 
-        System.Threading.Tasks.Parallel.For(
-            0,
-            roots.Count,
-            new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = Environment.ProcessorCount },
-            i =>
+        await System.Threading.Tasks.Parallel.ForEachAsync(
+            Enumerable.Range(0, roots.Count),
+            new System.Threading.Tasks.ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = Environment.ProcessorCount },
+            async (i, token) =>
             {
-                ct.ThrowIfCancellationRequested();
-                results.Add(ScanOneRoot(roots[i], options, i, totalRoots, onProgress, ct));
+                token.ThrowIfCancellationRequested();
+                results.Add(await ScanOneRootAsync(roots[i], options, i, totalRoots, onProgress, token));
             });
 
         ct.ThrowIfCancellationRequested();
@@ -309,7 +141,7 @@ public sealed class Scanner
 
     private static readonly object ProgressLock = new();
 
-    private static (List<Candidate> Candidates, ulong Files, ulong Dirs) ScanOneRoot(
+    private static async Task<(List<Candidate> Candidates, ulong Files, ulong Dirs)> ScanOneRootAsync(
         string root,
         ScanOptions options,
         int rootIndex,
@@ -331,27 +163,33 @@ public sealed class Scanner
             var current = stack.Pop();
             // Stream the directory listing instead of allocating arrays for the
             // entire directory (huge temp/cache dirs with 100k+ entries used to
-            // stall and spike GC).
+            // stall and spike GC). Async enumeration keeps thread-pool threads
+            // free while the OS fills the buffer.
             try
             {
-                foreach (var sub in Directory.EnumerateDirectories(current))
+                await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                 {
                     dirs++;
-                    if (!ShouldPrune(sub))
+                    if (!ShouldPrune(sub) && !Safety.PathExclusions.IsExcluded(sub, options.Exclusions))
                     {
                         stack.Push(sub);
                     }
                 }
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // unreadable directory — skip
             }
 
             try
             {
-                foreach (var file in Directory.EnumerateFiles(current))
+                await foreach (var file in EnumerateStreamingAsync(current, static p => Directory.EnumerateFiles(p), ct))
                 {
+                    if (Safety.PathExclusions.IsExcluded(file, options.Exclusions))
+                    {
+                        continue;
+                    }
+
                     files++;
                     var candidate = ProcessFile(file, options);
                     if (candidate is not null)
@@ -371,8 +209,8 @@ public sealed class Scanner
                             Percent = ((rootIndex + partial) / totalRoots) * 100.0,
                             Finished = false,
                         };
-                        // Parallel.For invokes this from multiple threads; serialize
-                        // the callback so the UI never observes interleaved state.
+                        // Parallel.ForEachAsync invokes this from multiple threads;
+                        // serialize the callback so the UI never observes interleaved state.
                         if (onProgress is not null)
                         {
                             lock (ProgressLock)
@@ -383,7 +221,7 @@ public sealed class Scanner
                     }
                 }
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // unreadable directory — skip
             }
@@ -518,9 +356,16 @@ public sealed class Scanner
         return outList;
     }
 
-    public ScanResult ScanDuplicates(IReadOnlyList<string> roots, CancellationToken ct)
+    public ScanResult ScanDuplicates(IReadOnlyList<string> roots, CancellationToken ct) =>
+        ScanDuplicatesAsync(roots, ct).GetAwaiter().GetResult();
+
+    public async Task<ScanResult> ScanDuplicatesAsync(
+        IReadOnlyList<string> roots,
+        CancellationToken ct,
+        IReadOnlyList<string>? exclusions = null)
     {
         var sizeMap = new Dictionary<long, List<string>>();
+        var exclusionPatterns = exclusions ?? Array.Empty<string>();
 
         foreach (var root in roots)
         {
@@ -534,44 +379,49 @@ public sealed class Scanner
 
                 try
                 {
-                    foreach (var sub in Directory.EnumerateDirectories(current))
+                    await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                     {
-                        if (!ShouldPrune(sub))
+                        if (!ShouldPrune(sub) && !Safety.PathExclusions.IsExcluded(sub, exclusionPatterns))
                         {
                             stack.Push(sub);
                         }
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // unreadable directory — skip
                 }
 
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(current))
-                    {
-                        try
+                    await foreach (var file in EnumerateStreamingAsync(current, static p => Directory.EnumerateFiles(p), ct))
                         {
-                            var length = new FileInfo(file).Length;
-                            if (length >= DuplicateMinSize)
+                            if (Safety.PathExclusions.IsExcluded(file, exclusionPatterns))
                             {
-                                if (!sizeMap.TryGetValue(length, out var list))
-                                {
-                                    list = new List<string>();
-                                    sizeMap[length] = list;
-                                }
+                                continue;
+                            }
 
-                                list.Add(file);
+                            try
+                            {
+                                var length = new FileInfo(file).Length;
+                                if (length >= DuplicateMinSize)
+                                {
+                                    if (!sizeMap.TryGetValue(length, out var list))
+                                    {
+                                        list = new List<string>();
+                                        sizeMap[length] = list;
+                                    }
+
+                                    list.Add(file);
+                                }
+                            }
+                            catch
+                            {
+                                // unreadable or removed concurrently — skip
                             }
                         }
-                        catch
-                        {
-                            // unreadable or removed concurrently — skip
-                        }
-                    }
                 }
-                catch
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // unreadable directory — skip
                 }
@@ -585,7 +435,7 @@ public sealed class Scanner
             foreach (var path in group)
             {
                 ct.ThrowIfCancellationRequested();
-                var hash = HashFile(path);
+                var hash = await HashFileAsync(path, ct);
                 if (hash is null)
                 {
                     continue;
@@ -636,25 +486,82 @@ public sealed class Scanner
     }
 
     /// <summary>Streams a file through a BLAKE3 hasher. Returns null when unreadable.</summary>
-    public static byte[]? HashFile(string path)
+    public static byte[]? HashFile(string path) => HashFileAsync(path, CancellationToken.None).GetAwaiter().GetResult();
+
+    /// <summary>Async variant of <see cref="HashFile"/> using true async file I/O.</summary>
+    public static async Task<byte[]?> HashFileAsync(string path, CancellationToken ct)
     {
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            await using var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete,
+                bufferSize: 64 * 1024,
+                useAsync: true);
             using var hasher = Blake3.Hasher.New();
             var buffer = new byte[1024 * 1024];
             int read;
-            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+            while ((read = await stream.ReadAsync(buffer.AsMemory(), ct)) > 0)
             {
                 hasher.Update(buffer.AsSpan(0, read));
             }
 
             return hasher.Finalize().AsSpan().ToArray();
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Streams a blocking <see cref="Directory"/> enumeration through a channel so
+    /// callers can consume it with await foreach. The .NET BCL has no native async
+    /// directory enumeration yet; this keeps the consuming context responsive,
+    /// streams lazily (no arrays), and honors cancellation per entry.
+    /// </summary>
+    private static async IAsyncEnumerable<string> EnumerateStreamingAsync(
+        string path,
+        Func<string, IEnumerable<string>> enumerate,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        {
+            SingleWriter = true,
+            SingleReader = true,
+        });
+
+        var producer = Task.Run(() =>
+        {
+            try
+            {
+                foreach (var entry in enumerate(path))
+                {
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    channel.Writer.TryWrite(entry);
+                }
+
+                channel.Writer.TryComplete();
+            }
+            catch (Exception ex)
+            {
+                // unreadable directory — surface to the consumer
+                channel.Writer.TryComplete(ex);
+            }
+        }, CancellationToken.None);
+
+        await foreach (var entry in channel.Reader.ReadAllAsync(ct))
+        {
+            yield return entry;
+        }
+
+        await producer;
     }
 
     private sealed class ByteArrayComparer : IEqualityComparer<byte[]>

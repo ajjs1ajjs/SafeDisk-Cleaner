@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using SafeDiskCleaner.Core.Localization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SafeDiskCleaner.Core.Cleanup;
@@ -18,6 +19,8 @@ var host = Host.CreateDefaultBuilder()
     {
         services.AddSafeDiskInfrastructure(ctx.Configuration);
         services.AddSafeDiskDatabase();
+        services.AddSingleton(sp => SafeDiskCleaner.Core.Rules.ScanRootsCatalog.LoadOrDefault(
+            Arg(args, "--rules")));
         services.AddSingleton<SignatureInspector>();
         services.AddSingleton<SafetyValidator>();
         services.AddSingleton<Scanner>();
@@ -82,7 +85,7 @@ static int PrintUsage()
 
 static int UnknownCommand(string command)
 {
-    Console.Error.WriteLine($"Невідома команда: {command}");
+    Console.Error.WriteLine(Loc.F("Cli.UnknownCommand", command));
     PrintUsage();
     return 1;
 }
@@ -121,10 +124,10 @@ static string? Arg(IReadOnlyList<string> args, string name)
 static async Task<int> AnalyzeAsync(Scanner scanner, SafeDiskCleaner.Core.Abstractions.IReportWriter reports, string[] args)
 {
     var options = BuildScanOptions(args);
-    var result = await Task.Run(() => scanner.Scan(options, null, CancellationToken.None));
+    var result = await scanner.ScanAsync(options, null, CancellationToken.None);
 
-    Console.WriteLine($"Проскановано файлів: {result.Summary.ScannedFiles:N0}, кандидатів: {result.Candidates.Count}");
-    Console.WriteLine($"Потенційно звільниться: {HumanSize.Format(result.Summary.TotalPotential)}");
+    Console.WriteLine(Loc.F("Cli.ScannedLine", result.Summary.ScannedFiles, result.Candidates.Count));
+    Console.WriteLine(Loc.F("Cli.Potential", HumanSize.Format(result.Summary.TotalPotential)));
     Console.WriteLine();
 
     foreach (var c in result.Candidates.Take(20))
@@ -134,13 +137,13 @@ static async Task<int> AnalyzeAsync(Scanner scanner, SafeDiskCleaner.Core.Abstra
 
     if (result.Candidates.Count > 20)
     {
-        Console.WriteLine($"... ще {result.Candidates.Count - 20} кандидатів.");
+        Console.WriteLine(Loc.F("Cli.MoreCandidates", result.Candidates.Count - 20));
     }
 
     if (args.Contains("--report"))
     {
         var file = await reports.WriteScanReportAsync(result);
-        Console.WriteLine($"Звіт збережено: {file}");
+        Console.WriteLine(Loc.F("Export.Saved", file));
     }
 
     return 0;
@@ -149,7 +152,7 @@ static async Task<int> AnalyzeAsync(Scanner scanner, SafeDiskCleaner.Core.Abstra
 static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDiskCleaner.Core.Abstractions.IReportWriter reports, string[] args)
 {
     var options = BuildScanOptions(args);
-    var scanResult = await Task.Run(() => scanner.Scan(options, null, CancellationToken.None));
+    var scanResult = await scanner.ScanAsync(options, null, CancellationToken.None);
 
     var mode = args.Contains("--dry-run")
         ? CleanMode.DryRun
@@ -162,7 +165,7 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
         .Where(c => c.Action != CandidateAction.Keep)
         .ToList();
 
-    Console.WriteLine($"Кандидатів до обробки: {candidates.Count} ({mode})");
+    Console.WriteLine(Loc.F("Cli.CandidatesToProcess", candidates.Count, mode));
 
     CleanupResult result;
     if (mode == CleanMode.Interactive)
@@ -198,7 +201,7 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
         result = await cleanup.RunAsync(candidates, cleanOptions, null);
     }
 
-    Console.WriteLine($"Оброблено: {result.Processed}, звільнено: {HumanSize.Format(result.FreedBytes)}");
+    Console.WriteLine(Loc.F("Cli.ProcessedFreed", result.Processed, HumanSize.Format(result.FreedBytes)));
     foreach (var entry in result.Entries)
     {
         Console.WriteLine($"[{entry.Status}] {entry.Path} — {entry.Detail}");
@@ -207,7 +210,7 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
     if (args.Contains("--report"))
     {
         var file = await reports.WriteCleanupReportAsync(result);
-        Console.WriteLine($"Звіт збережено: {file}");
+        Console.WriteLine(Loc.F("Export.Saved", file));
     }
 
     return 0;
@@ -218,14 +221,14 @@ static async Task<int> DuplicatesAsync(Scanner scanner, string[] args)
     var rootsValue = Arg(args, "--roots");
     if (string.IsNullOrWhiteSpace(rootsValue))
     {
-        Console.Error.WriteLine("Для пошуку дублікатів вкажіть --roots d1,d2");
+        Console.Error.WriteLine(Loc.T("Cli.SpecifyRoots"));
         return 1;
     }
 
     var roots = rootsValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    var result = await Task.Run(() => scanner.ScanDuplicates(roots, CancellationToken.None));
+    var result = await scanner.ScanDuplicatesAsync(roots, CancellationToken.None);
 
-    Console.WriteLine($"Дублікатів знайдено: {result.Candidates.Count}");
+    Console.WriteLine(Loc.F("Cli.DuplicatesFound", result.Candidates.Count));
     foreach (var c in result.Candidates.Take(50))
     {
         Console.WriteLine($"{HumanSize.Format(c.Size),10} {c.Path} — {c.Reason}");
@@ -247,7 +250,7 @@ static int ListDrives(IDriveService drives)
 static async Task<int> ShowAuditAsync(SafeDiskCleaner.Core.Abstractions.IAuditService audit)
 {
     var entries = await audit.GetAllAsync();
-    Console.WriteLine($"Записів: {entries.Count}");
+    Console.WriteLine(Loc.F("Cli.AuditEntries", entries.Count));
     foreach (var e in entries.Take(50))
     {
         Console.WriteLine($"{e.Timestamp:yyyy-MM-dd HH:mm} [{e.Action,-12}] {(e.Success ? "OK " : "ERR")} {HumanSize.Format(e.Size),10} {e.Path}");
@@ -260,7 +263,7 @@ static async Task<int> QuarantineAsync(SafeDiskCleaner.Core.Abstractions.IQuaran
 {
     if (args.Length == 0)
     {
-        Console.Error.WriteLine("quarantine: вкажіть list|restore <id>|remove <id>|purge");
+        Console.Error.WriteLine(Loc.T("Cli.QuarantineUsage"));
         return 1;
     }
 
@@ -292,7 +295,7 @@ static async Task<int> QuarantineActionAsync(
 {
     if (args.Length < 2)
     {
-        Console.Error.WriteLine("Вкажіть id карантинного запису");
+        Console.Error.WriteLine(Loc.T("Cli.SpecifyQuarantineId"));
         return 1;
     }
 
@@ -312,7 +315,7 @@ static async Task<int> QuarantineActionAsync(
 static async Task<int> QuarantinePurgeAsync(SafeDiskCleaner.Core.Abstractions.IQuarantineService quarantine)
 {
     var purged = await quarantine.PurgeExpiredAsync();
-    Console.WriteLine($"Видалено прострочених записів: {purged}");
+    Console.WriteLine(Loc.F("Cli.PurgedExpired", purged));
     return 0;
 }
 
@@ -320,7 +323,7 @@ static async Task<int> CheckUpdateAsync(SafeDiskCleaner.Core.Abstractions.IUpdat
 {
     var info = await update.CheckAsync();
     Console.WriteLine(info.Available
-        ? $"Доступна версія: {info.LatestVersion} ({info.DownloadUrl})"
-        : $"Встановлена остання версія ({info.CurrentVersion})");
+        ? Loc.F("Cli.UpdateAvailableLong", info.LatestVersion, info.DownloadUrl)
+        : Loc.F("Settings.UpToDate", info.CurrentVersion));
     return 0;
 }

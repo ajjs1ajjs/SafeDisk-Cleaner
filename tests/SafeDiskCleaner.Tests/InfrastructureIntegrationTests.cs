@@ -125,6 +125,30 @@ public sealed class InfrastructureIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Quarantine_Restore_IntoOccupiedPath_IsRefused()
+    {
+        var paths = _provider!.GetRequiredService<IAppPaths>();
+        paths.EnsureCreated();
+
+        var file = Path.Combine(_root, "conflict.tmp");
+        File.WriteAllBytes(file, new byte[1024]);
+
+        var id = await Quarantine.QuarantineAsync(file, retentionDays: 14);
+        File.Exists(file).Should().BeFalse();
+
+        // Recreate a file at the original location — restore must refuse to overwrite it.
+        File.WriteAllBytes(file, new byte[999]);
+
+        var act = async () => await Quarantine.RestoreAsync(id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*already exists*");
+        File.Exists(file).Should().BeTrue("the occupant must stay untouched");
+        File.Exists(Path.Combine(paths.QuarantineDir, id, "conflict.tmp"))
+            .Should().BeTrue("the quarantined copy stays available for another attempt");
+    }
+
+    [Fact]
     public async Task Quarantine_PurgeExpired_RemovesOldEntries_KeepsFresh()
     {
         var paths = _provider!.GetRequiredService<IAppPaths>();

@@ -10,6 +10,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SafeDiskCleaner.Tests" />
+    <InternalsVisibleTo Include="SafeDiskCleaner.ViewModels" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Rules\scan-roots.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Blake3" Version="3.0.2" />
     <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

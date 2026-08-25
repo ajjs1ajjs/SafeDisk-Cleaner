@@ -173,4 +173,95 @@ public sealed class ScannerTests
             Directory.Delete(root, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task ScanAsync_MatchesSyncResults()
+    {
+        var root = TestRoot("async");
+        try
+        {
+            var options = RecencyFree(new ScanOptions { Roots = [root], MinConfidence = 0 });
+
+            var syncResult = new Scanner().Scan(options, null, CancellationToken.None);
+            var asyncResult = await new Scanner().ScanAsync(options, null, CancellationToken.None);
+
+            asyncResult.Candidates.Where(c => c.Path.Contains(root)).Select(c => c.Path)
+                .Should().BeEquivalentTo(syncResult.Candidates.Where(c => c.Path.Contains(root)).Select(c => c.Path));
+            asyncResult.Summary.ScannedFiles.Should().Be(syncResult.Summary.ScannedFiles);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ScanAsync_RespectsCancellation()
+    {
+        var root = TestRoot("cancel");
+        try
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                File.WriteAllBytes(Path.Combine(root, "cache", $"c{i:D4}.bin"), new byte[1024]);
+            }
+
+            var options = RecencyFree(new ScanOptions { Roots = [root], MinConfidence = 0 });
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => new Scanner().ScanAsync(options, null, cts.Token));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ScanDuplicatesAsync_DetectsIdenticalFiles()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"safedisk-test-dupasync-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(root);
+            var a = Path.Combine(root, "a.bin");
+            var b = Path.Combine(root, "b.bin");
+            var data = new byte[5000];
+            Array.Fill(data, (byte)0xCD);
+            File.WriteAllBytes(a, data);
+            File.WriteAllBytes(b, data);
+
+            var result = await new Scanner().ScanDuplicatesAsync([root], CancellationToken.None);
+            result.Candidates.Should().HaveCount(1);
+            result.Candidates[0].Category.Should().Be(Category.DuplicateFiles);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task HashFileAsync_IsDeterministic()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"safedisk-test-hashasync-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(dir);
+            var file = Path.Combine(dir, "x.bin");
+            File.WriteAllBytes(file, new byte[100_000]);
+
+            var h1 = await Scanner.HashFileAsync(file, CancellationToken.None);
+            var h2 = await Scanner.HashFileAsync(file, CancellationToken.None);
+
+            h1.Should().NotBeNull();
+            h1.Should().BeEquivalentTo(h2);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }
