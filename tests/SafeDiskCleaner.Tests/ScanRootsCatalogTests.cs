@@ -69,7 +69,7 @@ public sealed class ScanRootsCatalogTests
         };
 
         var resolved = catalog.Resolve(true, true);
-        resolved.Should().Contain(r => r.TrimEnd('/', '\\').EndsWith("mp", StringComparison.OrdinalIgnoreCase));
+        resolved.Should().Contain(r => IsTempDir(r));
         resolved.Should().NotContain("/definitely/not/existing");
     }
 
