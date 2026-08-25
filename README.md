@@ -4,19 +4,19 @@
 
 **Безпечний аналіз, очищення та пошук дублікатів для Windows**
 
-![banner](docs/banner.svg)
+<img src="docs/banner.svg" width="100%" alt="SafeDisk Cleaner">
 
-[![Release](https://img.shields.io/github/v/release/ajjs1ajjs/SafeDisk-Cleaner?style=for-the-badge&label=Останній+реліз&color=7B2FFF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?style=for-the-badge&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?style=for-the-badge&label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Tests](https://img.shields.io/badge/tests-97_passing-00C853?style=for-the-badge)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Platform](https://img.shields.io/badge/platform-Windows_10_11-00E5FF?style=for-the-badge)]()
-[![.NET](https://img.shields.io/badge/.NET-10_LTS-512BD4?style=for-the-badge)]()
-[![License](https://img.shields.io/badge/license-MIT-26A69A?style=for-the-badge)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/ajjs1ajjs/SafeDisk-Cleaner?label=release&color=7B2FFF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
+[![Tests](https://img.shields.io/badge/tests-97%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-00E5FF)]()
+[![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
+[![License](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
 
 **WPF · MVVM · Material Design 3 · .NET 10 LTS** — захищає ваші дані, дає повний контроль над кожним кроком очищення.
 
-<a href="https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest"><img src="https://img.shields.io/badge/⬇️_Завантажити-1.1.1-00A0C6?style=for-the-badge"></a>
+<a href="https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest"><img src="https://img.shields.io/badge/Download-latest-00A0C6"></a>
 
 </div>
 
