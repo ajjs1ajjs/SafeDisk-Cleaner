@@ -172,6 +172,8 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
         with:
+          repository: ajjs1ajjs/SafeDisk-Cleaner
+          token: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           files: |
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-portable-win64.zip
             BUILD/ci/final/SafeDiskCleaner-${{ env.version }}-portable-win64.exe
