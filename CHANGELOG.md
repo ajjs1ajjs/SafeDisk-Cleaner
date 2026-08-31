@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.0 — Windows + macOS only
+
+- **Платформи:** збірки лише для Windows (portable + installer) та macOS (Avalonia); видалено Ubuntu/Linux з CI та релізу
+- Оновлено README: додано macOS до платформ, оновлено системні вимоги
+
 ## v1.4.1 — Хотфікс: застосунок не запускався після оновлення
 
 - **Виправлено падіння старту**: `WpfAppLifecycle`/`WpfDispatcher` (та Avalonia-аналоги) реєструвалися в DI як конкретні класи замість інтерфейсів `IAppLifecycle`/`IDispatcher` — резолв `MainViewModel` кидав виняток, який глобальний обробник ковтав, тож процес жив без вікна

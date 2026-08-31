@@ -13,7 +13,7 @@
 
 # 🛡️ SafeDisk Cleaner
 
-**Безпечний аналіз, очищення та пошук дублікатів для Windows**
+**Безпечний аналіз, очищення та пошук дублікатів для Windows та macOS**
 
 <img src="docs/banner.svg" width="100%" alt="SafeDisk Cleaner">
 
@@ -21,7 +21,7 @@
 [![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Tests](https://img.shields.io/badge/tests-164%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-00E5FF)]()
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
 
@@ -108,7 +108,7 @@
 
 ### Системні вимоги
 
-- Windows 10/11
+- Windows 10/11 або macOS 13+
 - **.NET 10 SDK** (для розробки; готові збірки не потребують встановленого runtime)
 
 ### Збірка та запуск
