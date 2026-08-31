@@ -1,4 +1,15 @@
-<div align="center">
+﻿<div align="center">
+
+# SafeDisk Cleaner — Source Code
+
+[![Deployed to](https://img.shields.io/badge/Deployed_to-SafeDisk--Cleaner-blue)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner)
+[![Website](https://img.shields.io/badge/Website-ajjs1ajjs.github.io%2FSafeDisk--Cleaner-green)](https://ajjs1ajjs.github.io/SafeDisk-Cleaner/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner-source/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner-source/actions)
+
+> **Це репозиторій з вихідним кодом SafeDisk Cleaner disk analysis tool.**
+> Готовий продукт деплоїться в: **https://github.com/ajjs1ajjs/SafeDisk-Cleaner**
+> Офіційний сайт: **https://ajjs1ajjs.github.io/SafeDisk-Cleaner/**
 
 # 🛡️ SafeDisk Cleaner
 
@@ -12,14 +23,13 @@
 [![Tests](https://img.shields.io/badge/tests-164%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
-[![License](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
 
 **WPF · MVVM · Material Design 3 · .NET 10 LTS** — захищає ваші дані, дає повний контроль над кожним кроком очищення.
 
 <a href="https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest"><img src="https://img.shields.io/badge/Download-latest-00A0C6"></a>
 
 </div>
-
 ---
 
 ## ✨ Чому SafeDisk Cleaner?
