@@ -38,6 +38,32 @@ public sealed class Scanner
     public static bool ShouldPrune(string directory) =>
         PathProtection.IsProtectedPath(directory);
 
+    /// <summary>
+    /// True when <paramref name="path"/> is a reparse point (Windows junction /
+    /// mount point / symlink) or a Unix symlink. Such entries must never be
+    /// descended into during a scan: they can point outside the scan root to an
+    /// arbitrary directory, which would let unrelated files be classified as
+    /// junk and deleted. See the callers for the safety rationale.
+    /// </summary>
+    public static bool IsReparsePoint(string path)
+    {
+        try
+        {
+            var attributes = File.GetAttributes(path);
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                return true;
+            }
+
+            return new DirectoryInfo(path).LinkTarget is not null;
+        }
+        catch
+        {
+            // unreadable or removed concurrently — treat as prune-safe
+            return true;
+        }
+    }
+
     public ScanResult Scan(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct) =>
         ScanAsync(options, onProgress, ct).GetAwaiter().GetResult();
 
@@ -170,7 +196,14 @@ public sealed class Scanner
                 await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                 {
                     dirs++;
-                    if (!ShouldPrune(sub) && !Safety.PathExclusions.IsExcluded(sub, options.Exclusions))
+                    // Never follow junctions/symlinks: a link inside a scanned root
+                    // can point to an arbitrary directory (e.g. an attacker-controlled
+                    // %TEMP% junction -> user Documents), which would let a "temp
+                    // cache" candidate escape into a real location and be deleted.
+                    // Reparse points are treated as hard prunes.
+                    if (!ShouldPrune(sub)
+                        && !IsReparsePoint(sub)
+                        && !Safety.PathExclusions.IsExcluded(sub, options.Exclusions))
                     {
                         stack.Push(sub);
                     }
@@ -381,7 +414,9 @@ public sealed class Scanner
                 {
                     await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                     {
-                        if (!ShouldPrune(sub) && !Safety.PathExclusions.IsExcluded(sub, exclusionPatterns))
+                        if (!ShouldPrune(sub)
+                            && !IsReparsePoint(sub)
+                            && !Safety.PathExclusions.IsExcluded(sub, exclusionPatterns))
                         {
                             stack.Push(sub);
                         }

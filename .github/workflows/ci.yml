@@ -72,7 +72,7 @@ jobs:
         include:
           - os: windows-latest
             rid: win-x64
-            artifact: portable-win64
+            artifact: setup-win64
           - os: macos-latest
             rid: osx-x64
             artifact: macos-x64
@@ -107,17 +107,6 @@ jobs:
         run: |
           dotnet publish src/SafeDiskCleaner.Avalonia -c Release -r ${{ matrix.rid }} --self-contained true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/unix
 
-      - name: Stage Windows artifacts
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $final = "BUILD/ci/final"
-          New-Item -ItemType Directory -Path $final -Force | Out-Null
-          Copy-Item BUILD/ci/portable/SafeDiskCleaner.exe "$final/SafeDiskCleaner-$env:version-portable-win64.exe" -Force
-          Copy-Item scripts/run.cmd "$final/run.cmd" -Force
-          Get-ChildItem $final -File | ForEach-Object { Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue }
-          Compress-Archive -Path "$final/*" -DestinationPath "BUILD/ci/SafeDiskCleaner-$env:version-portable-win64.zip" -Force
-
       - name: Install Inno Setup
         if: runner.os == 'Windows'
         shell: pwsh
@@ -132,10 +121,10 @@ jobs:
           & $iscc "scripts/installer.iss" /DMyAppVersion=$env:version /Qp
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
 
-      # Optional Authenticode signing (№11): runs only when the repo has the
-      # secrets configured. Requires: CERT_PFX_B64 (base64 of the .pfx),
+      # Optional Authenticode signing: runs only when the repo has the secrets
+      # configured. Requires: CERT_PFX_B64 (base64 of the .pfx),
       # CERT_PFX_PASSWORD, and optionally CERT_TIMESTAMP_URL.
-      - name: Sign Windows artifacts (Authenticode)
+      - name: Sign Windows installer (Authenticode)
         if: runner.os == 'Windows' && env.CERT_PFX_B64 != ''
         env:
           CERT_PFX_B64: ${{ secrets.CERT_PFX_B64 }}
@@ -150,13 +139,10 @@ jobs:
             Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
           if (-not $signtool) { throw "signtool.exe not found in Windows SDK" }
           $tsServer = if ($env:CERT_TIMESTAMP_URL) { "/tr $($env:CERT_TIMESTAMP_URL) /fd sha256" } else { "/fd sha256" }
-          foreach ($file in @(
-              "BUILD/ci/final/SafeDiskCleaner-$env:version-portable-win64.exe",
-              "BUILD/ci/SafeDiskCleaner-$env:version-portable-win64.zip")) {
-            if (Test-Path $file) {
-              & $signtool sign /f $pfx /p "$env:CERT_PFX_PASSWORD" $tsServer $file
-              if ($LASTEXITCODE -ne 0) { throw "signtool failed for $file" }
-            }
+          $installer = "BUILD/ci/SafeDiskCleaner-$env:version-setup-win64.exe"
+          if (Test-Path $installer) {
+            & $signtool sign /f $pfx /p "$env:CERT_PFX_PASSWORD" $tsServer $installer
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed for installer" }
           }
           Remove-Item $pfx -Force
 
@@ -172,9 +158,5 @@ jobs:
           repository: ajjs1ajjs/SafeDisk-Cleaner
           token: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           files: |
-            BUILD/ci/SafeDiskCleaner-${{ env.version }}-portable-win64.zip
-            BUILD/ci/final/SafeDiskCleaner-${{ env.version }}-portable-win64.exe
-            BUILD/ci/final/run.cmd
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-setup-win64.exe
-            BUILD/ci/SafeDiskCleaner-${{ env.version }}-linux-x64.tar.gz
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-macos-x64.tar.gz

@@ -146,4 +146,11 @@ public sealed class CleanupOptions
     public uint QuarantineRetentionDays { get; init; } = 14;
     public bool MoveToRecycleBin { get; init; } = true;
     public byte AutoThreshold { get; init; } = 95;
+
+    /// <summary>
+    /// Minimum age (in days) a candidate must have before it may actually be
+    /// cleaned. A conservative safety floor applied at cleanup time, independent
+    /// from the scanner's recency filter. Default 3.
+    /// </summary>
+    public uint RecencyDays { get; init; } = 3;
 }

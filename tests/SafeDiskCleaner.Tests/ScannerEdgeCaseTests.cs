@@ -78,6 +78,93 @@ public sealed class ScannerEdgeCaseTests
     }
 
     [Fact]
+    public async Task ScanAsync_DoesNotFollowJunctionOutsideScanRoot()
+    {
+        // A junction/symlink created inside the root is a potential escape: it can
+        // point to an unrelated directory whose files would be classified as junk
+        // and deleted. The scanner must never descend into reparse points. If the
+        // environment cannot create links, the test is skipped.
+        var baseDir = Path.Combine(Path.GetTempPath(), $"sdc-link-{Guid.NewGuid():N}");
+        var root = Path.Combine(baseDir, "scan");
+        var victim = Path.Combine(baseDir, "victim");
+        try
+        {
+            Directory.CreateDirectory(root);
+            Directory.CreateDirectory(victim);
+            File.WriteAllBytes(Path.Combine(victim, "secret.log"), new byte[2048]);
+
+            var link = Path.Combine(root, "junk_link");
+            var created = TryCreateDirectoryLink(link, victim);
+            if (!created)
+            {
+                return; // no link support/privilege here — nothing to verify
+            }
+
+            var options = new ScanOptions
+            {
+                Roots = [root],
+                MinConfidence = 0,
+            };
+            var result = await new Scanner().ScanAsync(options, null, CancellationToken.None);
+
+            result.Candidates.Should().NotContain(
+                c => c.Path.Contains("secret.log", StringComparison.Ordinal),
+                "files reachable only through a junction must never be classified/cleaned");
+        }
+        finally
+        {
+            TryDeleteTree(baseDir);
+        }
+    }
+
+    private static bool TryCreateDirectoryLink(string link, string target)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                // Dir junctions need no admin; fall back to a symlink if unavailable.
+                var psi = new System.Diagnostics.ProcessStartInfo(
+                    "cmd.exe", $"/c mklink /J \"{link}\" \"{target}\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                using var p = System.Diagnostics.Process.Start(psi)!;
+                p.WaitForExit(10_000);
+                if (p.ExitCode == 0 && Directory.Exists(link))
+                {
+                    return true;
+                }
+            }
+
+            Directory.CreateSymbolicLink(link, target);
+            return Directory.Exists(link);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void TryDeleteTree(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch
+        {
+            // best-effort teardown
+        }
+    }
+
+    [Fact]
     public async Task ScanAsync_DirectoryExclusion_SkipsSubtree()
     {
         var root = MakeScanTree("dir");

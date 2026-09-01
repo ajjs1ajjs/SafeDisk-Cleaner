@@ -5,7 +5,7 @@
 [![Deployed to](https://img.shields.io/badge/Deployed_to-SafeDisk--Cleaner-blue)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner)
 [![Website](https://img.shields.io/badge/Website-ajjs1ajjs.github.io%2FSafeDisk--Cleaner-green)](https://ajjs1ajjs.github.io/SafeDisk-Cleaner/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner-source/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner-source/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 
 > **Це репозиторій з вихідним кодом SafeDisk Cleaner disk analysis tool.**
 > Готовий продукт деплоїться в: **https://github.com/ajjs1ajjs/SafeDisk-Cleaner**
@@ -20,7 +20,7 @@
 [![Release](https://img.shields.io/github/v/release/ajjs1ajjs/SafeDisk-Cleaner?label=release&color=7B2FFF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Tests](https://img.shields.io/badge/tests-164%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
+[![Tests](https://img.shields.io/badge/tests-165%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
@@ -97,10 +97,12 @@
 
 Виберіть на [сторінці релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest):
 
-| Варіант | Файл | Опис |
-|--------|------|------|
-| 🧰 **Інсталятор** | `SafeDiskCleaner-<ver>-setup-win64.exe` | Встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», звичайне видалення. |
-| 📦 **Портативна** | `SafeDiskCleaner-<ver>-portable-win64.exe` | Один файл, самостійна збірка. Запускається з будь-якого місця. |
+| Платформа | Файл | Опис |
+|-----------|------|------|
+| 🪟 **Windows** | `SafeDiskCleaner-<ver>-setup-win64.exe` | **Універсальний інсталятор** — встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», коректне видалення через «Програми та компоненти». Підтримує весь функціонал застосунку. |
+| 🍎 **macOS** | `SafeDiskCleaner-<ver>-macos-x64.tar.gz` | Самодостатня збірка (Avalonia) для macOS 13+. |
+
+> Для Windows використовуйте інсталятор — він встановлює повний набір функцій (сканування, дублікати, карантин, планувальник, автооновлення) і правильно реєструється в системі.
 
 ---
 
@@ -117,7 +119,7 @@
 dotnet restore
 dotnet build -c Release            # збірка
 dotnet run --project src/SafeDiskCleaner.App   # WPF UI
-dotnet test                        # тести (97)
+dotnet test                        # тести (165)
 ```
 
 ### CLI
@@ -135,10 +137,10 @@ dotnet run --project src/SafeDiskCleaner.Cli -- update
 
 ### Реліз
 
-Тег `v*` запускає CI: тести → портативна збірка → інсталятор (Inno Setup) → автоматичне опублікування релізу.
+Тег `v*` запускає CI: тести → Windows-інсталятор (Inno Setup) + збірка macOS (Avalonia) → автоматичне опублікування релізу.
 
 ```bash
-git tag v1.1.1 && git push origin v1.1.1
+git tag v1.6.0 && git push origin v1.6.0
 ```
 
 ---
@@ -177,12 +179,14 @@ git tag v1.1.1 && git push origin v1.1.1
 ## 📦 Структура проєкту
 
 ```
-SafeDiskCleaner.sln
+SafeDiskCleaner.slnx
 ├── Directory.Build.props            # спільна версія
 ├── src/
 │   ├── SafeDiskCleaner.Core/        # домен: моделі, rules, confidence, safety, scanner, Windows interop
 │   ├── SafeDiskCleaner.Infrastructure/  # EF Core, Refit+Polly, Serilog, сервіси, DI
+│   ├── SafeDiskCleaner.ViewModels/  # спільні ViewModels для WPF і Avalonia
 │   ├── SafeDiskCleaner.App/         # WPF UI (MaterialDesign, MVVM)
+│   ├── SafeDiskCleaner.Avalonia/    # Avalonia UI (Windows/macOS)
 │   └── SafeDiskCleaner.Cli/         # консольний застосунок
 ├── scripts/                         # build-release.ps1, installer.iss
 └── tests/

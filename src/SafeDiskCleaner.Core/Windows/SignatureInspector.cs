@@ -74,6 +74,9 @@ public sealed class SignatureInspector
             }
 
             var output = process.StandardOutput.ReadToEnd();
+            // Drain stderr too, otherwise a verbose PowerShell error can fill the
+            // redirected pipe buffer and block the process until the timeout kills it.
+            process.StandardError.ReadToEnd();
             return output.Contains("microsoft", StringComparison.OrdinalIgnoreCase)
                 || output.Contains("windows", StringComparison.OrdinalIgnoreCase);
         }

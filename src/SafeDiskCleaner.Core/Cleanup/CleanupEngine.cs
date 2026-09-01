@@ -196,7 +196,7 @@ public sealed class CleanupEngine
                 : CleanupOutcome.Failed("Failed to empty Recycle Bin");
         }
 
-        var verdict = _safety.Validate(candidate.Path, candidate.Category, recencyDays: 3);
+        var verdict = _safety.Validate(candidate.Path, candidate.Category, recencyDays: options.RecencyDays);
         if (!verdict.Allowed)
         {
             return CleanupOutcome.Failed(string.Join("; ", verdict.Reasons));
