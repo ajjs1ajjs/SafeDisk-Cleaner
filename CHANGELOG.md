@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.6.1 — Безпека: виправлено GitHub Pages deployment
+
+- **Виправлено GitHub Pages:** вимкнено workflow `pages.yml` — раніше весь репозиторій деплоївся на GitHub Pages (вихідний код, скрипти, артефакти). Це було вразливістю безпеки/витоку IP. Додано коментарі з поясненням.
+
 ## v1.6.0 — Windows installer focus + security hardening
 
 - **Дистрибуція Windows — інсталятор**: реліз тепер постачає Windows як універсальний інсталятор (`SafeDiskCleaner-<ver>-setup-win64.exe`, Inno Setup) — встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», коректне видалення; прибрано окрему портативну збірку/flat exe та zip з релізу
