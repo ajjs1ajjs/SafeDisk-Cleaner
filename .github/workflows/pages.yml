@@ -23,10 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # For a .NET desktop app, GitHub Pages is not applicable.
+      # This workflow is kept as a placeholder for documentation hosting.
+      # To enable, create a 'docs' folder with static content and update the path below.
+      - name: Setup Pages
+        if: false  # Disabled - no web content to deploy
+        uses: actions/configure-pages@v4
+
       - uses: actions/upload-pages-artifact@v3
+        if: false  # Disabled - no web content to deploy
         with:
-          path: '.'
+          path: './docs'
 
       - name: Deploy to GitHub Pages
+        if: false  # Disabled - no web content to deploy
         id: deployment
         uses: actions/deploy-pages@v4
