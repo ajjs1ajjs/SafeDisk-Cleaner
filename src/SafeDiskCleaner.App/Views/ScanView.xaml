@@ -1,0 +1,525 @@
+﻿<UserControl x:Class="SafeDiskCleaner.App.Views.ScanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.App.Localization"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:SafeDiskCleaner.App"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             x:Name="Root">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        <converters:InverseBooleanConverter x:Key="InverseBool" />
+        <converters:RiskToBrushConverter x:Key="RiskToBrush" />
+        <converters:ConfidenceToBrushConverter x:Key="ConfidenceToBrush" />
+        <converters:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+        <converters:DriveIsSelectedConverter x:Key="DriveIsSelected" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,20,24,28">
+
+            <!-- ===== ANALYSIS AREA CARD ===== -->
+            <Border Style="{StaticResource NeonCard}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Loc Scan.AreaTitle}"
+                               Style="{StaticResource NeonCardTitle}" />
+
+                    <!-- Drive cards -->
+                    <ItemsControl ItemsSource="{Binding Drives}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="0,0,12,12"
+                                        Padding="0"
+                                        Cursor="Hand"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding DataContext.ToggleDriveCommand, ElementName=Root}"
+                                        CommandParameter="{Binding Letter}">
+                                    <Button.ToolTip>
+                                        <TextBlock>
+                                            <Run Text="{Binding Letter}" />
+                                            <Run Text=" — " />
+                                            <Run Text="{Binding Kind}" />
+                                            <Run Text="{loc:Loc Frag.FreeInline}" />
+                                            <Run Text="{Binding Free, Converter={StaticResource BytesToHuman}}" />
+                                        </TextBlock>
+                                    </Button.ToolTip>
+                                    <Border x:Name="driveBorder"
+                                            Width="110" Height="100"
+                                            CornerRadius="12"
+                                            Background="{DynamicResource BgCardBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1.5"
+                                            Effect="{DynamicResource SoftNeonGlow}">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Letter}"
+                                                       FontSize="28" FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource NeonCyanBrush}"
+                                                       Effect="{DynamicResource NeonCyanGlow}" />
+                                            <TextBlock Text="{Binding Kind}"
+                                                       FontSize="11"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <DataTemplate.Triggers>
+                                    <!-- Selected drive - bright neon cyan border + glow -->
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{StaticResource DriveIsSelected}">
+                                                <Binding Path="Letter" />
+                                                <Binding Path="DataContext.CustomRoots" ElementName="Root" />
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter TargetName="driveBorder" Property="BorderBrush" Value="{DynamicResource NeonCyanBrush}" />
+                                        <Setter TargetName="driveBorder" Property="BorderThickness" Value="2" />
+                                        <Setter TargetName="driveBorder" Property="Background">
+                                            <Setter.Value>
+                                                <SolidColorBrush Color="{DynamicResource BgDeepColor}" />
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter TargetName="driveBorder" Property="Effect" Value="{DynamicResource NeonCyanGlow}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Custom roots input -->
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 Style="{StaticResource NeonTextBox}"
+                                 materialDesign:HintAssist.Hint="{loc:Loc Scan.CustomRootsHint}"
+                                 Text="{Binding CustomRoots, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource NeonOutlineButton}"
+                                Content="{loc:Loc Common.Browse}"
+                                Margin="8,0,0,0"
+                                Command="{Binding PickFoldersCommand}" />
+                    </Grid>
+
+                    <!-- Scan options row -->
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <CheckBox Style="{StaticResource NeonCheckBox}"
+                                  Content="{loc:Loc Scan.MediumCheckbox}"
+                                  IsChecked="{Binding IncludeMedium}" />
+                        <CheckBox Style="{StaticResource NeonCheckBox}"
+                                  Content="Advanced (DriverStore, Windows.old)"
+                                  IsChecked="{Binding IncludeAdvanced}" />
+                        <CheckBox Style="{StaticResource NeonCheckBox}"
+                                  Content="{loc:Loc Scan.ToRecycleBin}"
+                                  ToolTip="{loc:Loc Scan.ToRecycleBinTooltip}"
+                                  IsChecked="{Binding MoveToRecycleBin}" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <TextBlock Text="Min confidence:" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" />
+                            <TextBox Width="56"
+                                     Margin="6,0,0,0"
+                                     VerticalAlignment="Center"
+                                     Style="{StaticResource NeonTextBox}"
+                                     Text="{Binding MinConfidence, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="24,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc Scan.NotUsedDays}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" />
+                            <TextBox Width="56"
+                                     Margin="6,0,0,0"
+                                     VerticalAlignment="Center"
+                                     Style="{StaticResource NeonTextBox}"
+                                     Text="{Binding RecencyDays, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Action buttons -->
+                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                        <Button Command="{Binding ScanCommand}">
+                            <Button.Content>
+                                <TextBlock Text="{loc:Loc Scan.Analyze}" />
+                            </Button.Content>
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NeonPrimaryButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsScanning}" Value="True">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <TextBlock Text="{loc:Loc Scan.Scanning}" />
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Style="{StaticResource NeonOutlineButton}"
+                                Content="{loc:Loc Common.Cancel}"
+                                Margin="12,0,0,0"
+                                Command="{Binding CancelScanCommand}"
+                                Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
+
+                        <Button Style="{StaticResource NeonOutlineButton}"
+                                Content="{loc:Loc Scan.CleanRecycleBin}"
+                                Margin="12,0,0,0"
+                                ToolTip="{loc:Loc Scan.CleanRecycleBinTooltip}"
+                                Command="{Binding EmptyRecycleBinCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== SCAN PROGRESS ===== -->
+            <StackPanel Visibility="{Binding ScanProgress, Converter={StaticResource NullToCollapsed}}" Margin="0,0,0,16">
+                <ProgressBar Value="{Binding ScanProgress.Percent, Mode=OneWay}"
+                             Maximum="100"
+                             Style="{StaticResource NeonProgressBar}" />
+                <TextBlock Margin="0,8,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}">
+                    <Run Text="{Binding ScanProgress.FilesScanned, Mode=OneWay, StringFormat={}{0:N0}}" />
+                    <Run Text="{loc:Loc Frag.Files}" />
+                    <Run Text="{Binding ScanProgress.CandidatesFound, Mode=OneWay}" />
+                    <Run Text="{loc:Loc Frag.Candidates}" />
+                </TextBlock>
+            </StackPanel>
+
+            <!-- ===== CLEANUP PROGRESS ===== -->
+            <StackPanel Visibility="{Binding CleanupProgress, Converter={StaticResource NullToCollapsed}}" Margin="0,0,0,16">
+                <ProgressBar Value="{Binding CleanupProgress.Percent, Mode=OneWay}"
+                             Maximum="100"
+                             Style="{StaticResource NeonProgressBar}" />
+                <TextBlock Margin="0,8,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding CleanupProgress.CurrentPath, Mode=OneWay}" />
+            </StackPanel>
+
+            <!-- ===== MESSAGE ===== -->
+            <Border Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonInfoBorder}"
+                    Margin="0,0,0,16">
+                <TextBlock Text="{Binding Message}"
+                           TextWrapping="Wrap"
+                           FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </Border>
+
+            <!-- ===== SUMMARY ===== -->
+            <Border Visibility="{Binding ScanResult, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonCard}"
+                    Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource NeonCyanBrush}"
+                                   Text="{Binding ScanResult.Summary.TotalPotential, Converter={StaticResource BytesToHuman}}"
+                                   Effect="{DynamicResource TextGlow}" />
+                        <TextBlock Text="{loc:Loc Scan.Potential}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                        <TextBlock FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Text="{Binding ScanResult.Summary.ScannedFiles, StringFormat={}{0:N0}}" />
+                        <TextBlock Text="{loc:Loc Scan.FilesScanned}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                        <TextBlock FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Text="{Binding ScanResult.Candidates.Count}" />
+                        <TextBlock Text="{loc:Loc Scan.CandidatesCount}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3">
+                        <TextBlock FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Text="{Binding ScanResult.Summary.ElapsedMs, StringFormat={}{0} ms}" />
+                        <TextBlock Text="{loc:Loc Scan.ElapsedTime}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ===== CANDIDATES TABLE ===== -->
+            <Border Visibility="{Binding ScanResult, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonCard}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="16,12"
+                            Background="{DynamicResource BgCardBrush}"
+                            CornerRadius="12,12,0,0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{StaticResource NeonCyanBrush}"
+                                               Text="{loc:Loc Scan.Candidates}" Margin="0,0,16,0"
+                                               Effect="{DynamicResource TextGlow}" />
+                                    <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}">
+                                        <Run Text="{Binding SelectedCount, Mode=OneWay}" />
+                                        <Run Text="{loc:Loc Frag.Selected}" />
+                                        <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="{loc:Loc Common.SelectAll}"
+                                            Command="{Binding ToggleAllSelectionCommand}">
+                                        <Button.CommandParameter>
+                                            <sys:Boolean>True</sys:Boolean>
+                                        </Button.CommandParameter>
+                                    </Button>
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="{loc:Loc Common.Deselect}"
+                                            Command="{Binding ToggleAllSelectionCommand}">
+                                        <Button.CommandParameter>
+                                            <sys:Boolean>False</sys:Boolean>
+                                        </Button.CommandParameter>
+                                    </Button>
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="{loc:Loc Scan.OnlySafe}"
+                                            ToolTip="{loc:Loc Scan.OnlySafeTooltip}"
+                                            Command="{Binding SelectOnlySafeCommand}" />
+                                    <Button Style="{StaticResource NeonFlatButton}"
+                                            Content="{loc:Loc Scan.TreemapToggle}"
+                                            Command="{Binding ToggleTreemapCommand}" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="{loc:Loc Common.ExportCsv}"
+                                            Margin="4,0,0,0"
+                                            ToolTip="{loc:Loc Common.ExportCsvTooltip}"
+                                            Command="{Binding ExportCommand}" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="Dry Run"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="dry-run" />
+                                    <Button Style="{StaticResource NeonOutlineButton}"
+                                            Content="{loc:Loc Scan.AutoClean}"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="auto" />
+                                    <Button Style="{StaticResource NeonPrimaryButton}"
+                                            Content="{loc:Loc Scan.CleanSelected}"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding CleanCommand}"
+                                            CommandParameter="interactive" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- FILTER BAR -->
+                            <Grid Grid.Row="1" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="FilterVariant" Width="16" Height="16" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{loc:Loc Scan.Filters}" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+
+                                <ComboBox Grid.Column="1"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Center"
+                                          ItemsSource="{Binding CategoryFilterOptions}"
+                                          SelectedItem="{Binding CategoryFilter}"
+                                          materialDesign:HintAssist.Hint="{loc:Loc Col.Category}"
+                                          Style="{StaticResource NeonComboBox}" />
+
+                                <ComboBox Grid.Column="2"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Center"
+                                          ItemsSource="{Binding RiskFilterOptions}"
+                                          SelectedItem="{Binding RiskFilter}"
+                                          materialDesign:HintAssist.Hint="{loc:Loc Col.Risk}"
+                                          Style="{StaticResource NeonComboBox}" />
+
+                                <Grid Grid.Column="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Style="{StaticResource NeonTextBox}"
+                                             materialDesign:HintAssist.Hint="{loc:Loc Scan.SearchHint}"
+                                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource NeonFlatButton}"
+                                            Content="{loc:Loc Scan.ResetFilters}"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding ResetFiltersCommand}"
+                                            VerticalAlignment="Center" />
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding FilteredCandidates}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Extended"
+                              MaxHeight="480"
+                              Style="{StaticResource NeonDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header=""
+                                                    IsReadOnly="False"
+                                                    Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+                            <DataGridTextColumn Header="{loc:Loc Col.Category}" Binding="{Binding CategoryLabel}" Width="160" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding SizeText}" Width="90" />
+                            <DataGridTextColumn Header="{loc:Loc Common.LastAccess}" Binding="{Binding LastAccessText}" Width="110" />
+                            <DataGridTemplateColumn Header="Confidence" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    ToolTip="{Binding Recommendation}">
+                                            <ProgressBar Width="72"
+                                                         Height="6"
+                                                         Maximum="100"
+                                                         Value="{Binding Confidence, Mode=OneWay}"
+                                                         Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToBrush}}"
+                                                         Style="{StaticResource NeonProgressBar}" />
+                                            <TextBlock Text="{Binding Confidence, StringFormat={}{0}%}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{loc:Loc Col.Recommendation}" Binding="{Binding Recommendation}" Width="120" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- ===== CLEANUP RESULT TABLE ===== -->
+            <Border Visibility="{Binding CleanupResult, Converter={StaticResource NullToCollapsed}}"
+                    Style="{StaticResource NeonCard}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Padding="16,12"
+                            Background="{DynamicResource BgCardBrush}"
+                            CornerRadius="12,12,0,0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource NeonCyanBrush}"
+                                   Text="{loc:Loc Common.CleanupResult}"
+                                   Effect="{DynamicResource TextGlow}" />
+                    </Border>
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding CleanupResult.Entries}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              MaxHeight="360"
+                              Style="{StaticResource NeonDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{loc:Loc Common.Status}" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="100" />
+                            <DataGridTextColumn Header="{loc:Loc Common.Details}" Binding="{Binding Detail}" Width="240" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- ===== RESULTS TREEMAP ===== -->
+            <Border Style="{StaticResource NeonCard}"
+                    Margin="0,16,0,0"
+                    Visibility="{Binding ShowTreemap, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding TreemapTiles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Width="800" Height="320" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding X}" />
+                            <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="{Binding Width}"
+                                    Height="{Binding Height}"
+                                    Background="{DynamicResource BgHoverBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    ToolTip="{Binding SizeText}">
+                                <TextBlock Text="{Binding Label}"
+                                           FontSize="11"
+                                           Margin="6,4,2,0"
+                                           VerticalAlignment="Top"
+                                           HorizontalAlignment="Left"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

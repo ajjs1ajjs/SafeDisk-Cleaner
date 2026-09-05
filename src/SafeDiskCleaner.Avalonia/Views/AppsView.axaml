@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+             x:Class="SafeDiskCleaner.App.Views.AppsView">
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="14">
+
+      <TextBlock Text="{loc:Loc Apps.Title}"
+                 FontSize="24"
+                 FontWeight="SemiBold"
+                 Foreground="{DynamicResource TextPrimaryBrush}" />
+      <TextBlock Text="{loc:Loc Apps.Description}"
+                 TextWrapping="Wrap"
+                 Classes="NeonHint" />
+
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Classes="NeonOutline"
+                Content="{loc:Loc Apps.RefreshBtn}"
+                Command="{Binding RefreshCommand}" />
+        <TextBlock Text="{Binding Message}"
+                   VerticalAlignment="Center"
+                   FontSize="13"
+                   Foreground="{DynamicResource TextSecondaryBrush}" />
+      </StackPanel>
+
+      <DataGrid ItemsSource="{Binding Apps}"
+                AutoGenerateColumns="False"
+                CanUserResizeColumns="False"
+                CanUserSortColumns="True"
+                IsReadOnly="True">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="{loc:Loc Apps.NameCol}" Binding="{Binding Name}" Width="*" />
+          <DataGridTextColumn Header="{loc:Loc Apps.VersionCol}" Binding="{Binding Version}" Width="110" />
+          <DataGridTextColumn Header="{loc:Loc Apps.PublisherCol}" Binding="{Binding Publisher}" Width="220" />
+          <DataGridTextColumn Header="{loc:Loc Apps.SizeCol}" Binding="{Binding SizeText}" Width="100" />
+          <DataGridTemplateColumn Header="{loc:Loc Common.Actions}" Width="130">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <Button Classes="NeonFlat"
+                        Content="{loc:Loc Apps.UninstallBtn}"
+                        Command="{Binding $parent[UserControl].DataContext.UninstallCommand}"
+                        CommandParameter="{Binding}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

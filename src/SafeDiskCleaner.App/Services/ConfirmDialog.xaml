@@ -1,0 +1,47 @@
+﻿<UserControl x:Class="SafeDiskCleaner.App.Services.ConfirmDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.App.Localization"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Width="440">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding Title}"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource NeonCyanBrush}"
+                   Effect="{DynamicResource TextGlow}" />
+
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   Margin="0,16,0,24"
+                   FontSize="14"
+                   Foreground="{StaticResource TextPrimaryBrush}" />
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="{loc:Loc Common.Cancel}"
+                    Style="{StaticResource NeonFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <sys:Boolean xmlns:sys="clr-namespace:System;assembly=System.Runtime">False</sys:Boolean>
+                </Button.CommandParameter>
+            </Button>
+            <Button Content="{Binding ConfirmButton}"
+                    Style="{StaticResource NeonOutlineButton}"
+                    Margin="8,0,0,0"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <sys:Boolean xmlns:sys="clr-namespace:System;assembly=System.Runtime">True</sys:Boolean>
+                </Button.CommandParameter>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

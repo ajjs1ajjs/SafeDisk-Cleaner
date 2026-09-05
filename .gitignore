@@ -1,0 +1,29 @@
+# Logs
+logs
+*.log
+
+# Build output (.NET)
+bin/
+obj/
+BUILD/
+dist-portable/
+
+# Node (old frontend, kept for reference)
+node_modules
+dist
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
+
+# AI editor
+.claude/
+
+

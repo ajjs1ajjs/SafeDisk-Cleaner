@@ -1,0 +1,179 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+        xmlns:vm="clr-namespace:SafeDiskCleaner.ViewModels;assembly=SafeDiskCleaner.ViewModels"
+        xmlns:views="using:SafeDiskCleaner.App.Views"
+        xmlns:c="using:SafeDiskCleaner.App"
+        x:Class="SafeDiskCleaner.App.Views.MainWindow"
+        Title="SafeDisk Cleaner"
+        Width="1280"
+        Height="820"
+        MinWidth="960"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BgDeepBrush}">
+  <Window.Resources>
+    <c:IconGlyphConverter x:Key="IconGlyph" />
+    <c:NullToVisibleConverter x:Key="NullToVisible" />
+    <c:InverseBooleanConverter x:Key="InverseBool" />
+  </Window.Resources>
+
+  <Window.DataTemplates>
+    <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+      <views:DashboardView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ScanViewModel}">
+      <views:ScanView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:DuplicatesViewModel}">
+      <views:DuplicatesView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:QuarantineViewModel}">
+      <views:QuarantineView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:AuditViewModel}">
+      <views:AuditView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:AppsViewModel}">
+<views:AppsView />
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+      <views:SettingsView />
+    </DataTemplate>
+  </Window.DataTemplates>
+
+  <Grid RowDefinitions="Auto,Auto,*">
+    <!-- HEADER BAR -->
+    <Border Grid.Row="0"
+            Padding="24,16,24,14"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="0,0,0,1"
+            Background="{DynamicResource BgSurfaceBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Border Width="30"
+                  Height="30"
+                  CornerRadius="15"
+                  Background="{DynamicResource AccentBrush}"
+                  VerticalAlignment="Center">
+            <TextBlock Text="SD"
+                       FontSize="13"
+                       FontWeight="Bold"
+                       Foreground="#081120"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+          </Border>
+          <StackPanel Margin="12,0,0,0">
+            <TextBlock Text="SafeDisk Cleaner"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="{loc:Loc MainWindow.SubtitleShort}"
+                       FontSize="11"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Opacity="0.8" />
+          </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Column="2"
+                Padding="12,6"
+                CornerRadius="6"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                Background="{DynamicResource BgCardBrush}"
+                VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="⛁"
+                       FontSize="13"
+                       Margin="0,0,6,0"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+            <TextBlock Text="{Binding Scan.DataRoot}"
+                       FontSize="11"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- UPDATE BANNER -->
+    <Border Grid.Row="1"
+            Padding="16,10"
+            Background="{DynamicResource BgSurfaceBrush}"
+            BorderBrush="{DynamicResource AccentBorderBrush}"
+            BorderThickness="0,0,0,1"
+            IsVisible="{Binding IsUpdateBannerVisible}">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock Text="↑"
+                     FontSize="14"
+                     FontWeight="Bold"
+                     Foreground="{DynamicResource AccentBrush}"
+                     Margin="0,0,8,0" />
+          <TextBlock VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextPrimaryBrush}">
+            <Run Text="{loc:Loc Update.AvailablePrefix}" />
+            <Run Text="{Binding LatestVersionText}"
+                 FontWeight="SemiBold"
+                 Foreground="{DynamicResource AccentBrush}" />
+          </TextBlock>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+          <ProgressBar Width="160"
+                       Height="4"
+                       Maximum="100"
+                       Value="{Binding DownloadProgress}"
+                       IsVisible="{Binding IsDownloading}"
+                       Margin="0,0,12,0"
+                       Classes="NeonProgress" />
+          <TextBlock Text="{Binding UpdateStatus}"
+                     FontSize="12"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     VerticalAlignment="Center"
+                     Margin="0,0,12,0"
+                     IsVisible="{Binding IsDownloading}" />
+          <Button Content="{loc:Loc Update.Install}"
+                  Classes="NeonFlat"
+                  Command="{Binding UpdateCommand}"
+                  IsEnabled="{Binding IsDownloading, Converter={StaticResource InverseBool}}"
+                  Foreground="{DynamicResource AccentBrush}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- MAIN CONTENT AREA -->
+    <Grid Grid.Row="2" ColumnDefinitions="220,*">
+      <!-- NAV SIDEBAR -->
+      <Border Grid.Column="0"
+              Background="{DynamicResource BgSurfaceBrush}"
+              BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="0,0,1,0">
+        <ListBox ItemsSource="{Binding NavItems}"
+                 SelectedItem="{Binding SelectedNavItem}"
+                 Classes="NeonNav">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding IconKind, Converter={StaticResource IconGlyph}}"
+                           FontSize="18"
+                           Width="22"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Title}"
+                           Margin="12,0,0,0"
+                           VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
+
+      <!-- PAGE CONTENT -->
+      <ContentControl Grid.Column="1"
+                      Content="{Binding CurrentPage}" />
+    </Grid>
+  </Grid>
+</Window>

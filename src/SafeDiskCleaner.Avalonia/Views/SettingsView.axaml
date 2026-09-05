@@ -1,0 +1,132 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+             x:Class="SafeDiskCleaner.App.Views.SettingsView">
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Settings.InterfaceCard}" Classes="NeonTitle" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="40">
+            <StackPanel Spacing="8">
+              <TextBlock Text="{loc:Loc Settings.ThemeLabel}" Classes="NeonSection" />
+              <StackPanel Orientation="Horizontal" Spacing="16">
+                <CheckBox Content="{loc:Loc Settings.DarkTheme}"
+                          IsChecked="{Binding IsDarkTheme}" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Text="{loc:Loc Settings.AccentColorShort}" Classes="NeonSection" />
+              <ComboBox ItemsSource="{Binding AccentOptions}"
+                        SelectedItem="{Binding AccentPreset}"
+                        Width="160" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Text="{loc:Loc Settings.Language}" Classes="NeonSection" />
+              <ComboBox ItemsSource="{Binding LanguageOptions}"
+                        SelectedItem="{Binding SelectedLanguage}"
+                        Width="160" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Settings.CleaningCard}" Classes="NeonTitle" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="40">
+            <StackPanel Spacing="8">
+              <TextBlock Text="{loc:Loc Settings.RetentionDays}" Classes="NeonSection" />
+              <TextBox Width="80"
+                       Classes="NeonTextBox"
+                       Text="{Binding QuarantineRetentionDays}" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Text="{loc:Loc Settings.AutoCleanThresholdMb}" Classes="NeonSection" />
+              <TextBox Width="80"
+                       Classes="NeonTextBox"
+                       Text="{Binding AutoThreshold}" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Settings.ExclusionsCard}" Classes="NeonTitle" />
+          <TextBlock Text="{loc:Loc Settings.ExclusionsHint}"
+                     Classes="NeonHint"
+                     Margin="0,2,0,8"
+                     TextWrapping="Wrap" />
+          <TextBox Classes="NeonTextBox"
+                   MinHeight="96"
+                   AcceptsReturn="True"
+                   TextWrapping="NoWrap"
+                   Text="{Binding ExclusionsText}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Settings.ScheduleCard}" Classes="NeonTitle" />
+          <CheckBox Content="{loc:Loc Settings.ScheduleEnable}"
+                    IsChecked="{Binding ScheduleEnabled}"
+                    Margin="0,8,0,8" />
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="{loc:Loc Settings.ScheduleTimeLabel}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+            <TextBox Width="70"
+                     Classes="NeonTextBox"
+                     Text="{Binding ScheduleTime}" />
+            <ComboBox Width="140"
+                      ItemsSource="{Binding FrequencyOptions}"
+                      SelectedItem="{Binding SelectedFrequency}" />
+            <Button Classes="NeonOutline"
+                    Content="{loc:Loc Common.Continue}"
+                    Command="{Binding ApplyScheduleCommand}" />
+            <TextBlock Text="{Binding ScheduleStatus}"
+                       VerticalAlignment="Center"
+                       FontSize="12"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Settings.SystemCard}" Classes="NeonTitle" />
+          <Grid ColumnDefinitions="Auto,*" Margin="0,12,0,0">
+            <TextBlock Text="{loc:Loc Settings.DataDir}"
+                       Classes="NeonSection"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding DataRoot}"
+                       Classes="NeonHint"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center" />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*" Margin="0,12,0,0">
+            <TextBlock Text="{loc:Loc Settings.Version}"
+                       Classes="NeonSection"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Version}"
+                       Classes="NeonHint"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="12">
+            <Button Classes="NeonOutline"
+                    Content="{loc:Loc Settings.CheckUpdates}"
+                    Command="{Binding CheckUpdateCommand}" />
+            <TextBlock Text="{Binding UpdateText}"
+                       Classes="NeonHint"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,73 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+             xmlns:c="using:SafeDiskCleaner.App"
+             x:Class="SafeDiskCleaner.App.Views.QuarantineView"
+             x:Name="Root">
+  <UserControl.Resources>
+    <c:NullToVisibleConverter x:Key="NullToVisible" />
+    <c:CountToVisibleConverter x:Key="HasEntries" />
+    <c:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+  </UserControl.Resources>
+
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Nav.Quarantine}" Classes="NeonTitle" />
+          <TextBlock Text="{loc:Loc Quarantine.Hint}"
+                     Classes="NeonHint"
+                     Margin="0,4,0,0" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+            <Button Classes="NeonDanger"
+                    Content="{loc:Loc Quarantine.Clear}"
+                    Command="{Binding EmptyCommand}"
+                    IsVisible="{Binding HasEntries}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border IsVisible="{Binding Message, Converter={StaticResource NullToVisible}}"
+              Classes="NeonInfo">
+        <TextBlock Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="13"
+                   Foreground="{DynamicResource TextPrimaryBrush}" />
+      </Border>
+
+      <Border Classes="NeonCard"
+              Padding="0"
+              IsVisible="{Binding HasEntries}">
+        <DataGrid ItemsSource="{Binding Entries}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  MaxHeight="560"
+                  Classes="NeonGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="{loc:Loc Common.OriginalPath}" Binding="{Binding OriginalPath}" Width="*" />
+            <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding Size, Converter={StaticResource BytesToHuman}}" Width="110" />
+            <DataGridTextColumn Header="{loc:Loc Col.QuarantinedAt}" Binding="{Binding QuarantinedAt, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTextColumn Header="{loc:Loc Col.Expires}" Binding="{Binding ExpiresAt, StringFormat={}{0:g}}" Width="160" />
+            <DataGridTemplateColumn Header="{loc:Loc Common.Actions}" Width="200">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="NeonOutline"
+                            Content="{loc:Loc Common.Restore}"
+                            Command="{Binding DataContext.RestoreCommand, ElementName=Root}"
+                            CommandParameter="{Binding}" />
+                    <Button Classes="NeonDanger"
+                            Content="{loc:Loc Common.Delete}"
+                            Command="{Binding DataContext.RemoveCommand, ElementName=Root}"
+                            CommandParameter="{Binding}" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

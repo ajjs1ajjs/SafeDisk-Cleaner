@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Select targets
+        id: targets
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_OS -eq 'Windows') {
+            "targets=SafeDiskCleaner.slnx" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "targets=src/SafeDiskCleaner.Core src/SafeDiskCleaner.Infrastructure src/SafeDiskCleaner.Cli src/SafeDiskCleaner.Avalonia tests/SafeDiskCleaner.Tests" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
+      - name: Restore
+        shell: pwsh
+        run: |
+          foreach ($t in "${{ steps.targets.outputs.targets }}".Split(' ')) {
+            if ($t) { dotnet restore $t }
+          }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          foreach ($t in "${{ steps.targets.outputs.targets }}".Split(' ')) {
+            if ($t) { dotnet build $t -c Release --no-restore }
+          }
+
+      - name: Test
+        run: dotnet test tests/SafeDiskCleaner.Tests -c Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: '**/TestResults/**/*.cobertura.xml'
+          if-no-files-found: ignore
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: setup-win64
+          - os: macos-latest
+            rid: osx-x64
+            artifact: macos-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Compute version
+        id: version
+        shell: pwsh
+        run: |
+          $v = $env:GITHUB_REF_NAME -replace '^v', ''
+          "version=$v" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Publish WPF app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          dotnet publish src/SafeDiskCleaner.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/portable
+
+      - name: Publish Avalonia app (Unix)
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: |
+          dotnet publish src/SafeDiskCleaner.Avalonia -c Release -r ${{ matrix.rid }} --self-contained true -p:Version=$env:version -p:AssemblyVersion=$env:version.0 -p:FileVersion=$env:version.0 -o BUILD/ci/unix
+
+      - name: Install Inno Setup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" }
+          & $iscc "scripts/installer.iss" /DMyAppVersion=$env:version /Qp
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+
+      # Optional Authenticode signing: runs only when the repo has the secrets
+      # configured. Requires: CERT_PFX_B64 (base64 of the .pfx),
+      # CERT_PFX_PASSWORD, and optionally CERT_TIMESTAMP_URL.
+      - name: Sign Windows installer (Authenticode)
+        if: runner.os == 'Windows' && env.CERT_PFX_B64 != ''
+        env:
+          CERT_PFX_B64: ${{ secrets.CERT_PFX_B64 }}
+          CERT_PFX_PASSWORD: ${{ secrets.CERT_PFX_PASSWORD }}
+          CERT_TIMESTAMP_URL: ${{ vars.CERT_TIMESTAMP_URL }}
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERT_PFX_B64))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Where-Object Name -eq 'signtool.exe' |
+            Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe not found in Windows SDK" }
+          $tsServer = if ($env:CERT_TIMESTAMP_URL) { "/tr $($env:CERT_TIMESTAMP_URL) /fd sha256" } else { "/fd sha256" }
+          $installer = "BUILD/ci/SafeDiskCleaner-$env:version-setup-win64.exe"
+          if (Test-Path $installer) {
+            & $signtool sign /f $pfx /p "$env:CERT_PFX_PASSWORD" $tsServer $installer
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed for installer" }
+          }
+          Remove-Item $pfx -Force
+
+      - name: Package Unix artifacts
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: |
+          tar -czf "BUILD/ci/SafeDiskCleaner-$env:version-${{ matrix.artifact }}.tar.gz" -C BUILD/ci/unix .
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
+        with:
+          repository: ajjs1ajjs/SafeDisk-Cleaner
+          token: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          files: |
+            BUILD/ci/SafeDiskCleaner-${{ env.version }}-setup-win64.exe
+            BUILD/ci/SafeDiskCleaner-${{ env.version }}-macos-x64.tar.gz

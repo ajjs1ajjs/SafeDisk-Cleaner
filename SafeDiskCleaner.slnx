@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SafeDiskCleaner.App/SafeDiskCleaner.App.csproj" />
+    <Project Path="src/SafeDiskCleaner.Avalonia/SafeDiskCleaner.Avalonia.csproj" />
+    <Project Path="src/SafeDiskCleaner.Cli/SafeDiskCleaner.Cli.csproj" />
+    <Project Path="src/SafeDiskCleaner.Core/SafeDiskCleaner.Core.csproj" />
+    <Project Path="src/SafeDiskCleaner.Infrastructure/SafeDiskCleaner.Infrastructure.csproj" />
+    <Project Path="src/SafeDiskCleaner.ViewModels/SafeDiskCleaner.ViewModels.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SafeDiskCleaner.Tests/SafeDiskCleaner.Tests.csproj" />
+  </Folder>
+</Solution>

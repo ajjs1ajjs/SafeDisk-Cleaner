@@ -1,0 +1,94 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:SafeDiskCleaner.Avalonia.Localization"
+             xmlns:c="using:SafeDiskCleaner.App"
+             x:Class="SafeDiskCleaner.App.Views.DuplicatesView">
+  <UserControl.Resources>
+    <c:NullToVisibleConverter x:Key="NullToVisible" />
+    <c:InverseBooleanConverter x:Key="InverseBool" />
+    <c:BytesToHumanSizeConverter x:Key="BytesToHuman" />
+  </UserControl.Resources>
+
+  <ScrollViewer>
+    <StackPanel Margin="24,20,24,28" Spacing="16">
+
+      <Border Classes="NeonCard">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc Dup.Title}" Classes="NeonTitle" />
+          <TextBlock Text="{loc:Loc Dup.DescriptionShort}"
+                     Classes="NeonHint"
+                     Margin="0,4,0,0" />
+          <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="12">
+            <Button Classes="NeonPrimary"
+                    Content="{loc:Loc Dup.Find}"
+                    Command="{Binding ScanDuplicatesCommand}"
+                    IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}" />
+            <Button Classes="NeonOutline"
+                    Content="{loc:Loc Common.Cancel}"
+                    Command="{Binding CancelScanCommand}"
+                    IsVisible="{Binding IsScanning}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border IsVisible="{Binding Message, Converter={StaticResource NullToVisible}}"
+              Classes="NeonInfo">
+        <TextBlock Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="13"
+                   Foreground="{DynamicResource TextPrimaryBrush}" />
+      </Border>
+
+      <Border IsVisible="{Binding DuplicateResult, Converter={StaticResource NullToVisible}}"
+              Classes="NeonCard"
+              Padding="0">
+        <Grid RowDefinitions="Auto,*">
+          <Border Grid.Row="0"
+                  Padding="16,12"
+                  Background="{DynamicResource BgCardBrush}"
+                  CornerRadius="12,12,0,0"
+                  BorderBrush="{DynamicResource BorderBrush}"
+                  BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Orientation="Horizontal"
+                          VerticalAlignment="Center"
+                          Spacing="16">
+                <TextBlock FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AccentBrush}"
+                           Text="{loc:Loc Dup.ResultsTitle}" />
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextSecondaryBrush}">
+                  <Run Text="{Binding SelectedCount, Mode=OneWay}" />
+                  <Run Text="{loc:Loc Frag.Selected}" />
+                  <Run Text="{Binding SelectedSize, Mode=OneWay, Converter={StaticResource BytesToHuman}}" />
+                </TextBlock>
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Classes="NeonPrimary"
+                      Content="{loc:Loc Scan.CleanSelected}"
+                      Command="{Binding CleanDuplicatesCommand}"
+                      IsEnabled="{Binding IsCleaning, Converter={StaticResource InverseBool}}" />
+            </Grid>
+          </Border>
+
+          <DataGrid Grid.Row="1"
+                    ItemsSource="{Binding Candidates}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    MaxHeight="520"
+                    Classes="NeonGrid">
+            <DataGrid.Columns>
+              <DataGridCheckBoxColumn Header=""
+                                      IsReadOnly="False"
+                                      Binding="{Binding IsSelected}" />
+              <DataGridTextColumn Header="{loc:Loc Common.Path}" Binding="{Binding Path}" Width="*" />
+              <DataGridTextColumn Header="{loc:Loc Common.Size}" Binding="{Binding SizeText}" Width="100" />
+              <DataGridTextColumn Header="{loc:Loc Dup.GroupCol}" Binding="{Binding GroupId}" Width="160" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

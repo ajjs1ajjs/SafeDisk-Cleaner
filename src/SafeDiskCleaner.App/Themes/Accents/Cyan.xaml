@@ -1,0 +1,23 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Accent preset: Cyan. Swapped at runtime by ThemeService. -->
+
+    <Color x:Key="NeonCyanColor">#00E5FF</Color>
+    <Color x:Key="NeonCyanHoverColor">#33EAFF</Color>
+    <Color x:Key="NeonCyanPressedColor">#00B8CC</Color>
+
+    <SolidColorBrush x:Key="NeonCyanBrush" Color="{StaticResource NeonCyanColor}" />
+
+    <DropShadowEffect x:Key="NeonCyanGlow" Color="#00E5FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+    <DropShadowEffect x:Key="NeonCyanGlowStrong" Color="#00E5FF" BlurRadius="20" ShadowDepth="0" Opacity="1.0" />
+    <DropShadowEffect x:Key="SoftNeonGlow" Color="#00E5FF" BlurRadius="8" ShadowDepth="0" Opacity="0.5" />
+    <DropShadowEffect x:Key="TextGlow" Color="#00E5FF" BlurRadius="4" ShadowDepth="0" Opacity="0.6" />
+
+    <LinearGradientBrush x:Key="NeonBorderGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#00E5FF" Offset="0" />
+        <GradientStop Color="#0070FF" Offset="0.5" />
+        <GradientStop Color="#7B2FFF" Offset="1" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>
