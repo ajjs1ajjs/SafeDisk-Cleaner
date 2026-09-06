@@ -9,10 +9,11 @@
 
 > **Це репозиторій з вихідним кодом SafeDisk Cleaner disk analysis tool.**
 > Готовий продукт деплоїться в: **https://github.com/ajjs1ajjs/SafeDisk-Cleaner**
+> Офіційний сайт: **https://ajjs1ajjs.github.io/SafeDisk-Cleaner/**
 
 # 🛡️ SafeDisk Cleaner
 
-**Безпечний аналіз, очищення та пошук дублікатів для Windows та macOS**
+**Безпечний аналіз, очищення та пошук дублікатів для Windows, Linux та macOS (Intel + Apple Silicon)**
 
 <img src="docs/banner.svg" width="100%" alt="SafeDisk Cleaner">
 
@@ -20,7 +21,7 @@
 [![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Tests](https://img.shields.io/badge/tests-165%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-00E5FF)]()
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20(Intel%20%2B%20ARM)-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
 
@@ -98,10 +99,12 @@
 
 | Платформа | Файл | Опис |
 |-----------|------|------|
-| 🪟 **Windows** | `SafeDiskCleaner-<ver>-setup-win64.exe` | **Універсальний інсталятор** — встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», коректне видалення через «Програми та компоненти». Підтримує весь функціонал застосунку. |
-| 🍎 **macOS** | `SafeDiskCleaner-<ver>-macos-x64.tar.gz` | Самодостатня збірка (Avalonia) для macOS 13+. |
+| 🪟 **Windows** | `SafeDiskCleaner-<ver>-setup-win64.exe` | **Універсальний інсталятор** — встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», коректне видалення через «Програми та компоненти». Повний функціонал (сканування, дублікати, карантин, планувальник, автооновлення). |
+| 🐧 **Linux (Ubuntu/Debian)** | `SafeDiskCleaner-<ver>-linux-x64.tar.gz` | Самодостатній архів (Avalonia) для Ubuntu 22.04+, Debian 12+. Розпакуйте і запустіть `./SafeDiskCleaner`. |
+| 🍎 **macOS (Intel x64)** | `SafeDiskCleaner-<ver>-macos-x64.tar.gz` | Самодостатня збірка (Avalonia) для macOS 13+ на Intel. |
+| 🍎 **macOS (Apple Silicon M1–M4)** | `SafeDiskCleaner-<ver>-macos-arm64.tar.gz` | Нативна збірка (Avalonia) для macOS 13+ на Apple Silicon (M1/M2/M3/M4). |
 
-> Для Windows використовуйте інсталятор — він встановлює повний набір функцій (сканування, дублікати, карантин, планувальник, автооновлення) і правильно реєструється в системі.
+> Для Windows використовуйте інсталятор — він встановлює повний набір функцій і правильно реєструється в системі. Для Linux/macOS — архів з самодостатнім виконуваним файлом.
 
 ---
 
@@ -109,7 +112,7 @@
 
 ### Системні вимоги
 
-- Windows 10/11 або macOS 13+
+- **Windows 10/11**, **Ubuntu 22.04+/Debian 12+**, **macOS 13+** (Intel + Apple Silicon)
 - **.NET 10 SDK** (для розробки; готові збірки не потребують встановленого runtime)
 
 ### Збірка та запуск
@@ -148,7 +151,7 @@ git tag v1.6.0 && git push origin v1.6.0
 
 | Шар | Технологія |
 |-----|------------|
-| Платформа | **WPF, .NET 10 LTS** |
+| Платформа | **WPF (Windows)** · **Avalonia (Linux/macOS Intel/ARM64)** · **.NET 10 LTS** |
 | UI | MaterialDesignInXamlToolkit (Material Design 3), темна/світла тема + 4 акценти |
 | Архітектура | MVVM (CommunityToolkit.Mvvm), Dependency Injection, Generic Host |
 | Дані | Entity Framework Core + SQLite |
