@@ -1,10 +1,14 @@
 ﻿using System.IO;
 using SafeDiskCleaner.Core.Localization;
+using System;
+using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SafeDiskCleaner.ViewModels.Abstractions;
 using SafeDiskCleaner.ViewModels.Services;
 using SafeDiskCleaner.Core.Abstractions;
+using SafeDiskCleaner.Core.Models;
 
 namespace SafeDiskCleaner.ViewModels;
 
@@ -13,8 +17,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly AppSettings _settings;
     private readonly IAppPaths _paths;
     private readonly IUpdateService _update;
+    private readonly IUpdateInstaller _updateInstaller;
     private readonly IThemeService _themeService;
     private readonly IScheduleService _schedule;
+    private readonly IDialogService _dialogService;
+    private readonly IDispatcher _dispatcher;
 
     public IReadOnlyList<string> AccentOptions { get; } = ["Cyan", "Purple", "Green", "Amber"];
 
@@ -82,6 +89,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string? _updateText;
 
+    [ObservableProperty]
+    private bool _isUpdating;
+
+    [ObservableProperty]
+    private double _updateProgress;
+
+    [ObservableProperty]
+    private string? _updateProgressText;
+
     /// <summary>One exclusion pattern per line (paths or * / ? wildcards).</summary>
     [ObservableProperty]
     private string _exclusionsText = string.Empty;
@@ -102,14 +118,20 @@ public sealed partial class SettingsViewModel : ObservableObject
         AppSettings settings,
         IAppPaths paths,
         IUpdateService update,
+        IUpdateInstaller updateInstaller,
         IThemeService themeService,
-        IScheduleService schedule)
+        IScheduleService schedule,
+        IDialogService dialogService,
+        IDispatcher dispatcher)
     {
         _settings = settings;
         _paths = paths;
         _update = update;
+        _updateInstaller = updateInstaller;
         _themeService = themeService;
         _schedule = schedule;
+        _dialogService = dialogService;
+        _dispatcher = dispatcher;
 
         _dataRoot = paths.DataRoot;
         _isDarkTheme = settings.IsDarkTheme;
@@ -142,6 +164,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     partial void OnLanguageChanged(string value) => Save();
 
     partial void OnQuarantineRetentionDaysChanged(uint value) => Save();
+
     partial void OnAutoThresholdChanged(byte value) => Save();
 
     partial void OnExclusionsTextChanged(string value) => Save();
@@ -228,5 +251,83 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateText = info.Available
             ? Loc.F("Settings.UpdateAvailable", info.LatestVersion)
             : Loc.F("Settings.UpToDate", info.CurrentVersion);
+    }
+
+    [RelayCommand]
+    private async Task InstallUpdateAsync()
+    {
+        if (IsUpdating) return;
+
+        var info = await _update.CheckAsync();
+        if (!info.Available)
+        {
+            await _dialogService.ConfirmAsync(Loc.T("Settings.UpdateTitle"), Loc.F("Settings.UpToDate", info.CurrentVersion), Loc.T("Common.OK"));
+            return;
+        }
+
+        var asset = _updateInstaller.SelectAsset(info);
+        if (asset is null)
+        {
+            await _dialogService.ConfirmAsync(Loc.T("Settings.UpdateErrorTitle"), Loc.T("Settings.UpdateNoAsset"), Loc.T("Common.OK"));
+            return;
+        }
+
+        var confirm = await _dialogService.ConfirmAsync(
+            Loc.T("Settings.UpdateTitle"),
+            Loc.F("Settings.UpdateConfirm", info.LatestVersion),
+            Loc.T("Settings.InstallUpdate"));
+
+        if (!confirm) return;
+
+        IsUpdating = true;
+        UpdateProgress = 0;
+        UpdateProgressText = Loc.T("Settings.UpdateDownloading");
+
+        try
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), asset.Name);
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+
+            var progress = new Progress<double>(p =>
+            {
+                _dispatcher.Invoke(() =>
+                {
+                    UpdateProgress = p;
+                    UpdateProgressText = Loc.F("Settings.UpdateProgress", p.ToString("F0"));
+                });
+            });
+
+            await _updateInstaller.DownloadAsync(asset, tempPath, progress);
+
+            _dispatcher.Invoke(() =>
+            {
+                UpdateProgressText = Loc.T("Settings.UpdateVerifying");
+            });
+
+            // Verify checksum if available
+            var checksumAsset = _updateInstaller.SelectChecksumAsset(info);
+            if (checksumAsset is not null)
+            {
+                var checksumText = await _updateInstaller.DownloadTextAsync(checksumAsset);
+                _updateInstaller.VerifySha256(tempPath, checksumText);
+            }
+
+            _dispatcher.Invoke(() =>
+            {
+                UpdateProgressText = Loc.T("Settings.UpdateInstalling");
+            });
+
+            // Launch installer (runs in background, will close this app)
+            _updateInstaller.LaunchInstaller(tempPath);
+        }
+        catch (Exception ex)
+        {
+            _dispatcher.Invoke(() =>
+            {
+                IsUpdating = false;
+                UpdateText = Loc.F("Settings.UpdateFailed", ex.Message);
+            });
+            await _dialogService.ConfirmAsync(Loc.T("Settings.UpdateErrorTitle"), Loc.F("Settings.UpdateError", ex.Message), Loc.T("Common.OK"));
+        }
     }
 }

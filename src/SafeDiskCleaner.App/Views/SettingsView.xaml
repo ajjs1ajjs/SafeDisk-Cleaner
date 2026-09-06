@@ -197,6 +197,27 @@
                                    FontSize="13"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
                     </StackPanel>
+
+                    <!-- ===== UPDATE PROGRESS ===== -->
+                    <StackPanel Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Margin="0,12,0,0">
+                        <ProgressBar Value="{Binding UpdateProgress}"
+                                     Minimum="0" Maximum="100"
+                                     Height="6"
+                                     Style="{StaticResource NeonProgressBar}" />
+                        <TextBlock Text="{Binding UpdateProgressText}"
+                                   Margin="0,6,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <Button Style="{StaticResource NeonPrimaryButton}"
+                            Content="{loc:Loc Settings.InstallUpdate}"
+                            Command="{Binding InstallUpdateCommand}"
+                            Visibility="{Binding IsUpdating, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                            Margin="0,12,0,0"
+                            IsEnabled="{Binding IsUpdating, Converter={StaticResource InverseBoolToVisibilityConverter}, ConverterParameter=not}" />
                 </StackPanel>
             </Border>
         </StackPanel>

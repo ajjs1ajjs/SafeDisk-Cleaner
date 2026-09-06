@@ -1,6 +1,7 @@
 ﻿<Application x:Class="SafeDiskCleaner.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SafeDiskCleaner.App"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Application.Resources>
         <ResourceDictionary>
@@ -11,6 +12,18 @@
                 <ResourceDictionary Source="Themes/Accents/Cyan.xaml" />
                 <ResourceDictionary Source="Themes/NeonClean.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <local:NullToCollapsedConverter x:Key="NullToCollapsedConverter" />
+            <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+            <local:RiskToBrushConverter x:Key="RiskToBrushConverter" />
+            <local:RiskToLabelConverter x:Key="RiskToLabelConverter" />
+            <local:ConfidenceToBrushConverter x:Key="ConfidenceToBrushConverter" />
+            <local:ActionToCheckEnabledConverter x:Key="ActionToCheckEnabledConverter" />
+            <local:BytesToHumanSizeConverter x:Key="BytesToHumanSizeConverter" />
+            <local:DriveIsSelectedConverter x:Key="DriveIsSelectedConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
