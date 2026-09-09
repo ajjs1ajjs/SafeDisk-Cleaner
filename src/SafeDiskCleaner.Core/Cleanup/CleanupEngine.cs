@@ -20,8 +20,11 @@ public sealed class CleanupEngine
         _safety = safety;
         _quarantine = quarantine;
         _audit = audit;
-        _recycleBin = recycleBin ?? PlatformServices.RecycleBin;
+        _recycleBin = recycleBin ?? CreateDefaultRecycleBin();
     }
+
+    private static IRecycleBin CreateDefaultRecycleBin() =>
+        OperatingSystem.IsWindows() ? new WindowsRecycleBin() : new UnixRecycleBin();
 
     private const int AuditBatchSize = 50;
 

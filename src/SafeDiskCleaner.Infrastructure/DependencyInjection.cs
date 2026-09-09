@@ -15,8 +15,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddSafeDiskInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<IDriveService>(PlatformServices.Drives);
-        services.AddSingleton<IRecycleBin>(PlatformServices.RecycleBin);
+        services.AddSingleton<IDriveService>(sp =>
+            OperatingSystem.IsWindows() ? new WindowsDriveService() : new UnixDriveService());
+        services.AddSingleton<IRecycleBin>(sp =>
+            OperatingSystem.IsWindows() ? new WindowsRecycleBin() : new UnixRecycleBin());
 
         services.AddSingleton<IAppPaths, AppPaths>();
         services.AddSingleton<IUpdateService, UpdateService>();

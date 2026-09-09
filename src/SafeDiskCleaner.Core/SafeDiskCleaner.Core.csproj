@@ -19,10 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blake3" Version="3.0.2" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.2" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="Blake3" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="FluentValidation" />
   </ItemGroup>
 
 </Project>

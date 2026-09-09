@@ -49,17 +49,30 @@ public sealed class QuarantineService : IQuarantineService
         }
 
         var dest = Path.Combine(targetDir, name);
-        // Read the size before the move. Guard against the TOCTOU race where the
-        // file is removed between measuring and moving, which used to surface as
-        // an uncaught FileNotFoundException and abort the whole cleanup run.
+
         long size;
         try
         {
-            size = new FileInfo(sourcePath).Length;
+            using var fs = new FileStream(
+                sourcePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.None,
+                bufferSize: 4096,
+                useAsync: false);
+            size = fs.Length;
         }
         catch (FileNotFoundException)
         {
             throw new InvalidOperationException($"Source file no longer exists: {sourcePath}");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new InvalidOperationException($"Access denied to source file: {sourcePath}");
+        }
+        catch (IOException)
+        {
+            throw new InvalidOperationException($"Source file is locked by another process: {sourcePath}");
         }
 
         MoveAcrossVolumes(sourcePath, dest);

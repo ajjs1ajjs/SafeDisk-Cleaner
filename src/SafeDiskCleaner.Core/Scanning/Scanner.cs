@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using SafeDiskCleaner.Core.Confidence;
 using SafeDiskCleaner.Core.Models;
@@ -20,9 +21,12 @@ public sealed class Scanner
 
     public Scanner(IRecycleBin? recycleBin = null, ScanRootsCatalog? rootsCatalog = null)
     {
-        _recycleBin = recycleBin ?? PlatformServices.RecycleBin;
+        _recycleBin = recycleBin ?? CreateDefaultRecycleBin();
         _rootsCatalog = rootsCatalog ?? ScanRootsCatalog.Embedded;
     }
+
+    private static IRecycleBin CreateDefaultRecycleBin() =>
+        OperatingSystem.IsWindows() ? new WindowsRecycleBin() : new UnixRecycleBin();
 
     /// <summary>
     /// Default roots from the embedded declarative catalog
@@ -39,22 +43,21 @@ public sealed class Scanner
         PathProtection.IsProtectedPath(directory);
 
     /// <summary>
-    /// True when <paramref name="path"/> is a reparse point (Windows junction /
-    /// mount point / symlink) or a Unix symlink. Such entries must never be
-    /// descended into during a scan: they can point outside the scan root to an
-    /// arbitrary directory, which would let unrelated files be classified as
-    /// junk and deleted. See the callers for the safety rationale.
+    /// True when <paramref name="path"/> is a reparse point (Windows symlink, junction, or mount point)
+    /// or a Unix symlink. Such entries must never be descended into during a scan: they can point
+    /// outside the scan root to an arbitrary directory, which would let unrelated files be
+    /// classified as junk and deleted. See the callers for the safety rationale.
     /// </summary>
     public static bool IsReparsePoint(string path)
     {
         try
         {
-            var attributes = File.GetAttributes(path);
-            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            if (OperatingSystem.IsWindows())
             {
-                return true;
+                return IsWindowsReparsePoint(path);
             }
 
+            // Unix: check for symlink
             return new DirectoryInfo(path).LinkTarget is not null;
         }
         catch
@@ -63,6 +66,99 @@ public sealed class Scanner
             return true;
         }
     }
+
+    private static bool IsWindowsReparsePoint(string path)
+    {
+        try
+        {
+            var handle = CreateFile(
+                path,
+                0,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                IntPtr.Zero);
+
+            if (handle == INVALID_HANDLE_VALUE)
+            {
+                return false;
+            }
+
+            try
+            {
+                var buffer = new byte[16 * 1024];
+                var result = DeviceIoControl(
+                    handle,
+                    FSCTL_GET_REPARSE_POINT,
+                    IntPtr.Zero,
+                    0,
+                    buffer,
+                    (uint)buffer.Length,
+                    out var bytesReturned,
+                    IntPtr.Zero);
+
+                if (!result || bytesReturned < 4)
+                {
+                    return false;
+                }
+
+                // REPARSE_DATA_BUFFER starts with the 4-byte ReparseTag.
+                var tag = BitConverter.ToUInt32(buffer, 0);
+
+                return tag == IO_REPARSE_TAG_SYMLINK
+                    || tag == IO_REPARSE_TAG_MOUNT_POINT
+                    || tag == IO_REPARSE_TAG_HSM
+                    || tag == IO_REPARSE_TAG_HSM2;
+            }
+            finally
+            {
+                CloseHandle(handle);
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // P/Invoke definitions for Windows reparse point detection
+    private const uint FILE_SHARE_READ = 0x00000001;
+    private const uint FILE_SHARE_WRITE = 0x00000002;
+    private const uint FILE_SHARE_DELETE = 0x00000004;
+    private const uint OPEN_EXISTING = 3;
+    private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+    private const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+    private const uint FSCTL_GET_REPARSE_POINT = 0x000900A8;
+    private static readonly IntPtr INVALID_HANDLE_VALUE = new(-1);
+    private const uint IO_REPARSE_TAG_SYMLINK = 0xA000000C;
+    private const uint IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003;
+    private const uint IO_REPARSE_TAG_HSM = 0xC0000004;
+    private const uint IO_REPARSE_TAG_HSM2 = 0x80000006;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr CreateFile(
+        string lpFileName,
+        uint dwDesiredAccess,
+        uint dwShareMode,
+        IntPtr lpSecurityAttributes,
+        uint dwCreationDisposition,
+        uint dwFlagsAndAttributes,
+        IntPtr hTemplateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool DeviceIoControl(
+        IntPtr hDevice,
+        uint dwIoControlCode,
+        IntPtr lpInBuffer,
+        uint nInBufferSize,
+        byte[] lpOutBuffer,
+        uint nOutBufferSize,
+        out uint lpBytesReturned,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
 
     public ScanResult Scan(ScanOptions options, Action<ScanProgress>? onProgress, CancellationToken ct) =>
         ScanAsync(options, onProgress, ct).GetAwaiter().GetResult();
@@ -74,6 +170,9 @@ public sealed class Scanner
         var totalRoots = Math.Max(1, roots.Count);
 
         var results = new System.Collections.Concurrent.ConcurrentBag<(List<Candidate> Candidates, ulong Files, ulong Dirs)>();
+        var rootFileCounts = new ulong[roots.Count];
+        var rootDirCounts = new ulong[roots.Count];
+        var rootCandidateCounts = new int[roots.Count];
 
         await System.Threading.Tasks.Parallel.ForEachAsync(
             Enumerable.Range(0, roots.Count),
@@ -81,7 +180,7 @@ public sealed class Scanner
             async (i, token) =>
             {
                 token.ThrowIfCancellationRequested();
-                results.Add(await ScanOneRootAsync(roots[i], options, i, totalRoots, onProgress, token));
+                results.Add(await ScanOneRootAsync(roots[i], options, i, totalRoots, onProgress, token, rootFileCounts, rootDirCounts, rootCandidateCounts));
             });
 
         ct.ThrowIfCancellationRequested();
@@ -165,15 +264,16 @@ public sealed class Scanner
         return string.IsNullOrWhiteSpace(windows) ? @"C:\" : Path.GetPathRoot(windows) ?? @"C:\";
     }
 
-    private static readonly object ProgressLock = new();
-
     private static async Task<(List<Candidate> Candidates, ulong Files, ulong Dirs)> ScanOneRootAsync(
         string root,
         ScanOptions options,
         int rootIndex,
         int totalRoots,
         Action<ScanProgress>? onProgress,
-        CancellationToken ct)
+        CancellationToken ct,
+        ulong[] rootFileCounts,
+        ulong[] rootDirCounts,
+        int[] rootCandidateCounts)
     {
         var candidates = new List<Candidate>();
         ulong files = 0;
@@ -187,20 +287,11 @@ public sealed class Scanner
             ct.ThrowIfCancellationRequested();
 
             var current = stack.Pop();
-            // Stream the directory listing instead of allocating arrays for the
-            // entire directory (huge temp/cache dirs with 100k+ entries used to
-            // stall and spike GC). Async enumeration keeps thread-pool threads
-            // free while the OS fills the buffer.
             try
             {
                 await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                 {
                     dirs++;
-                    // Never follow junctions/symlinks: a link inside a scanned root
-                    // can point to an arbitrary directory (e.g. an attacker-controlled
-                    // %TEMP% junction -> user Documents), which would let a "temp
-                    // cache" candidate escape into a real location and be deleted.
-                    // Reparse points are treated as hard prunes.
                     if (!ShouldPrune(sub)
                         && !IsReparsePoint(sub)
                         && !Safety.PathExclusions.IsExcluded(sub, options.Exclusions))
@@ -211,7 +302,6 @@ public sealed class Scanner
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // unreadable directory — skip
             }
 
             try
@@ -223,42 +313,43 @@ public sealed class Scanner
                         continue;
                     }
 
-                    files++;
+                    var fileCount = Interlocked.Increment(ref files);
+                    rootFileCounts[rootIndex] = fileCount;
+
                     var candidate = ProcessFile(file, options);
                     if (candidate is not null)
                     {
                         candidates.Add(candidate);
+                        rootCandidateCounts[rootIndex] = candidates.Count;
                     }
 
-                    if (files % ProgressEveryFiles == 0)
+                    if (fileCount % ProgressEveryFiles == 0)
                     {
-                        var partial = (files % ProgressWindowFiles) / (double)ProgressWindowFiles;
+                        var partial = (fileCount % ProgressWindowFiles) / (double)ProgressWindowFiles;
                         var progress = new ScanProgress
                         {
                             CurrentRoot = root,
-                            FilesScanned = files,
+                            FilesScanned = fileCount,
                             DirsScanned = dirs,
                             CandidatesFound = (ulong)candidates.Count,
                             Percent = ((rootIndex + partial) / totalRoots) * 100.0,
                             Finished = false,
                         };
-                        // Parallel.ForEachAsync invokes this from multiple threads;
-                        // serialize the callback so the UI never observes interleaved state.
                         if (onProgress is not null)
                         {
-                            lock (ProgressLock)
-                            {
-                                onProgress(progress);
-                            }
+                            onProgress(progress);
                         }
                     }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // unreadable directory — skip
             }
         }
+
+        rootFileCounts[rootIndex] = files;
+        rootDirCounts[rootIndex] = dirs;
+        rootCandidateCounts[rootIndex] = candidates.Count;
 
         return (candidates, files, dirs);
     }
@@ -397,8 +488,10 @@ public sealed class Scanner
         CancellationToken ct,
         IReadOnlyList<string>? exclusions = null)
     {
-        var sizeMap = new Dictionary<long, List<string>>();
         var exclusionPatterns = exclusions ?? Array.Empty<string>();
+
+        var hashMap = new System.Collections.Concurrent.ConcurrentDictionary<byte[], string>(new ByteArrayComparer());
+        var candidates = new List<Candidate>();
 
         foreach (var root in roots)
         {
@@ -424,85 +517,61 @@ public sealed class Scanner
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    // unreadable directory — skip
                 }
 
                 try
                 {
                     await foreach (var file in EnumerateStreamingAsync(current, static p => Directory.EnumerateFiles(p), ct))
+                    {
+                        if (Safety.PathExclusions.IsExcluded(file, exclusionPatterns))
                         {
-                            if (Safety.PathExclusions.IsExcluded(file, exclusionPatterns))
+                            continue;
+                        }
+
+                        try
+                        {
+                            var length = new FileInfo(file).Length;
+                            if (length < DuplicateMinSize)
                             {
                                 continue;
                             }
 
-                            try
+                            var hash = await HashFileAsync(file, ct);
+                            if (hash is null)
                             {
-                                var length = new FileInfo(file).Length;
-                                if (length >= DuplicateMinSize)
-                                {
-                                    if (!sizeMap.TryGetValue(length, out var list))
-                                    {
-                                        list = new List<string>();
-                                        sizeMap[length] = list;
-                                    }
-
-                                    list.Add(file);
-                                }
+                                continue;
                             }
-                            catch
+
+                            if (hashMap.TryGetValue(hash, out var first))
                             {
-                                // unreadable or removed concurrently — skip
+                                var info = new FileInfo(file);
+                                candidates.Add(new Candidate
+                                {
+                                    Path = file,
+                                    Size = info.Length,
+                                    Category = Category.DuplicateFiles,
+                                    Confidence = 98,
+                                    Action = CandidateAction.Review,
+                                    Reason = $"Duplicate of {first}",
+                                    LastModified = info.LastWriteTimeUtc.ToString("yyyy-MM-dd"),
+                                    LastAccessDays = ConfidenceEngine.ElapsedDays(info.LastAccessTimeUtc),
+                                    RiskLevel = RiskLevel.Advanced,
+                                    GroupId = Convert.ToHexString(hash),
+                                });
+                            }
+                            else
+                            {
+                                hashMap[hash] = file;
                             }
                         }
+                        catch
+                        {
+                            // unreadable or removed concurrently — skip
+                        }
+                    }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    // unreadable directory — skip
-                }
-            }
-        }
-
-        var candidates = new List<Candidate>();
-        foreach (var group in sizeMap.Values.Where(g => g.Count >= 2))
-        {
-            var hashes = new Dictionary<byte[], string>(new ByteArrayComparer());
-            foreach (var path in group)
-            {
-                ct.ThrowIfCancellationRequested();
-                var hash = await HashFileAsync(path, ct);
-                if (hash is null)
-                {
-                    continue;
-                }
-
-                if (hashes.TryGetValue(hash, out var first))
-                {
-                    try
-                    {
-                        var info = new FileInfo(path);
-                        candidates.Add(new Candidate
-                        {
-                            Path = path,
-                            Size = info.Length,
-                            Category = Category.DuplicateFiles,
-                            Confidence = 98,
-                            Action = CandidateAction.Review,
-                            Reason = $"Duplicate of {first}",
-                            LastModified = info.LastWriteTimeUtc.ToString("yyyy-MM-dd"),
-                            LastAccessDays = ConfidenceEngine.ElapsedDays(info.LastAccessTimeUtc),
-                            RiskLevel = RiskLevel.Advanced,
-                            GroupId = Convert.ToHexString(hash),
-                        });
-                    }
-                    catch
-                    {
-                        // removed concurrently
-                    }
-                }
-                else
-                {
-                    hashes[hash] = path;
                 }
             }
         }

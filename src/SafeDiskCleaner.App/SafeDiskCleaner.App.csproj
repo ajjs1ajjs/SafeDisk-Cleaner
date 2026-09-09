@@ -7,10 +7,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MaterialDesignThemes" Version="5.3.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="MaterialDesignThemes" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Async" />
+    <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <PropertyGroup>

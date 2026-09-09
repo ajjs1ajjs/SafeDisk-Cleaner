@@ -7,15 +7,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Async" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Tmds.DBus.Protocol" />
   </ItemGroup>
 
   <PropertyGroup>

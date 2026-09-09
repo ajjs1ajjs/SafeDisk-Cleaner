@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.7.2 — Production audit fixes (security + reliability)
+
+- **SEC-001 (critical): прибрано PowerShell із перевірки підписів.** `SignatureInspector` більше не спавнить `powershell.exe` для кожного файлу — сертифікат підписувача витягується в процесі через `X509Certificate.CreateFromSignedFile`, жодного process spawn / shell surface. Побічний ефект: швидша перевірка Advanced-категорій.
+- **SEC-002 (high): закрито TOCTOU у карантині.** `QuarantineService.QuarantineAsync` тепер відкриває файл ексклюзивним `FileStream(FileShare.None)` перед читанням розміру — підміна файлу (symlink swap) між виміром і переміщенням неможлива, зайняті файли відхиляються з чіткою помилкою.
+- **SEC-003 (high): Central Package Management + lockfiles.** Новий `Directory.Packages.props` (єдине місце версій, transitive pinning), `RestorePackagesWithLockFile=true`, `packages.lock.json` закомічені для всіх 7 проєктів (включно з Avalonia).
+- **BUG-002: коректна детекція reparse points.** `Scanner.IsReparsePoint` більше не покладається на `DirectoryInfo.LinkTarget` (кидав виняток на junction points) — Windows-шлях читає reparse tag через `FSCTL_GET_REPARSE_POINT` (symlink / mount point / HSM).
+- **BUG-001: прибрано глобальний ProgressLock.** Прогрес сканування тепер на `Interlocked`-лічильниках per-root — паралельні рути не серіалізуються на одному лозі.
+- **PERF-001: стрімінговий пошук дублікатів.** `ScanDuplicatesAsync` більше не тримає в пам'яті `size → всі шляхи` для всіх файлів — хешує потоково, пам'ять O(дублікати), а не O(всі файли).
+- **ARCH-001: видалено статичний `PlatformServices`.** `IDriveService`/`IRecycleBin` резолвяться тільки через DI; `Scanner`/`CleanupEngine` приймають `IRecycleBin` через конструктор (зі зворотно-сумісним дефолтом для тестів).
+- **CFG-001: прибрано захардкоджений `App.Version` з `appsettings.json`.** Версія тільки з assembly (`Directory.Build.props` → 1.7.2), дрейфу конфіг/збірка більше немає.
+- **Тести:** 165 pass.
+
 ## v1.6.1 — Безпека: виправлено GitHub Pages deployment
 
 - **Виправлено GitHub Pages:** вимкнено workflow `pages.yml` — раніше весь репозиторій деплоївся на GitHub Pages (вихідний код, скрипти, артефакти). Це було вразливістю безпеки/витоку IP. Додано коментарі з поясненням.
