@@ -1,0 +1,77 @@
+using FluentAssertions;
+using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Update;
+
+namespace SafeDiskCleaner.Tests;
+
+public sealed class UpdateAssetsTests
+{
+    private static ReleaseAsset Asset(string name) => new()
+    {
+        Name = name,
+        DownloadUrl = $"https://example.com/{name}",
+        Size = 1024,
+    };
+
+    private static UpdateInfo Info(params string[] names) => new()
+    {
+        Available = true,
+        LatestVersion = "v9.9.9",
+        CurrentVersion = "0.0.0",
+        DownloadUrl = "https://example.com/release",
+        Assets = names.Select(Asset).ToList(),
+    };
+
+    [Fact]
+    public void SelectInstallAsset_SkipsChecksumFiles_EvenWhenListedFirst()
+    {
+        // Regression: "<asset>.sha256" contains the "portable" hint too and must
+        // never be picked as the install asset.
+        var assets = Info(
+            "SafeDiskCleaner-1.7.3-portable-win64.exe.sha256",
+            "SafeDiskCleaner-1.7.3-setup-win64.exe",
+            "SafeDiskCleaner-1.7.3-portable-win64.exe").Assets;
+
+        var selected = UpdateAssets.SelectInstallAsset(assets);
+
+        if (OperatingSystem.IsWindows())
+        {
+            selected.Should().NotBeNull();
+            selected!.Name.Should().Be("SafeDiskCleaner-1.7.3-portable-win64.exe");
+        }
+    }
+
+    [Fact]
+    public void SelectInstallAsset_ReturnsNull_WhenNoPortableAsset()
+    {
+        // Old releases (<=1.7.2) ship no portable asset: the UI must fall back
+        // to the browser instead of downloading a wrong file.
+        var assets = Info("SafeDiskCleaner-1.7.2-setup-win64.exe").Assets;
+
+        if (OperatingSystem.IsWindows())
+        {
+            UpdateAssets.SelectInstallAsset(assets).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SelectChecksumAsset_FindsCompanion_ForSelectedAsset()
+    {
+        var assets = Info(
+            "SafeDiskCleaner-1.7.3-portable-win64.exe",
+            "SafeDiskCleaner-1.7.3-portable-win64.exe.sha256").Assets;
+
+        var checksum = UpdateAssets.SelectChecksumAsset(assets);
+
+        checksum.Should().NotBeNull();
+        checksum!.Name.Should().Be("SafeDiskCleaner-1.7.3-portable-win64.exe.sha256");
+    }
+
+    [Fact]
+    public void SelectChecksumAsset_ReturnsNull_WhenReleaseShipsNone()
+    {
+        var assets = Info("SafeDiskCleaner-1.7.3-portable-win64.exe").Assets;
+
+        UpdateAssets.SelectChecksumAsset(assets).Should().BeNull();
+    }
+}

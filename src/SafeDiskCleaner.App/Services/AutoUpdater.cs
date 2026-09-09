@@ -28,9 +28,9 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
     public async Task<UpdateInfo> CheckAsync(CancellationToken ct = default) =>
         await _update.CheckAsync(ct);
 
-    /// <summary>Picks the portable release asset.</summary>
+    /// <summary>Picks the portable release asset (shared contract, see UpdateAssets).</summary>
     public ReleaseAsset? SelectAsset(UpdateInfo info) =>
-        info.Assets.FirstOrDefault(a => a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
+        SafeDiskCleaner.Core.Update.UpdateAssets.SelectInstallAsset(info.Assets);
 
     public async Task DownloadAsync(
         ReleaseAsset asset,
@@ -198,10 +198,7 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
 
     /// <summary>Finds the "<asset>.sha256" companion asset, or null when the release ships none.</summary>
     public ReleaseAsset? SelectChecksumAsset(UpdateInfo info) =>
-        SelectAsset(info) is { } asset
-            ? info.Assets.FirstOrDefault(a =>
-                string.Equals(a.Name, asset.Name + ".sha256", StringComparison.OrdinalIgnoreCase))
-            : null;
+        SafeDiskCleaner.Core.Update.UpdateAssets.SelectChecksumAsset(info.Assets);
 
     /// <inheritdoc />
     public async Task<string> DownloadTextAsync(ReleaseAsset asset, CancellationToken ct = default)

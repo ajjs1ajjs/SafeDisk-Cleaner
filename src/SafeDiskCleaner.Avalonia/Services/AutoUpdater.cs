@@ -27,18 +27,9 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
     public Task<UpdateInfo> CheckAsync(CancellationToken ct = default) =>
         _update.CheckAsync(ct);
 
-    /// <summary>Picks the asset matching the current platform.</summary>
-    public ReleaseAsset? SelectAsset(UpdateInfo info)
-    {
-        var hints = OperatingSystem.IsWindows()
-            ? new[] { "portable" }
-            : OperatingSystem.IsMacOS()
-                ? new[] { "dmg", "macos", "osx" }
-                : new[] { "AppImage", "linux", "tar.gz" };
-
-        return info.Assets.FirstOrDefault(a =>
-            hints.Any(h => a.Name.Contains(h, StringComparison.OrdinalIgnoreCase)));
-    }
+    /// <summary>Picks the asset matching the current platform (shared contract, see UpdateAssets).</summary>
+    public ReleaseAsset? SelectAsset(UpdateInfo info) =>
+        SafeDiskCleaner.Core.Update.UpdateAssets.SelectInstallAsset(info.Assets);
 
     public async Task DownloadAsync(
         ReleaseAsset asset,
@@ -144,10 +135,7 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
 
     /// <summary>Finds the "<asset>.sha256" companion asset, or null when the release ships none.</summary>
     public ReleaseAsset? SelectChecksumAsset(UpdateInfo info) =>
-        SelectAsset(info) is { } asset
-            ? info.Assets.FirstOrDefault(a =>
-                string.Equals(a.Name, asset.Name + ".sha256", StringComparison.OrdinalIgnoreCase))
-            : null;
+        SafeDiskCleaner.Core.Update.UpdateAssets.SelectChecksumAsset(info.Assets);
 
     /// <inheritdoc />
     public async Task<string> DownloadTextAsync(ReleaseAsset asset, CancellationToken ct = default)

@@ -182,6 +182,29 @@ jobs:
         run: |
           tar -czf "BUILD/ci/SafeDiskCleaner-$env:version-macos-arm64.tar.gz" -C BUILD/ci/macos-arm64 .
 
+      # Portable Windows asset for the in-app auto-update flow:
+      # AutoUpdater.SelectAsset looks for an asset with "portable" in the name.
+      # Copy (not move) — installer.iss still needs BUILD/ci/portable/*.exe.
+      - name: Stage portable Windows asset
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item "BUILD/ci/portable/SafeDiskCleaner.exe" "BUILD/ci/SafeDiskCleaner-$env:version-portable-win64.exe" -Force
+
+      # Checksum companions ("<asset>.sha256", sha256sum format) for every
+      # artifact this runner produced. The app verifies the download against
+      # these before executing anything. Runs after signing so hashes cover
+      # the final bytes.
+      - name: Generate SHA-256 checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem "BUILD/ci/SafeDiskCleaner-$env:version-*" -File |
+            Where-Object { $_.Extension -ne '.sha256' } |
+            ForEach-Object {
+              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash  $($_.Name)" | Out-File "$($_.FullName).sha256" -Encoding ascii -NoNewline
+            }
+
       - name: Upload release assets
         uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
         with:
@@ -189,6 +212,8 @@ jobs:
           token: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           files: |
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-setup-win64.exe
+            BUILD/ci/SafeDiskCleaner-${{ env.version }}-portable-win64.exe
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-linux-x64.tar.gz
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-macos-x64.tar.gz
             BUILD/ci/SafeDiskCleaner-${{ env.version }}-macos-arm64.tar.gz
+            BUILD/ci/*.sha256

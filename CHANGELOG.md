@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.3 — In-app auto-update repair
+
+- **Проблема:** кнопка оновлення в програмі відкривала браузер на сторінці релізу замість авто-режиму (скачати → перевірити → встановити).
+- **Корінь:** розрив контракту між CI і апкою. `AutoUpdater.SelectAsset` шукає асети з `portable` у назві, а CI заливав тільки `*-setup-win64.exe` + tar.gz — селектор повертав null і `MainViewModel` падав у fallback `Process.Start(release page)`. Аналогічно в Налаштуваннях — діалог `UpdateNoAsset`. Додатково CI не публікував `*.sha256`, тож `VerifySha256` ніколи не виконувалась.
+- **CI:** новий артефакт `SafeDiskCleaner-<ver>-portable-win64.exe` (копія single-file збірки; інсталятор далі збирається з `BUILD/ci/portable`), генерація `<asset>.sha256` у форматі sha256sum для всіх артефактів після підпису, обидва додані в upload.
+- **App:** селекція асетів винесена в спільний `Core.Update.UpdateAssets` (WPF + Avalonia делегують туди); `.sha256`-файли явно виключені з кандидатів на встановлення — інакше чексума могла б затінити бінарник за порядком в API.
+- **Тести:** 169 pass (+4 `UpdateAssetsTests`: sha256 ніколи не вибирається, null без portable-асета, пошук компаньйона).
+- **Важливо:** релізи ≤1.7.2 не мають portable-асета, тому встановлені 1.7.1/1.7.2 востаннє оновляться через браузер; з 1.7.3 далі — повний авто-режим із SHA-256-перевіркою.
+
 ## v1.7.2 — Production audit fixes (security + reliability)
 
 - **SEC-001 (critical): прибрано PowerShell із перевірки підписів.** `SignatureInspector` більше не спавнить `powershell.exe` для кожного файлу — сертифікат підписувача витягується в процесі через `X509Certificate.CreateFromSignedFile`, жодного process spawn / shell surface. Побічний ефект: швидша перевірка Advanced-категорій.
