@@ -1,0 +1,43 @@
+name: Deferred release
+
+# One-shot cloud trigger: fires 2026-10-01 07:00 UTC (10:00 Kyiv), after the
+# Actions budget resets. Merges release-oct1-staging into main and pushes tag
+# v1.7.4, which wakes the normal CI (build-and-test + publish -> release).
+# Backup: press "Run workflow" on this workflow any time after the reset.
+# NOTE: pushes below use PUBLIC_RELEASE_TOKEN (PAT), because pushes made with
+# GITHUB_TOKEN do NOT trigger other workflows by design.
+
+on:
+  schedule:
+    - cron: '0 7 1 10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deferred-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+
+      - name: Merge staging and push tag
+        env:
+          TAG: v1.7.4
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main release-oct1-staging
+          git checkout main
+          git merge --ff-only origin/release-oct1-staging || git merge origin/release-oct1-staging -m "chore(release): merge staging for $TAG"
+          git push origin main
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag "$TAG"
+          fi
+          git push origin "$TAG"
+          git push origin --delete release-oct1-staging || true
