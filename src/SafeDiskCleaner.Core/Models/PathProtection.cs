@@ -15,8 +15,20 @@ public static class PathProtection
         @"\efi\",
         @"\recovery\",
         @"\boot\",
-        @"$recycle.bin",
+        "$recycle.bin",
         @"\system volume information",
+    ];
+
+    // NOTE: candidates are normalized, so macOS needles use backslashes too.
+    internal static readonly string[] MacOsProtectedNeedles =
+    [
+        @"\system\",
+        @"\usr\",
+        @"\bin\",
+        @"\sbin\",
+        @"\etc\",
+        @"\boot\",
+        @"\library\",
     ];
 
     // Windows.old / Windows~old are scan roots: their nested \Windows\, System32,
@@ -25,7 +37,7 @@ public static class PathProtection
     private static readonly string[] WindowsOldProtectedNeedles =
     [
         @"\recovery\",
-        @"$recycle.bin",
+        "$recycle.bin",
         @"\system volume information",
     ];
 
@@ -36,7 +48,9 @@ public static class PathProtection
     /// Uses a best-effort canonicalization first so that ".." segments and
     /// relative paths cannot bypass the check.
     /// </summary>
-    public static bool IsProtectedPath(string path)
+    public static bool IsProtectedPath(string path) => IsProtectedPath(path, OperatingSystem.IsMacOS());
+
+    internal static bool IsProtectedPath(string path, bool isMacOS)
     {
         var candidates = new List<string>
         {
@@ -65,8 +79,24 @@ public static class PathProtection
             }
         }
 
+        if (isMacOS)
+        {
+            foreach (var candidate in candidates)
+            {
+                if (MacOsProtectedNeedles.Any(n => ContainsNeedle(candidate, n)))
+                {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
-    private static string Normalize(string path) => path.Replace('/', '\\').TrimEnd('\\').ToLowerInvariant();
+    private static bool ContainsNeedle(string candidate, string needle) =>
+        candidate.Contains(needle, StringComparison.Ordinal)
+        || candidate.Equals(needle.TrimEnd('\\'), StringComparison.Ordinal)
+        || candidate.EndsWith(needle.TrimEnd('\\'), StringComparison.Ordinal);
+
+    internal static string Normalize(string path) => path.Replace('/', '\\').TrimEnd('\\').ToLowerInvariant();
 }

@@ -46,7 +46,7 @@ public sealed class SafetyValidator
         var lower = path.Replace('/', '\\').ToLowerInvariant();
         if (lower.Contains(@"\safedisk\quarantine", StringComparison.Ordinal)
             || lower.Contains(@"\safedisk\audit", StringComparison.Ordinal)
-            || path.Equals(RecycleBinSentinel, StringComparison.Ordinal))
+            || lower.Equals(RecycleBinSentinel, StringComparison.Ordinal))
         {
             return SafetyVerdict.Deny("Path is part of SafeDisk internals");
         }

@@ -20,7 +20,7 @@
 [![Release](https://img.shields.io/github/v/release/ajjs1ajjs/SafeDisk-Cleaner?label=release&color=7B2FFF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Tests](https://img.shields.io/badge/tests-165%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
+[![Tests](https://img.shields.io/badge/tests-183%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20(Intel%20%2B%20ARM)-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)
@@ -85,7 +85,7 @@
 
 - 📁 `Windows`, `Program Files`, `ProgramData`, `System32`, `Drivers`, `EFI`, `Recovery`, `Boot`
 - 📄 файли з розширеннями `.dll .sys .exe .cat .inf .msi .msp`
-- 🔐 файли з атрибутом `SYSTEM`, відкриті процесами або використані за останні N днів
+- 🔐 файли з атрибутом `SYSTEM`, зайняті іншими процесами або використані за останні N днів
 - ✍️ файли з цифровим підписом Microsoft (Advanced-категорії)
 - 🚫 пакети драйверів у Windows DriverStore — навіть якщо файл схожий на кеш
 
@@ -95,16 +95,105 @@
 
 ## 📥 Встановлення
 
-Виберіть на [сторінці релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest):
+### 🪟 Windows
 
-| Платформа | Файл | Опис |
-|-----------|------|------|
-| 🪟 **Windows** | `SafeDiskCleaner-<ver>-setup-win64.exe` | **Універсальний інсталятор** — встановлення в `%LOCALAPPDATA%\Programs`, ярлик у меню «Пуск», коректне видалення через «Програми та компоненти». Повний функціонал (сканування, дублікати, карантин, планувальник, автооновлення). |
-| 🐧 **Linux (Ubuntu/Debian)** | `SafeDiskCleaner-<ver>-linux-x64.tar.gz` | Самодостатній архів (Avalonia) для Ubuntu 22.04+, Debian 12+. Розпакуйте і запустіть `./SafeDiskCleaner`. |
-| 🍎 **macOS (Intel x64)** | `SafeDiskCleaner-<ver>-macos-x64.tar.gz` | Самодостатня збірка (Avalonia) для macOS 13+ на Intel. |
-| 🍎 **macOS (Apple Silicon M1–M4)** | `SafeDiskCleaner-<ver>-macos-arm64.tar.gz` | Нативна збірка (Avalonia) для macOS 13+ на Apple Silicon (M1/M2/M3/M4). |
+**Системні вимоги:**
+- Windows 10 або Windows 11 (x64)
+- .NET 10 Desktop Runtime (не потрібен для готових збірок; потрібен лише для розробки)
 
-> Для Windows використовуйте інсталятор — він встановлює повний набір функцій і правильно реєструється в системі. Для Linux/macOS — архів з самодостатнім виконуваним файлом.
+**Встановлення:**
+1. Завантажте `SafeDiskCleaner-<ver>-setup-win64.exe` з [сторінки релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest).
+2. Запустіть інсталятор — він встановить програму в `%LOCALAPPDATA%\Programs\SafeDisk Cleaner`, створить ярлик у меню «Пуск» та зареєструє видалення через «Програми та компоненти».
+3. Після встановлення запустіть «SafeDisk Cleaner» з меню «Пуск».
+
+**Альтернативно (портативний режим):**
+1. Завантажте `SafeDiskCleaner-<ver>-portable-win64.exe`.
+2. Розмістіть його у зручному місці.
+3. Запустіть напряму — дані зберігатимуться в `%LOCALAPPDATA%\SafeDisk`.
+
+**Запуск з джерела (розробка):**
+```powershell
+git clone https://github.com/ajjs1ajjs/SafeDisk-Cleaner.git
+cd SafeDisk-Cleaner
+dotnet restore
+dotnet run --project src/SafeDiskCleaner.App
+```
+
+**Базова перевірка:**
+```powershell
+dotnet test
+```
+
+---
+
+### 🍎 macOS (Apple Silicon M1+)
+
+**Системні вимоги:**
+- macOS 13 (Ventura) або новіша
+- Apple Silicon: M1, M2, M3, M4 та новіші (ARM64 / aarch64)
+- Rosetta 2 **не потрібен** — збірка нативна для ARM64
+
+**Встановлення:**
+1. Завантажте `SafeDiskCleaner-<ver>-macos-arm64.tar.gz` з [сторінки релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest).
+2. Розпакуйте архів:
+   ```bash
+   tar -xzf SafeDiskCleaner-<ver>-macos-arm64.tar.gz
+   ```
+3. Перемістіть `SafeDiskCleaner` у `/Applications` або іншу зручну теку.
+4. При першому запуску macOS може попередити про невідомий розробника — клацніть «Open» у системних налаштуваннях або виконайте:
+   ```bash
+   xattr -cr /Applications/SafeDiskCleaner
+   ```
+
+**Запуск з джерела (розробка):**
+```bash
+git clone https://github.com/ajjs1ajjs/SafeDisk-Cleaner.git
+cd SafeDisk-Cleaner
+dotnet restore
+dotnet run --project src/SafeDiskCleaner.Avalonia
+```
+
+**Збірка для macOS (ARM64):**
+```bash
+chmod +x scripts/build-macos.sh
+./scripts/build-macos.sh 1.7.4
+```
+
+**Базова перевірка:**
+```bash
+dotnet test
+```
+
+---
+
+### 🐧 Linux (Ubuntu/Debian)
+
+**Системні вимоги:**
+- Ubuntu 22.04+ / Debian 12+ (x64)
+- Готові збірки самодостатні, runtime не потрібен
+
+**Встановлення:**
+1. Завантажте `SafeDiskCleaner-<ver>-linux-x64.tar.gz` з [сторінки релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest).
+2. Розпакуйте і запустіть:
+   ```bash
+   tar -xzf SafeDiskCleaner-<ver>-linux-x64.tar.gz
+   ./SafeDiskCleaner
+   ```
+
+---
+
+### 🍎 macOS (Intel x64)
+
+**Системні вимоги:**
+- macOS 13 (Ventura) або новіша, Intel x64
+
+**Встановлення:**
+1. Завантажте `SafeDiskCleaner-<ver>-macos-x64.tar.gz` з [сторінки релізів](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest).
+2. Розпакуйте:
+   ```bash
+   tar -xzf SafeDiskCleaner-<ver>-macos-x64.tar.gz
+   ```
+3. Перемістіть `SafeDiskCleaner` у `/Applications`. При першому запуску за потреби виконайте `xattr -cr /Applications/SafeDiskCleaner`.
 
 ---
 
@@ -117,11 +206,21 @@
 
 ### Збірка та запуск
 
+**Windows (WPF UI):**
+```powershell
+dotnet restore
+dotnet run --project src/SafeDiskCleaner.App
+```
+
+**macOS (Avalonia UI):**
 ```bash
 dotnet restore
-dotnet build -c Release            # збірка
-dotnet run --project src/SafeDiskCleaner.App   # WPF UI
-dotnet test                        # тести (165)
+dotnet run --project src/SafeDiskCleaner.Avalonia
+```
+
+**Тести (обидві платформи):**
+```bash
+dotnet test
 ```
 
 ### CLI
@@ -139,10 +238,10 @@ dotnet run --project src/SafeDiskCleaner.Cli -- update
 
 ### Реліз
 
-Тег `v*` запускає CI: тести → Windows-інсталятор (Inno Setup) + збірка macOS (Avalonia) → автоматичне опублікування релізу.
+Тег `v*` запускає CI: тести → Windows-інсталятор (Inno Setup) + збірки Linux/macOS (Avalonia) → автоматичне опублікування релізу.
 
 ```bash
-git tag v1.6.0 && git push origin v1.6.0
+git tag v1.7.4 && git push origin v1.7.4
 ```
 
 ---
@@ -166,15 +265,15 @@ git tag v1.6.0 && git push origin v1.6.0
 
 ## 📁 Де зберігаються дані?
 
-| Що | Шлях |
-|----|------|
-| SQLite база (audit, карантин) | `C:\ProgramData\SafeDisk\SafeDisk.db` |
-| Карантин | `C:\ProgramData\SafeDisk\quarantine\` |
-| Звіти | `C:\ProgramData\SafeDisk\reports\` |
-| Логи (Serilog) | `C:\ProgramData\SafeDisk\logs\` |
-| Налаштування | `C:\ProgramData\SafeDisk\settings.json` |
+| Що | Windows | Linux | macOS |
+|----|---------|-------|-------|
+| SQLite база (audit, карантин) | `C:\ProgramData\SafeDisk\SafeDisk.db` | `~/.local/share/SafeDisk/SafeDisk.db` | `~/Library/Application Support/SafeDisk/SafeDisk.db` |
+| Карантин | `C:\ProgramData\SafeDisk\quarantine\` | `~/.local/share/SafeDisk/quarantine/` | `~/Library/Application Support/SafeDisk/quarantine/` |
+| Звіти | `C:\ProgramData\SafeDisk\reports\` | `~/.local/share/SafeDisk/reports/` | `~/Library/Application Support/SafeDisk/reports/` |
+| Логи (Serilog) | `C:\ProgramData\SafeDisk\logs\` | `~/.local/share/SafeDisk/logs/` | `~/Library/Application Support/SafeDisk/logs/` |
+| Налаштування | `C:\ProgramData\SafeDisk\settings.json` | `~/.local/share/SafeDisk/settings.json` | `~/Library/Application Support/SafeDisk/settings.json` |
 
-> Якщо `C:\ProgramData` недоступний — використовується `%LOCALAPPDATA%\SafeDisk`.
+> Якщо головна тека недоступна — використовується `%LOCALAPPDATA%\SafeDisk` (Windows) або `~/.local/share/SafeDisk` (Linux/macOS fallback).
 
 ---
 
@@ -184,13 +283,16 @@ git tag v1.6.0 && git push origin v1.6.0
 SafeDiskCleaner.slnx
 ├── Directory.Build.props            # спільна версія
 ├── src/
-│   ├── SafeDiskCleaner.Core/        # домен: моделі, rules, confidence, safety, scanner, Windows interop
+│   ├── SafeDiskCleaner.Core/        # домен: моделі, rules, confidence, safety, scanner, platform interop
 │   ├── SafeDiskCleaner.Infrastructure/  # EF Core, Refit+Polly, Serilog, сервіси, DI
 │   ├── SafeDiskCleaner.ViewModels/  # спільні ViewModels для WPF і Avalonia
-│   ├── SafeDiskCleaner.App/         # WPF UI (MaterialDesign, MVVM)
-│   ├── SafeDiskCleaner.Avalonia/    # Avalonia UI (Windows/macOS)
+│   ├── SafeDiskCleaner.App/         # WPF UI (Windows)
+│   ├── SafeDiskCleaner.Avalonia/    # Avalonia UI (Linux/macOS)
 │   └── SafeDiskCleaner.Cli/         # консольний застосунок
-├── scripts/                         # build-release.ps1, installer.iss
+├── scripts/
+│   ├── build-release.ps1            # Windows-збірка (Inno Setup)
+│   ├── build-macos.sh               # macOS ARM64-збірка
+│   └── installer.iss                # Inno Setup-сценарій
 └── tests/
     └── SafeDiskCleaner.Tests/       # xUnit + FluentAssertions + Moq
 ```

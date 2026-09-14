@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using FluentAssertions;
 using SafeDiskCleaner.Core.Models;
 using SafeDiskCleaner.Core.Update;
@@ -52,8 +53,44 @@ public sealed class UpdateAssetsTests
 
     private static string PlatformAssetName() =>
         OperatingSystem.IsWindows() ? "SafeDiskCleaner-1.7.3-portable-win64.exe"
-        : OperatingSystem.IsMacOS() ? "SafeDiskCleaner-1.7.3-macos-x64.tar.gz"
-        : "SafeDiskCleaner-1.7.3-linux-x64.tar.gz";
+        : OperatingSystem.IsMacOS() && RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? "SafeDiskCleaner-1.7.3-macos-arm64.tar.gz"
+            : OperatingSystem.IsMacOS()
+                ? "SafeDiskCleaner-1.7.3-macos-x64.tar.gz"
+                : "SafeDiskCleaner-1.7.3-linux-x64.tar.gz";
+
+    [Fact]
+    public void SelectInstallAsset_IgnoresForeignOsAsset_ListedFirst()
+    {
+        // Regression: a bare "tar.gz" hint matched any OS. A foreign-OS asset
+        // listed first must never win.
+        var linux = "SafeDiskCleaner-1.7.3-linux-x64.tar.gz";
+        var mac = OperatingSystem.IsMacOS() && RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? "SafeDiskCleaner-1.7.3-macos-arm64.tar.gz"
+            : OperatingSystem.IsMacOS()
+                ? "SafeDiskCleaner-1.7.3-macos-x64.tar.gz"
+                : "SafeDiskCleaner-1.7.3-portable-win64.exe";
+        var expected = OperatingSystem.IsLinux() ? linux : mac;
+        var foreign = OperatingSystem.IsLinux() ? mac : linux;
+
+        var assets = Info(foreign, expected).Assets;
+        var selected = UpdateAssets.SelectInstallAsset(assets);
+
+        selected.Should().NotBeNull();
+        selected!.Name.Should().Be(expected);
+    }
+
+    [Fact]
+    public void CrossOsIsolation_MacNeverPicksLinuxAsset()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        var assets = Info("SafeDiskCleaner-1.7.3-linux-x64.tar.gz").Assets;
+        UpdateAssets.SelectInstallAsset(assets).Should().BeNull();
+    }
 
     [Fact]
     public void SelectChecksumAsset_FindsCompanion_ForSelectedAsset()

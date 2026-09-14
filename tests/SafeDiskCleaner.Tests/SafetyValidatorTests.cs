@@ -61,6 +61,12 @@ public sealed class SafetyValidatorTests
     }
 
     [Fact]
+    public void RecycleBinSentinel_Uppercase_IsDenied()
+    {
+        Validator.Validate("__RECYCLE_BIN__", Category.RecycleBin, 0).Allowed.Should().BeFalse();
+    }
+
+    [Fact]
     public void FreshFile_IsDeniedByRecency()
     {
         var dir = TempDir("fresh");

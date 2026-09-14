@@ -26,20 +26,50 @@ public sealed class AppPaths : IAppPaths
 
     private static string ResolveDataRoot()
     {
-        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-        var primary = Path.Combine(programData, "SafeDisk");
-        try
+        if (OperatingSystem.IsMacOS())
         {
-            Directory.CreateDirectory(primary);
-            return primary;
+            var primary = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library", "Application Support", "SafeDisk");
+            try
+            {
+                Directory.CreateDirectory(primary);
+                return primary;
+            }
+            catch
+            {
+                // fall through to LocalApplicationData (~/.local/share on macOS)
+            }
         }
-        catch
+        else if (OperatingSystem.IsLinux())
         {
-            var fallback = Path.Combine(
+            // No root-owned /usr/share attempt: regular users store data under ~/.local/share.
+            var linuxRoot = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SafeDisk");
-            Directory.CreateDirectory(fallback);
-            return fallback;
+            Directory.CreateDirectory(linuxRoot);
+            return linuxRoot;
         }
+        else
+        {
+            try
+            {
+                var programData = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "SafeDisk");
+                Directory.CreateDirectory(programData);
+                return programData;
+            }
+            catch
+            {
+                // fall through to per-user fallback below
+            }
+        }
+
+        var fallback = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SafeDisk");
+        Directory.CreateDirectory(fallback);
+        return fallback;
     }
 }

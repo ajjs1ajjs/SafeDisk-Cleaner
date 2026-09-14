@@ -4,16 +4,23 @@ using SafeDiskCleaner.Core.Windows;
 namespace SafeDiskCleaner.Core.Platform;
 
 /// <summary>
-/// Trash implementation for Unix desktops following the freedesktop.org
+/// Trash implementation for Unix desktops. Linux follows the freedesktop.org
 /// Trash specification (XDG_DATA_HOME/Trash with files/ and info/).
+/// macOS uses ~/.Trash (Finder), which needs no .trashinfo sidecar.
 /// </summary>
 public sealed class UnixRecycleBin : IRecycleBin
 {
     private string FilesDir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Trash", "files");
+        OperatingSystem.IsMacOS()
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Trash", "files");
 
     private string InfoDir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Trash", "info");
+        OperatingSystem.IsMacOS()
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Trash", "info");
+
+    private bool IsMacTrash => OperatingSystem.IsMacOS();
 
     public RecycleBinInfo? Query(string? root = null)
     {
@@ -26,12 +33,20 @@ public sealed class UnixRecycleBin : IRecycleBin
 
             ulong size = 0;
             ulong count = 0;
-            foreach (var file in Directory.EnumerateFiles(FilesDir))
+            foreach (var entry in Directory.EnumerateFileSystemEntries(FilesDir))
             {
                 try
                 {
-                    size += (ulong)new FileInfo(file).Length;
-                    count++;
+                    if (File.Exists(entry))
+                    {
+                        size += (ulong)new FileInfo(entry).Length;
+                        count++;
+                    }
+                    else if (Directory.Exists(entry))
+                    {
+                        size += DirSize(entry);
+                        count++;
+                    }
                 }
                 catch
                 {
@@ -53,11 +68,18 @@ public sealed class UnixRecycleBin : IRecycleBin
         {
             if (Directory.Exists(FilesDir))
             {
-                foreach (var file in Directory.EnumerateFiles(FilesDir))
+                foreach (var entry in Directory.EnumerateFileSystemEntries(FilesDir))
                 {
                     try
                     {
-                        File.Delete(file);
+                        if (File.Exists(entry))
+                        {
+                            File.Delete(entry);
+                        }
+                        else if (Directory.Exists(entry))
+                        {
+                            Directory.Delete(entry, recursive: true);
+                        }
                     }
                     catch
                     {
@@ -66,7 +88,8 @@ public sealed class UnixRecycleBin : IRecycleBin
                 }
             }
 
-            if (Directory.Exists(InfoDir))
+            // On macOS FilesDir == InfoDir, already emptied above.
+            if (!IsMacTrash && Directory.Exists(InfoDir))
             {
                 foreach (var file in Directory.EnumerateFiles(InfoDir))
                 {
@@ -97,12 +120,15 @@ public sealed class UnixRecycleBin : IRecycleBin
         }
 
         Directory.CreateDirectory(FilesDir);
-        Directory.CreateDirectory(InfoDir);
+        if (!IsMacTrash)
+        {
+            Directory.CreateDirectory(InfoDir);
+        }
 
         var name = Path.GetFileName(path);
         var target = name;
         var n = 1;
-        while (File.Exists(Path.Combine(FilesDir, target)))
+        while (File.Exists(Path.Combine(FilesDir, target)) || Directory.Exists(Path.Combine(FilesDir, target)))
         {
             target = $"{name}.{n++}";
         }
@@ -118,13 +144,41 @@ public sealed class UnixRecycleBin : IRecycleBin
             File.Delete(path);
         }
 
-        var infoPath = Path.Combine(InfoDir, target + ".trashinfo");
-        var info = new StringBuilder()
-            .AppendLine("[Trash Info]")
-            .Append("Path=").AppendLine(EncodePath(path))
-            .Append("DeletionDate=").AppendLine(DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"))
-            .ToString();
-        File.WriteAllText(infoPath, info, Encoding.UTF8);
+        if (!IsMacTrash)
+        {
+            var infoPath = Path.Combine(InfoDir, target + ".trashinfo");
+            var info = new StringBuilder()
+                .AppendLine("[Trash Info]")
+                .Append("Path=").AppendLine(EncodePath(path))
+                .Append("DeletionDate=").AppendLine(DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"))
+                .ToString();
+            File.WriteAllText(infoPath, info, Encoding.UTF8);
+        }
+    }
+
+    private static ulong DirSize(string dir)
+    {
+        ulong total = 0;
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    total += (ulong)new FileInfo(file).Length;
+                }
+                catch
+                {
+                    // removed concurrently
+                }
+            }
+        }
+        catch
+        {
+            // unreadable dir counts as 0
+        }
+
+        return total;
     }
 
     private static string EncodePath(string path)

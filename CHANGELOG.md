@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.4 — macOS protection + asset selection hardening
+
+- **PathProtection:** macOS-голки переведені на бекслеші (нормалізація робить `/`→`\`), інакше системні шляхи macOS не детектились; додано тестовану перегрузку `IsProtectedPath(path, isMacOS)`, тести ганяються на всіх OS.
+- **UpdateAssets:** прибрано голий `tar.gz` з хінтів — linux-асет більше не затіняє macOS (і навпаки); на macOS враховується архітектура (ARM64 → arm64, Intel → x64 без arm64).
+- **UnixRecycleBin:** `Query`/`Empty` враховують теки (рекурсивно), на macOS без `.trashinfo`-сайдкара і без подвійного проходу.
+- **AppPaths:** явна Linux-гілка (`~/.local/share`), без спроби root-owned `/usr/share`.
+- **Скрипти:** `build-macos.sh` перестворює `final` перед `tar`; `build-release.ps1` — правильний суфікс `win64` + guard тільки-Windows.
+- **Тести:** 183 pass (ізоляційні крос-OS тести, macOS-гілка без привʼязки до OS).
+
 ## v1.7.3 — In-app auto-update repair
 
 - **Проблема:** кнопка оновлення в програмі відкривала браузер на сторінці релізу замість авто-режиму (скачати → перевірити → встановити).

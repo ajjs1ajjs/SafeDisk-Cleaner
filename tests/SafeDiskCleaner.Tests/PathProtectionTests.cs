@@ -16,6 +16,37 @@ public sealed class PathProtectionTests
         PathProtection.IsProtectedPath(path).Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("/System/Library/foo")]
+    [InlineData("/usr/bin/foo")]
+    [InlineData("/bin/bash")]
+    [InlineData("/sbin/fsck")]
+    [InlineData("/etc/hosts")]
+    [InlineData("/boot/efi")]
+    [InlineData("/Library/LaunchAgents/foo")]
+    [InlineData("/bin")]
+    [InlineData("/etc")]
+    public void MacOsProtectedPaths_AreDetected(string path)
+    {
+        // OS-independent: exercise the macOS branch directly so the test
+        // runs on Windows/Linux CI too (regression: '/' vs '\\' needles).
+        PathProtection.IsProtectedPath(path, isMacOS: true).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("/System/Library/foo")]
+    [InlineData("/usr/bin/foo")]
+    public void MacOsBranch_IsGatedByOS(string path)
+    {
+        // On non-macOS the same paths are not mac-protected (Windows needles don't match them).
+        if (OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        PathProtection.IsProtectedPath(path, isMacOS: false).Should().BeFalse();
+    }
+
     [Fact]
     public void WindowsOld_IsNotFlagged()
     {

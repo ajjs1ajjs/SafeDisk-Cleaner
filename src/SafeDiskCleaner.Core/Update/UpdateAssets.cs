@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using SafeDiskCleaner.Core.Models;
 
 namespace SafeDiskCleaner.Core.Update;
@@ -14,15 +15,49 @@ public static class UpdateAssets
     /// <summary>Picks the install asset for the current OS, or null when the release has none.</summary>
     public static ReleaseAsset? SelectInstallAsset(IReadOnlyList<ReleaseAsset> assets)
     {
-        var hints = OperatingSystem.IsWindows()
-            ? ["portable"]
-            : OperatingSystem.IsMacOS()
-                ? (string[])["dmg", "macos", "osx"]
-                : ["AppImage", "linux", "tar.gz"];
+        var candidates = assets.Where(a => !IsChecksumFile(a.Name)).ToList();
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
 
-        return assets.FirstOrDefault(a =>
-            !IsChecksumFile(a.Name)
-            && hints.Any(h => a.Name.Contains(h, StringComparison.OrdinalIgnoreCase)));
+        if (OperatingSystem.IsWindows())
+        {
+            return candidates.FirstOrDefault(a =>
+                a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            // "tar.gz" alone must never match: otherwise a linux asset listed first
+            // would be picked on macOS (and vice versa). Require an OS marker.
+            var mac = candidates.Where(a =>
+                a.Name.Contains("macos", StringComparison.OrdinalIgnoreCase)
+                || a.Name.Contains("osx", StringComparison.OrdinalIgnoreCase)
+                || a.Name.Contains("arm64", StringComparison.OrdinalIgnoreCase)).ToList();
+            if (mac.Count == 0)
+            {
+                return null;
+            }
+
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                return mac.FirstOrDefault(a => a.Name.Contains("arm64", StringComparison.OrdinalIgnoreCase))
+                    ?? mac.FirstOrDefault();
+            }
+
+            // Intel Mac: prefer an x64 asset that is not arm64, then any non-arm64, then whatever is left.
+            return mac.FirstOrDefault(a =>
+                    a.Name.Contains("x64", StringComparison.OrdinalIgnoreCase)
+                    && !a.Name.Contains("arm64", StringComparison.OrdinalIgnoreCase))
+                ?? mac.FirstOrDefault(a => !a.Name.Contains("arm64", StringComparison.OrdinalIgnoreCase))
+                ?? mac.FirstOrDefault();
+        }
+
+        // Linux: same isolation rule — no bare "tar.gz" match.
+        return candidates.FirstOrDefault(a =>
+            a.Name.Contains("linux", StringComparison.OrdinalIgnoreCase)
+            || a.Name.Contains("AppImage", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Finds the "<install-asset>.sha256" companion, or null when the release ships none.</summary>
