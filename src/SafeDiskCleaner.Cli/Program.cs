@@ -90,6 +90,22 @@ static int UnknownCommand(string command)
     return 1;
 }
 
+static bool ValidateOptions(ScanOptions options)
+{
+    var result = new SafeDiskCleaner.Core.Validation.ScanOptionsValidator().Validate(options);
+    if (result.IsValid)
+    {
+        return true;
+    }
+
+    foreach (var failure in result.Errors)
+    {
+        Console.Error.WriteLine($"Invalid option: {failure.ErrorMessage}");
+    }
+
+    return false;
+}
+
 static ScanOptions BuildScanOptions(IReadOnlyList<string> args)
 {
     var rootValues = Arg(args, "--roots");
@@ -122,9 +138,13 @@ static string? Arg(IReadOnlyList<string> args, string name)
 }
 
 static async Task<int> AnalyzeAsync(Scanner scanner, SafeDiskCleaner.Core.Abstractions.IReportWriter reports, string[] args)
-{
-    var options = BuildScanOptions(args);
-    var result = await scanner.ScanAsync(options, null, CancellationToken.None);
+  {
+      var options = BuildScanOptions(args);
+      if (!ValidateOptions(options))
+      {
+          return 1;
+      }
+      var result = await scanner.ScanAsync(options, null, CancellationToken.None);
 
     Console.WriteLine(Loc.F("Cli.ScannedLine", result.Summary.ScannedFiles, result.Candidates.Count));
     Console.WriteLine(Loc.F("Cli.Potential", HumanSize.Format(result.Summary.TotalPotential)));
@@ -150,9 +170,13 @@ static async Task<int> AnalyzeAsync(Scanner scanner, SafeDiskCleaner.Core.Abstra
 }
 
 static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDiskCleaner.Core.Abstractions.IReportWriter reports, string[] args)
-{
-    var options = BuildScanOptions(args);
-    var scanResult = await scanner.ScanAsync(options, null, CancellationToken.None);
+  {
+      var options = BuildScanOptions(args);
+      if (!ValidateOptions(options))
+      {
+          return 1;
+      }
+      var scanResult = await scanner.ScanAsync(options, null, CancellationToken.None);
 
     var mode = args.Contains("--dry-run")
         ? CleanMode.DryRun
@@ -164,7 +188,6 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
     var candidates = scanResult.Candidates
         .Where(c => c.Action != CandidateAction.Keep)
         .ToList();
-
     Console.WriteLine(Loc.F("Cli.CandidatesToProcess", candidates.Count, mode));
 
     CleanupResult result;
@@ -194,11 +217,27 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
             }
         }
 
-        result = await cleanup.RunAsync(approved, cleanOptions, null);
+        // Interactive list was approved item-by-item above: Review-action
+        // candidates may proceed. Roots thread through for the jail check.
+        result = await cleanup.RunAsync(
+            approved,
+            new CleanupOptions
+            {
+                Mode = cleanOptions.Mode,
+                QuarantineRetentionDays = cleanOptions.QuarantineRetentionDays,
+                MoveToRecycleBin = cleanOptions.MoveToRecycleBin,
+                AutoThreshold = cleanOptions.AutoThreshold,
+                RecencyDays = cleanOptions.RecencyDays,
+                FallbackToQuarantine = cleanOptions.FallbackToQuarantine,
+                ConfirmReview = true,
+            },
+            null,
+            CancellationToken.None,
+            options.Roots);
     }
     else
     {
-        result = await cleanup.RunAsync(candidates, cleanOptions, null);
+        result = await cleanup.RunAsync(candidates, cleanOptions, null, CancellationToken.None, options.Roots);
     }
 
     Console.WriteLine(Loc.F("Cli.ProcessedFreed", result.Processed, HumanSize.Format(result.FreedBytes)));
@@ -218,15 +257,23 @@ static async Task<int> CleanAsync(Scanner scanner, CleanupEngine cleanup, SafeDi
 
 static async Task<int> DuplicatesAsync(Scanner scanner, string[] args)
 {
-    var rootsValue = Arg(args, "--roots");
-    if (string.IsNullOrWhiteSpace(rootsValue))
-    {
-        Console.Error.WriteLine(Loc.T("Cli.SpecifyRoots"));
-        return 1;
-    }
+      var rootsValue = Arg(args, "--roots");
+      if (string.IsNullOrWhiteSpace(rootsValue))
+      {
+          Console.Error.WriteLine(Loc.T("Cli.SpecifyRoots"));
+          return 1;
+      }
 
-    var roots = rootsValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    var result = await scanner.ScanDuplicatesAsync(roots, CancellationToken.None);
+      var roots = rootsValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+      foreach (var root in roots)
+      {
+          if (!SafeDiskCleaner.Core.Scanning.Scanner.IsScannableRoot(root))
+          {
+              Console.Error.WriteLine($"Invalid scan root: {root} (must be absolute, existing and not a reparse point).");
+              return 1;
+          }
+      }
+      var result = await scanner.ScanDuplicatesAsync(roots, CancellationToken.None);
 
     Console.WriteLine(Loc.F("Cli.DuplicatesFound", result.Candidates.Count));
     foreach (var c in result.Candidates.Take(50))

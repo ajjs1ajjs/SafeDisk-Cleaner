@@ -34,10 +34,10 @@ public sealed class DialogService : IDialogService
 
     public Task<string?> PickSaveFileAsync(string title, string defaultFileName, string filter)
     {
-        return PickSaveFileCoreAsync(title, defaultFileName);
+        return PickSaveFileCoreAsync(title, defaultFileName, filter);
     }
 
-    private static async Task<string?> PickSaveFileCoreAsync(string title, string defaultFileName)
+    private static async Task<string?> PickSaveFileCoreAsync(string title, string defaultFileName, string? filter)
     {
         var storage = GetStorageProvider();
         if (storage is null)
@@ -46,14 +46,45 @@ public sealed class DialogService : IDialogService
         }
 
         var ext = System.IO.Path.GetExtension(defaultFileName).TrimStart('.');
-        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        var options = new FilePickerSaveOptions
         {
             Title = title,
             SuggestedFileName = defaultFileName,
             DefaultExtension = string.IsNullOrEmpty(ext) ? null : ext,
-        });
+        };
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            // Map "Desc (*.csv)|*.csv|..." pipe types to Avalonia file-type
+            // choices so the requested extension is actually enforced.
+            var choices = new List<FilePickerFileType>();
+            foreach (var part in filter.Split('|'))
+            {
+                var patterns = part.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(p => p.StartsWith("*."))
+                    .Select(p => p.Trim())
+                    .ToArray();
+                if (patterns.Length > 0)
+                {
+                    choices.Add(new FilePickerFileType(part.Split('(')[0].Trim()) { Patterns = patterns.ToList() });
+                }
+            }
 
-        return file?.TryGetLocalPath();
+            if (choices.Count > 0)
+            {
+                options.FileTypeChoices = choices;
+            }
+        }
+
+        var file = await storage.SaveFilePickerAsync(options);
+        var picked = file?.TryGetLocalPath();
+        // Post-pick enforcement: the platform may still allow "all files".
+        if (picked is not null && !string.IsNullOrEmpty(ext)
+            && !picked.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return picked;
     }
 
     public async Task<bool> ConfirmAsync(string title, string message, string confirmButton = "OK")

@@ -206,13 +206,18 @@ public sealed partial class MainViewModel : ObservableObject
         var asset = _updater.SelectAsset(UpdateInfo);
         if (asset is null)
         {
-            try
+            // Browser fallback only for our own releases page — never an
+            // arbitrary URL from API data.
+            if (SafeDiskCleaner.Core.Update.UpdateUrlValidator.IsAllowedReleasePageUrl(UpdateInfo.DownloadUrl))
             {
-                Process.Start(new ProcessStartInfo(UpdateInfo.DownloadUrl) { UseShellExecute = true });
-            }
-            catch
-            {
-                // cannot open browser
+                try
+                {
+                    Process.Start(new ProcessStartInfo(UpdateInfo.DownloadUrl) { UseShellExecute = true });
+                }
+                catch
+                {
+                    // cannot open browser
+                }
             }
 
             return;
@@ -223,20 +228,26 @@ public sealed partial class MainViewModel : ObservableObject
         UpdateStatus = Loc.T("Update.Checking");
         try
         {
-            var destination = Path.Combine(
-                Path.GetTempPath(),
-                $"SafeDisk-{UpdateInfo.LatestVersion}-{Path.GetFileName(asset.Name)}");
+            // Non-guessable destination (see UpdateDownload); the version is
+            // validated because it lands in UI and diagnostics.
+            if (!SafeDiskCleaner.Core.Update.UpdateUrlValidator.IsSafeVersionTag(UpdateInfo.LatestVersion))
+            {
+                throw new InvalidOperationException("Release version from metadata is not a valid version tag");
+            }
+
+            var destination = SafeDiskCleaner.Core.Update.UpdateDownload.CreateSecureTempPath(
+                asset.Name, UpdateInfo.LatestVersion);
             var progress = new Progress<double>(p => DownloadProgress = p);
 
             await _updater.DownloadAsync(asset, destination, progress);
 
-            // Integrity: when the release ships a "<asset>.sha256" companion,
-            // the download must match before anything is executed.
-            if (_updater.SelectChecksumAsset(UpdateInfo) is { } checksumAsset)
-            {
-                var checksum = await _updater.DownloadTextAsync(checksumAsset);
-                _updater.VerifySha256(destination, checksum);
-            }
+            // Integrity is mandatory, not optional: a release without the
+            // "<asset>.sha256" companion is refused outright.
+            var checksumAsset = _updater.SelectChecksumAsset(UpdateInfo)
+                ?? throw new InvalidOperationException(
+                    "Release ships no checksum companion; refusing update");
+            var checksum = await _updater.DownloadTextAsync(checksumAsset);
+            _updater.VerifySha256(destination, checksum);
 
             UpdateStatus = Loc.T("Update.Installing");
             await Task.Delay(300);

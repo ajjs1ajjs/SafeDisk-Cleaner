@@ -15,6 +15,32 @@ public sealed class UnixRecycleBin : IRecycleBin
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash")
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Trash", "files");
 
+    /// <summary>
+    /// Ensures the trash directory exists, is a real directory (not a
+    /// planted symlink) and is owner-only. A symlinked Trash would redirect
+    /// trashed (possibly sensitive) content anywhere.
+    /// </summary>
+    private static void EnsureTrashDir(string dir)
+    {
+        var info = new DirectoryInfo(dir);
+        if (info.LinkTarget is not null)
+        {
+            throw new IOException($"Trash directory is a symlink: {dir}");
+        }
+        Directory.CreateDirectory(dir);
+        if (!OperatingSystem.IsWindows())
+        {
+            try
+            {
+                File.SetUnixFileMode(dir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+            catch
+            {
+                // best-effort hardening only
+            }
+        }
+    }
+
     private string InfoDir =>
         OperatingSystem.IsMacOS()
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash")
@@ -39,12 +65,12 @@ public sealed class UnixRecycleBin : IRecycleBin
                 {
                     if (File.Exists(entry))
                     {
-                        size += (ulong)new FileInfo(entry).Length;
+                        size = SaturatingAdd(size, (ulong)new FileInfo(entry).Length);
                         count++;
                     }
                     else if (Directory.Exists(entry))
                     {
-                        size += DirSize(entry);
+                        size = SaturatingAdd(size, DirSize(entry));
                         count++;
                     }
                 }
@@ -64,6 +90,7 @@ public sealed class UnixRecycleBin : IRecycleBin
 
     public bool Empty()
     {
+        ulong failed = 0;
         try
         {
             if (Directory.Exists(FilesDir))
@@ -83,7 +110,8 @@ public sealed class UnixRecycleBin : IRecycleBin
                     }
                     catch
                     {
-                        // skip in-use entries, keep going
+                        // skip in-use entries, keep going — but count them
+                        failed++;
                     }
                 }
             }
@@ -99,12 +127,12 @@ public sealed class UnixRecycleBin : IRecycleBin
                     }
                     catch
                     {
-                        // skip, keep going
+                        failed++;
                     }
                 }
             }
 
-            return true;
+            return failed == 0;
         }
         catch
         {
@@ -120,9 +148,11 @@ public sealed class UnixRecycleBin : IRecycleBin
         }
 
         Directory.CreateDirectory(FilesDir);
+        EnsureTrashDir(FilesDir);
         if (!IsMacTrash)
         {
             Directory.CreateDirectory(InfoDir);
+            EnsureTrashDir(InfoDir);
         }
 
         var name = Path.GetFileName(path);
@@ -165,7 +195,7 @@ public sealed class UnixRecycleBin : IRecycleBin
             {
                 try
                 {
-                    total += (ulong)new FileInfo(file).Length;
+                    total = SaturatingAdd(total, (ulong)new FileInfo(file).Length);
                 }
                 catch
                 {
@@ -179,6 +209,18 @@ public sealed class UnixRecycleBin : IRecycleBin
         }
 
         return total;
+    }
+
+    private static ulong SaturatingAdd(ulong a, ulong b)
+    {
+        try
+        {
+            return checked(a + b);
+        }
+        catch (OverflowException)
+        {
+            return ulong.MaxValue;
+        }
     }
 
     private static string EncodePath(string path)

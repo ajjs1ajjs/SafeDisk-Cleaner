@@ -79,9 +79,9 @@ public sealed class ScanRootsCatalog
             {
                 catalog = Merge(catalog, File.ReadAllText(overridesPath));
             }
-            catch (JsonException)
+            catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
             {
-                // invalid override — fall back to defaults
+                // invalid/unreadable override — fall back to defaults
             }
         }
 
@@ -105,13 +105,54 @@ public sealed class ScanRootsCatalog
 
         foreach (var group in overrides.Groups)
         {
-            if (!string.IsNullOrWhiteSpace(group.Id))
+            if (string.IsNullOrWhiteSpace(group.Id))
             {
-                merged[group.Id] = group;
+                continue;
             }
+
+            // An override file is user-writable: reject groups whose resolved
+            // roots escape into protected locations. The scanner validates
+            // roots again at scan time (defense in depth).
+            if (GroupTouchesProtected(group))
+            {
+                continue;
+            }
+
+            merged[group.Id] = group;
         }
 
         return new ScanRootsCatalog { Groups = [.. merged.Values] };
+    }
+
+    private static bool GroupTouchesProtected(ScanRootGroup group)
+    {
+        var basePath = ResolveBase(group.Base);
+        if (string.IsNullOrWhiteSpace(basePath))
+        {
+            return true; // unresolvable base — drop the group
+        }
+
+        foreach (var sub in group.Subdirectories.Length == 0 ? [""] : group.Subdirectories)
+        {
+            string root;
+            try
+            {
+                root = group.Join == SubPathJoin.Combine && !Path.IsPathFullyQualified(sub)
+                    ? Path.GetFullPath(Path.Combine(basePath, sub))
+                    : Path.GetFullPath(basePath + sub);
+            }
+            catch
+            {
+                return true;
+            }
+
+            if (Models.PathProtection.IsProtectedPath(root))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Resolves all active root directories for the current OS and tiers.</summary>
@@ -145,10 +186,39 @@ public sealed class ScanRootsCatalog
 
             foreach (var sub in group.Subdirectories.Length == 0 ? [""] : group.Subdirectories)
             {
-                var root = group.Join == SubPathJoin.Combine
-                    ? Path.Combine(basePath, sub)
-                    : basePath + sub;
-                roots.Add(root);
+                string root;
+                if (group.Join == SubPathJoin.Combine)
+                {
+                    // Combine mode: never let an absolute sub discard the base.
+                    if (Path.IsPathFullyQualified(sub))
+                        continue;
+                    root = Path.Combine(basePath, sub);
+                }
+                else
+                {
+                    root = basePath + sub;
+                }
+                // Canonicalize and confine: the resolved root must stay
+                // inside its base (`..\..` escapes are rejected).
+                string fullBase, fullRoot;
+                try
+                {
+                    fullBase = Path.GetFullPath(basePath);
+                    fullRoot = Path.GetFullPath(root);
+                }
+                catch
+                {
+                    continue;
+                }
+                var cmp = OperatingSystem.IsWindows()
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+                if (!fullRoot.Equals(fullBase, cmp)
+                    && !fullRoot.StartsWith(fullBase.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar, cmp))
+                {
+                    continue;
+                }
+                roots.Add(fullRoot);
             }
         }
 
@@ -194,10 +264,23 @@ public sealed class ScanRootsCatalog
                     // yields an existing directory (env vars are absent on CI/Linux)
                     return Path.GetTempPath();
                 case "$TMPDIR":
-                    return Environment.GetEnvironmentVariable("TMPDIR")
+                    // Env-overridable by design, so verify the result: it must
+                    // exist and must not itself be a protected location.
+                    var tmpdir = Environment.GetEnvironmentVariable("TMPDIR")
                         ?? Environment.GetEnvironmentVariable("TEMP")
                         ?? Environment.GetEnvironmentVariable("TMP")
                         ?? Path.GetTempPath();
+                    try
+                    {
+                        if (Directory.Exists(tmpdir)
+                            && !Models.PathProtection.IsProtectedPath(tmpdir))
+                            return tmpdir;
+                    }
+                    catch
+                    {
+                        // fall through to the safe default below
+                    }
+                    return Path.GetTempPath();
                 case "$LOCALAPPDATA":
                     return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) is { Length: > 0 } local
                         ? local

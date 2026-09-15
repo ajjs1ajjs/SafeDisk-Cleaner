@@ -23,7 +23,7 @@ public static class SquarifiedTreemap
         }
 
         var ordered = items
-            .Where(i => i.Value > 0 && !string.IsNullOrEmpty(i.Id))
+            .Where(i => i.Value > 0 && double.IsFinite(i.Value) && !string.IsNullOrEmpty(i.Id))
             .OrderByDescending(i => i.Value)
             .ToList();
         if (ordered.Count == 0)

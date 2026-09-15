@@ -27,10 +27,22 @@ public sealed class SafetyValidator
     }
 
     public SafetyVerdict Validate(string path, Category category, uint recencyDays)
+        => Validate(path, category, recencyDays, scanRoots: null);
+
+    public SafetyVerdict Validate(
+        string path, Category category, uint recencyDays, IReadOnlyList<string>? scanRoots)
     {
         if (string.IsNullOrWhiteSpace(path) || string.IsNullOrEmpty(Path.GetFileName(path)))
         {
             return SafetyVerdict.Deny("Invalid path");
+        }
+
+        // Containment jail: the final path must still sit under one of the
+        // scan roots that produced the candidate. `..`-escapes and UNC/`\\?\`
+        // prefixes never pass.
+        if (scanRoots is { Count: > 0 } && !IsWithinAnyRoot(path, scanRoots))
+        {
+            return SafetyVerdict.Deny("Path escapes the scan roots");
         }
 
         if (ClassificationEngine.IsProtectedExtension(path))
@@ -56,6 +68,13 @@ public sealed class SafetyValidator
             return SafetyVerdict.Deny("File has the SYSTEM attribute");
         }
 
+        if (FileState.AttributesUnreadable(path))
+        {
+            // Fail closed: an ACL-denied read between scan and cleanup must
+            // not look like a clean file.
+            return SafetyVerdict.Deny("File attributes unreadable");
+        }
+
         try
         {
             // Windows may not update LastAccessTime (NTFS last-access is disabled
@@ -71,15 +90,28 @@ public sealed class SafetyValidator
                     $"File was last used {days} day(s) ago (recency threshold {recencyDays} days)");
             }
         }
+        catch (FileNotFoundException)
+        {
+            return SafetyVerdict.Deny("File no longer exists");
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return SafetyVerdict.Deny("File no longer exists");
+        }
         catch
         {
-            // Metadata unavailable — do not block on it, the file may have been
-            // removed concurrently between scan and cleanup.
+            // Vanished concurrently — deny rather than clean blindly.
+            return SafetyVerdict.Deny("File metadata unavailable");
         }
 
         if (FileState.IsLocked(path))
         {
             return SafetyVerdict.Deny("File is open by another process");
+        }
+
+        if (FileState.LockCheckInconclusive(path))
+        {
+            return SafetyVerdict.Deny("File lock state unreadable");
         }
 
         if (category.RiskLevel() == RiskLevel.Advanced && _signatureInspector.HasMicrosoftSignature(path))
@@ -88,5 +120,39 @@ public sealed class SafetyValidator
         }
 
         return SafetyVerdict.Allow();
+    }
+
+    private static bool IsWithinAnyRoot(string path, IReadOnlyList<string> roots)
+    {
+        string full;
+        try
+        {
+            full = Path.GetFullPath(path);
+        }
+        catch
+        {
+            return false;
+        }
+        var cmp = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        foreach (var root in roots)
+        {
+            string fullRoot;
+            try
+            {
+                fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+            catch
+            {
+                continue;
+            }
+            if (full.Equals(fullRoot, cmp)
+                || full.StartsWith(fullRoot + Path.DirectorySeparatorChar, cmp))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

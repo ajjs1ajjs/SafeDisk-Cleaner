@@ -66,4 +66,38 @@ public sealed class PathProtectionTests
         // canonicalization must catch a traversal into a protected directory.
         PathProtection.IsProtectedPath(@"C:\Users\Me\..\..\Windows\System32\x.dll").Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(@"C:\")]
+    [InlineData(@"C:\Windows")]
+    [InlineData(@"D:\Program Files")]
+    [InlineData(@"C:\Users\Alice")]
+    [InlineData(@"C:\Users\Alice\NTUSER.DAT")]
+    [InlineData(@"C:\Program Files \evil.dat")]
+    public void BareSystemDirs_AreDetected(string path)
+    {
+        PathProtection.IsProtectedPath(path).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(@"C:\Temp\foo.txt")]
+    [InlineData(@"D:\Data\file.dat")]
+    [InlineData(@"C:\Users\Alice\Documents\notes.txt")]
+    public void NonSystemPaths_AreNotFlagged(string path)
+    {
+        PathProtection.IsProtectedPath(path).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NestedWindowsOld_DoesNotDisarmSystemNeedles()
+    {
+        // windows.old nested deep inside System32 must NOT weaken protection.
+        PathProtection.IsProtectedPath(@"C:\Windows\System32\drivers\windows.old\payload.dll").Should().BeTrue();
+    }
+
+    [Fact]
+    public void AdsSuffix_IsProtected()
+    {
+        PathProtection.IsProtectedPath(@"C:\Temp\safe.txt:evil").Should().BeTrue();
+    }
 }

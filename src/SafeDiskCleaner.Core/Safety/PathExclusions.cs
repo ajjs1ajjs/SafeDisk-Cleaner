@@ -19,7 +19,9 @@ public static class PathExclusions
             return false;
         }
 
-        var normalized = Normalize(path);
+        // Canonicalize the candidate so a symlink alias cannot dodge a
+        // directory exclusion (exclusions are path-identity based).
+        var normalized = Normalize(Canonicalize(path));
         foreach (var raw in patterns)
         {
             if (string.IsNullOrWhiteSpace(raw))
@@ -27,10 +29,14 @@ public static class PathExclusions
                 continue;
             }
 
-            var pattern = Normalize(raw.TrimEnd('/', '\\'));
+            var pattern = Normalize(Canonicalize(raw.TrimEnd('/', '\\')));
             if (pattern.IndexOfAny(['*', '?']) >= 0)
             {
-                if (Regex.IsMatch(normalized, WildcardToRegex(pattern), RegexOptions.IgnoreCase))
+                if (Regex.IsMatch(
+                        normalized,
+                        WildcardToRegex(pattern),
+                        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking,
+                        TimeSpan.FromMilliseconds(250)))
                 {
                     return true;
                 }
@@ -42,6 +48,18 @@ public static class PathExclusions
         }
 
         return false;
+    }
+
+    private static string Canonicalize(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path);
+        }
+        catch
+        {
+            return path;
+        }
     }
 
     private static bool IsPrefixMatch(string path, string prefix)

@@ -20,7 +20,7 @@
 [![Release](https://img.shields.io/github/v/release/ajjs1ajjs/SafeDisk-Cleaner?label=release&color=7B2FFF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ajjs1ajjs/SafeDisk-Cleaner/total?label=downloads&color=00E5FF)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/ajjs1ajjs/SafeDisk-Cleaner/ci.yml?label=CI)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
-[![Tests](https://img.shields.io/badge/tests-183%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
+[![Tests](https://img.shields.io/badge/tests-226%20passing-00C853)](https://github.com/ajjs1ajjs/SafeDisk-Cleaner/actions)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20(Intel%20%2B%20ARM)-00E5FF)]()
 [![.NET](https://img.shields.io/badge/.NET-10%20LTS-512BD4)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-26A69A)](LICENSE)

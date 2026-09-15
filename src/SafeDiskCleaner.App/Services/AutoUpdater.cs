@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using SafeDiskCleaner.Core.Abstractions;
 using SafeDiskCleaner.Core.Models;
+using SafeDiskCleaner.Core.Update;
 using SafeDiskCleaner.Core.Utils;
 
 namespace SafeDiskCleaner.App.Services;
@@ -38,27 +39,9 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
         IProgress<double>? progress,
         CancellationToken ct = default)
     {
-        // Large payload client (no 8s total timeout) configured in DI.
+        // Shared hardened pipeline: URL allowlist, redirect re-check, caps.
         using var client = _httpFactory.CreateClient("downloads");
-        using var response = await client.GetAsync(asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
-        response.EnsureSuccessStatusCode();
-
-        var total = response.Content.Headers.ContentLength ?? (asset.Size > 0 ? asset.Size : 0);
-        await using var source = await response.Content.ReadAsStreamAsync(ct);
-        await using var dest = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
-
-        var buffer = new byte[81920];
-        long read = 0;
-        int n;
-        while ((n = await source.ReadAsync(buffer, ct)) > 0)
-        {
-            await dest.WriteAsync(buffer.AsMemory(0, n), ct);
-            read += n;
-            if (total > 0)
-            {
-                progress?.Report(Math.Min(100.0, read * 100.0 / total));
-            }
-        }
+        await UpdateDownload.DownloadAsync(client, asset, destinationPath, progress, ct);
     }
 
     /// <summary>
@@ -156,7 +139,10 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
             throw new InvalidOperationException("Cannot determine the running executable path");
         }
 
-        var updaterDir = Path.Combine(Path.GetTempPath(), "SafeDiskUpdater");
+        // Unique per-run directory with exclusive creation: a fixed
+        // %TEMP%\SafeDiskUpdater\update.cmd could be pre-created or swapped
+        // by any local process between write and `cmd /c`.
+        var updaterDir = Path.Combine(Path.GetTempPath(), "SafeDiskUpdater-" + Path.GetRandomFileName());
         Directory.CreateDirectory(updaterDir);
         var script = Path.Combine(updaterDir, "update.cmd");
 
@@ -177,7 +163,12 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
             $"start \"\" \"{EscapeForBatch(currentExe)}\"\r\n" +
             "del \"%~f0\"\r\n";
 
-        File.WriteAllText(script, content);
+        // Exclusive creation: never truncate a file someone else planted.
+        using (var fs = new FileStream(script, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        using (var writer = new StreamWriter(fs, System.Text.Encoding.ASCII))
+        {
+            writer.Write(content);
+        }
 
         Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"")
         {
@@ -204,7 +195,7 @@ public sealed class AutoUpdater : SafeDiskCleaner.ViewModels.Abstractions.IUpdat
     public async Task<string> DownloadTextAsync(ReleaseAsset asset, CancellationToken ct = default)
     {
         using var client = _httpFactory.CreateClient("downloads");
-        return await client.GetStringAsync(asset.DownloadUrl, ct);
+        return await UpdateDownload.DownloadTextAsync(client, asset, ct);
     }
 
     /// <summary>

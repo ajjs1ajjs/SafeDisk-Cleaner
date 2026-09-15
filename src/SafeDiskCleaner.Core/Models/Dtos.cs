@@ -25,15 +25,17 @@ public sealed class CategoryStats
     public long Potential { get; init; }
 }
 
-public sealed class ScanSummary
-{
-    public ulong ScannedDirs { get; init; }
-    public ulong ScannedFiles { get; init; }
-    public long ElapsedMs { get; init; }
-    public long TotalPotential { get; init; }
-    public int TotalCandidates { get; init; }
-    public IReadOnlyList<CategoryStats> Categories { get; init; } = Array.Empty<CategoryStats>();
-}
+    public sealed class ScanSummary
+    {
+        public ulong ScannedDirs { get; init; }
+        public ulong ScannedFiles { get; init; }
+        public long ElapsedMs { get; init; }
+        public long TotalPotential { get; init; }
+        public int TotalCandidates { get; init; }
+        public IReadOnlyList<CategoryStats> Categories { get; init; } = Array.Empty<CategoryStats>();
+        /// <summary>True when candidate/depth caps truncated the scan.</summary>
+        public bool Truncated { get; init; }
+    }
 
 public sealed class ScanResult
 {
@@ -125,32 +127,52 @@ public sealed class ReleaseAsset
     public long Size { get; init; }
 }
 
-public sealed class ScanOptions
-{
-    public IReadOnlyList<string> Roots { get; init; } = Array.Empty<string>();
-    public bool IncludeMedium { get; init; }
-    public bool IncludeAdvanced { get; init; }
-    public byte MinConfidence { get; init; } = 50;
-    public uint RecencyDays { get; init; } = 7;
+    public sealed class ScanOptions
+    {
+        public IReadOnlyList<string> Roots { get; init; } = Array.Empty<string>();
+        public bool IncludeMedium { get; init; }
+        public bool IncludeAdvanced { get; init; }
+        public byte MinConfidence { get; init; } = 50;
+        public uint RecencyDays { get; init; } = 7;
 
-    /// <summary>
-    /// Paths or wildcard patterns (* ?) that must never be scanned, matched
-    /// case-insensitively against the full path. Empty = no exclusions.
-    /// </summary>
-    public IReadOnlyList<string> Exclusions { get; init; } = Array.Empty<string>();
-}
+        /// <summary>
+        /// Paths or wildcard patterns (* ?) that must never be scanned, matched
+        /// case-insensitively against the full path. Empty = no exclusions.
+        /// </summary>
+        public IReadOnlyList<string> Exclusions { get; init; } = Array.Empty<string>();
 
-public sealed class CleanupOptions
-{
-    public CleanMode Mode { get; init; } = CleanMode.Interactive;
-    public uint QuarantineRetentionDays { get; init; } = 14;
-    public bool MoveToRecycleBin { get; init; } = true;
-    public byte AutoThreshold { get; init; } = 95;
+        /// <summary>Maximum descent depth per root (cycle/degeneracy guard).</summary>
+        public int MaxDepth { get; init; } = 64;
 
-    /// <summary>
-    /// Minimum age (in days) a candidate must have before it may actually be
-    /// cleaned. A conservative safety floor applied at cleanup time, independent
-    /// from the scanner's recency filter. Default 3.
-    /// </summary>
-    public uint RecencyDays { get; init; } = 3;
-}
+        /// <summary>Maximum candidates kept per scan (rest is dropped + flagged).</summary>
+        public int MaxCandidates { get; init; } = 200_000;
+    }
+
+    public sealed class CleanupOptions
+    {
+        public CleanMode Mode { get; init; } = CleanMode.Interactive;
+        public uint QuarantineRetentionDays { get; init; } = 14;
+        public bool MoveToRecycleBin { get; init; } = true;
+        public byte AutoThreshold { get; init; } = 95;
+
+        /// <summary>
+        /// Minimum age (in days) a candidate must have before it may actually be
+        /// cleaned. A conservative safety floor applied at cleanup time, independent
+        /// from the scanner's recency filter. Default 3.
+        /// </summary>
+        public uint RecencyDays { get; init; } = 3;
+
+        /// <summary>
+        /// When recycling fails (cross-volume, oversized, policy-blocked), fall
+        /// back to quarantine. Default false: the failure is reported instead
+        /// of silently removing the file elsewhere.
+        /// </summary>
+        public bool FallbackToQuarantine { get; init; } = false;
+
+        /// <summary>
+        /// Required to delete `Review`-action candidates: the caller must have
+        /// shown them to the user and gotten confirmation. Engine-side guard
+        /// so safety never depends on every caller prompting.
+        /// </summary>
+        public bool ConfirmReview { get; init; } = false;
+    }

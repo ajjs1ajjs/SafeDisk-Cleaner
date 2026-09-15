@@ -30,6 +30,10 @@ jobs:
           TAG: v1.7.4
         run: |
           set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Refusing: TAG '$TAG' does not match ^vX.Y.Z\$" >&2
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin main release-oct1-staging

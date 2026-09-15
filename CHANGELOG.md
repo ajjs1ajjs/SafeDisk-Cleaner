@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (security audit round)
+
+No version bump: changes ride the v1.7.4 deferred release (Oct 1). Checks green (226/226 tests, TWAE + analyzers, NuGetAudit clean).
+
+- **PathProtection (rewritten):** segment-anchored matcher instead of substrings — bare `C:\Windows`, any-drive `Program Files`, profile roots, `NTUSER.DAT`, drive roots; `windows.old` exception anchored to first-level dir only; 8.3 short-name expansion PLUS a lexical second net (unexpanded `PROGRA~1`-style alias at drive level fails closed — expansion alone misses nonexistent paths / volumes with short names disabled); ADS-colon rejection; trailing dot/space normalization; Unix/macOS rules completed.
+- **FileState:** `IsLocked` fixed for exclusive locks — a sharing violation where even a read-only open fails previously read as "free"; now counts as locked (vanished files still excluded via `FileNotFound`/`DirectoryNotFound`, denied separately by the validator's fail-closed metadata gates).
+- **Scanner:** deny-by-default reparse handling (all tags prune, fail closed), scan-root validation (absolute/existing/not-a-link), depth cap + cycle set + candidate cap with `Truncated` flag, file-symlink skip, bounded channel with real cancellation, saturating size accumulation, 512 MB hash cap.
+- **Safety/Cleanup:** metadata fail-closed (ACL-denied reads deny), containment jail against scan roots, quarantine fallback opt-in (recycle failures report instead of silent moves), DryRun never purges, Review requires `ConfirmReview`, CSV formula sanitization, dialog extension enforcement (both flavors).
+- **ScanRoots:** `..` escapes confined to base, absolute subs rejected in Combine mode, `$TMPDIR` override verified, override groups touching protected paths dropped, broadened catch on override load.
+- **Update pipeline:** checksum REQUIRED (no companion = refuse), URL allowlist + redirect re-check, release-page gate, exact asset-name allowlists with ambiguity refusal, version-tag validation, non-guessable temp paths, size caps (8 KB text / 500 MB binary), random updater script dirs with exclusive creation, PE re-validation at launch, publisher check ported to Avalonia, 10-minute client timeout.
+- **Apps:** uninstaller must exist (no raw fallback), full command in confirm, `UseShellExecute=false` except msiexec.
+- **Supply chain:** CI least-privilege + concurrency + `--locked-mode` restore, blocking `NuGetAudit(all)` (transitive included) + informational `dotnet list --vulnerable` step, SHA-pinned actions, `LangVersion 14` + `Nullable` + `TreatWarningsAsErrors` + deterministic builds, xunit runner 2.8.2, Dependabot (nuget + actions), `SECURITY.md`, signing-key gitignores, `site/` CSP + external JS (Pages publishes `site/` only), `run.cmd` without Bypass, installer publisher URLs, per-asset `<asset>.sha256` companions (sha256sum format, generated post-signing, cover final bytes), release tag pattern `v*` (deferred workflow + `release-oct1.ps1` enforce `^vX.Y.Z$`).
+- **Accepted risks:** no CA code signature (SmartScreen/Gatekeeper warn); no Apple notarization; quarantine cross-volume copy is non-atomic (safe direction: failure, not loss).
+
 ## v1.7.4 — macOS protection + asset selection hardening
 
 - **PathProtection:** macOS-голки переведені на бекслеші (нормалізація робить `/`→`\`), інакше системні шляхи macOS не детектились; додано тестовану перегрузку `IsProtectedPath(path, isMacOS)`, тести ганяються на всіх OS.

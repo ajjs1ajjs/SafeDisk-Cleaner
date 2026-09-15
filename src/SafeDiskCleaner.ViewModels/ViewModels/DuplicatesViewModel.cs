@@ -21,6 +21,7 @@ public sealed partial class DuplicatesViewModel : ObservableObject
     private readonly AppSettings _settings;
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _cleanupCts;
+    private IReadOnlyList<string> _lastDupRoots = Array.Empty<string>();
 
     [ObservableProperty]
     private bool _isScanning;
@@ -66,10 +67,12 @@ public sealed partial class DuplicatesViewModel : ObservableObject
         var roots = _scan.CustomRoots.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        if (roots.Count == 0)
-        {
-            roots.AddRange(_scan.Drives.Select(d => d.RootPath()));
-        }
+          if (roots.Count == 0)
+          {
+              roots.AddRange(_scan.Drives.Select(d => d.RootPath()));
+          }
+
+          _lastDupRoots = roots;
 
         if (roots.Count == 0)
         {
@@ -184,6 +187,15 @@ public sealed partial class DuplicatesViewModel : ObservableObject
             return;
         }
 
+        var confirmed = await _dialogs.ConfirmAsync(
+            Loc.T("Dup.DeleteTitle"),
+            Loc.F("Dup.DeleteConfirm", selected.Count),
+            Loc.T("Common.Delete"));
+        if (!confirmed)
+        {
+            return;
+        }
+
         IsCleaning = true;
         Message = null;
         try
@@ -194,13 +206,16 @@ public sealed partial class DuplicatesViewModel : ObservableObject
                 QuarantineRetentionDays = _settings.QuarantineRetentionDays,
                 MoveToRecycleBin = _settings.MoveToRecycleBin,
                 AutoThreshold = _settings.AutoThreshold,
+                // Explicit per-row selection + confirm dialog above.
+                ConfirmReview = true,
             };
 
             _cleanupCts?.Cancel();
             _cleanupCts = new CancellationTokenSource();
 
+            var roots = _lastDupRoots;
             var result = await Task.Run(
-                () => _cleanup.RunAsync(selected, options, _ => { }, _cleanupCts.Token),
+                () => _cleanup.RunAsync(selected, options, _ => { }, _cleanupCts.Token, roots),
                 _cleanupCts.Token);
             CleanupResult = result;
             Message = Loc.F("Common.ProcessedFreed", result.Processed, HumanSize.Format(result.FreedBytes));

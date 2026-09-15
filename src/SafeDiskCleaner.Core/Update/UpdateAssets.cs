@@ -10,7 +10,7 @@ namespace SafeDiskCleaner.Core.Update;
 /// per-OS install asset plus a "<asset>.sha256" checksum companion. Checksum
 /// files are never install candidates — they only feed <see cref="SelectChecksumAsset"/>.
 /// </summary>
-public static class UpdateAssets
+public static partial class UpdateAssets
 {
     /// <summary>Picks the install asset for the current OS, or null when the release has none.</summary>
     public static ReleaseAsset? SelectInstallAsset(IReadOnlyList<ReleaseAsset> assets)
@@ -23,8 +23,17 @@ public static class UpdateAssets
 
         if (OperatingSystem.IsWindows())
         {
-            return candidates.FirstOrDefault(a =>
-                a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
+            // Anchored allowlist shape: first-match substring previously let a
+            // spoofed asset win by list ordering. Ambiguity refuses.
+            var wins = candidates
+                .Where(a => InstallNameRegex().IsMatch(a.Name))
+                .ToList();
+            if (wins.Count != 1)
+            {
+                return null; // zero or ambiguous — refuse to guess
+            }
+
+            return wins[0];
         }
 
         if (OperatingSystem.IsMacOS())
@@ -42,7 +51,7 @@ public static class UpdateAssets
 
             if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
             {
-                return mac.FirstOrDefault(a => a.Name.Contains("arm64", StringComparison.OrdinalIgnoreCase))
+                return mac.FirstOrDefault(a => MacArm64NameRegex().IsMatch(a.Name))
                     ?? mac.FirstOrDefault();
             }
 
@@ -55,9 +64,8 @@ public static class UpdateAssets
         }
 
         // Linux: same isolation rule — no bare "tar.gz" match.
-        return candidates.FirstOrDefault(a =>
-            a.Name.Contains("linux", StringComparison.OrdinalIgnoreCase)
-            || a.Name.Contains("AppImage", StringComparison.OrdinalIgnoreCase));
+        var linux = candidates.Where(a => LinuxNameRegex().IsMatch(a.Name)).ToList();
+        return linux.Count == 1 ? linux[0] : null;
     }
 
     /// <summary>Finds the "<install-asset>.sha256" companion, or null when the release ships none.</summary>
@@ -72,4 +80,19 @@ public static class UpdateAssets
 
     internal static bool IsChecksumFile(string name) =>
         name.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase);
+
+    [System.Text.RegularExpressions.GeneratedRegex(
+        @"^SafeDiskCleaner-.*-portable-win64\.exe$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex InstallNameRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(
+        @"^SafeDiskCleaner-.*-macos-arm64\.tar\.gz$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex MacArm64NameRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(
+        @"^SafeDiskCleaner-.*-linux-x64\.tar\.gz$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex LinuxNameRegex();
 }

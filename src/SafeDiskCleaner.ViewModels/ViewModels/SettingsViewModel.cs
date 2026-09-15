@@ -285,8 +285,15 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         try
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), asset.Name);
-            if (File.Exists(tempPath)) File.Delete(tempPath);
+            if (!SafeDiskCleaner.Core.Update.UpdateUrlValidator.IsSafeVersionTag(info.LatestVersion))
+            {
+                throw new InvalidOperationException("Release version from metadata is not a valid version tag");
+            }
+
+            // Non-guessable destination (see UpdateDownload): predictable
+            // %TEMP% paths allowed pre-creation swaps.
+            var tempPath = SafeDiskCleaner.Core.Update.UpdateDownload.CreateSecureTempPath(
+                asset.Name, info.LatestVersion);
 
             var progress = new Progress<double>(p =>
             {
@@ -304,13 +311,13 @@ public sealed partial class SettingsViewModel : ObservableObject
                 UpdateProgressText = Loc.T("Settings.UpdateVerifying");
             });
 
-            // Verify checksum if available
-            var checksumAsset = _updateInstaller.SelectChecksumAsset(info);
-            if (checksumAsset is not null)
-            {
-                var checksumText = await _updateInstaller.DownloadTextAsync(checksumAsset);
-                _updateInstaller.VerifySha256(tempPath, checksumText);
-            }
+            // Integrity is mandatory, not optional: a release without the
+            // "<asset>.sha256" companion is refused outright.
+            var checksumAsset = _updateInstaller.SelectChecksumAsset(info)
+                ?? throw new InvalidOperationException(
+                    "Release ships no checksum companion; refusing update");
+            var checksumText = await _updateInstaller.DownloadTextAsync(checksumAsset);
+            _updateInstaller.VerifySha256(tempPath, checksumText);
 
             _dispatcher.Invoke(() =>
             {

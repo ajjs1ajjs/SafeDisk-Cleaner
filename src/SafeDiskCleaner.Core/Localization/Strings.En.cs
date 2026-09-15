@@ -54,6 +54,7 @@ internal static class En
         ["Apps.ConfirmTitle"] = "Uninstall",
         ["Apps.ConfirmMsg"] = "Run the official uninstaller for “{0}”?",
         ["Apps.Launched"] = "The uninstaller for “{0}” was started.",
+        ["Apps.ConfirmCommand"] = "Run the official uninstaller for \"{0}\"?\n\nCommand:\n{1} {2}",
         ["Apps.Error"] = "Uninstall error: {0}",
         ["Apps.WindowsOnly"] = "The applications list is available on Windows only.",
         ["Scan.TreemapToggle"] = "Results map",
@@ -99,6 +100,8 @@ internal static class En
         ["Dup.NotFound"] = "No duplicates found.",
         ["Dup.Found"] = "Found duplicates: {0}.",
         ["Dup.Cancelled"] = "Duplicate search cancelled.",
+        ["Dup.DeleteTitle"] = "Delete duplicates",
+        ["Dup.DeleteConfirm"] = "Permanently delete {0} selected duplicate file(s)? The newest copy of each group is kept.",
 
         // Scan
         ["Scan.AreaTitle"] = "Scan scope",
@@ -133,7 +136,7 @@ internal static class En
 
         // Recycle bin
         ["RecycleBin.CleanConfirmTitle"] = "Empty recycle bin",
-        ["RecycleBin.CleanConfirmMsg"] = "This will permanently delete all files in the recycle bin. Continue?",
+        ["RecycleBin.CleanConfirmMsg"] = "This will permanently delete all files in the recycle bin on ALL drives. Continue?",
         ["RecycleBin.Cleaned"] = "Recycle bin emptied.",
         ["RecycleBin.CleanFailed"] = "Failed to empty the recycle bin.",
 

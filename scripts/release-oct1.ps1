@@ -6,6 +6,8 @@ param(
 # One-shot release runner for 2026-10-01 (GitHub Actions limits reset).
 # Safe to run twice: commit/push/tag steps are no-ops when there is nothing new.
 $ErrorActionPreference = "Stop"
+if ($Tag -notmatch '^v\d+\.\d+\.\d+$') { throw "Refusing: Tag '$Tag' does not match ^vX.Y.Z$" }
+if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Refusing: Version '$Version' does not match X.Y.Z$" }
 $root = Split-Path -Parent $PSScriptRoot
 $logDir = Join-Path $root "BUILD"
 $log = Join-Path $logDir "release-oct1.log"

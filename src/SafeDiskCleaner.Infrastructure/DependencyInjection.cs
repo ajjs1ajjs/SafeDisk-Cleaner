@@ -43,10 +43,11 @@ public static class DependencyInjection
 
         // Downloads the portable release binary — large payload, so no short
         // total timeout here (an 8s ceiling would kill a ~150MB download on a
-        // normal connection). Cancellation is driven by the caller's token.
+        // normal connection). Cancellation is driven by the caller's token,
+        // and AutoUpdater enforces its own overall deadline + size caps.
         services.AddHttpClient("downloads", client =>
         {
-            client.Timeout = Timeout.InfiniteTimeSpan;
+            client.Timeout = TimeSpan.FromMinutes(10);
         });
 
         services.AddSingleton<IGitHubApi>(sp =>

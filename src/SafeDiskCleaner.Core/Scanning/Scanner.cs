@@ -82,7 +82,8 @@ public sealed class Scanner
 
             if (handle == INVALID_HANDLE_VALUE)
             {
-                return false;
+                // Cannot open: fail closed (prune) — same as the outer catch.
+                return true;
             }
 
             try
@@ -100,16 +101,26 @@ public sealed class Scanner
 
                 if (!result || bytesReturned < 4)
                 {
-                    return false;
+                    // Distinguish "not a reparse point" (normal directory,
+                    // must be scanned) from genuine failures (prune).
+                    const int ERROR_NOT_A_REPARSE_POINT = 4390;
+                    int err = Marshal.GetLastWin32Error();
+                    if (!result && err == ERROR_NOT_A_REPARSE_POINT)
+                    {
+                        return false;
+                    }
+                    // No reparse data readable: fail closed (prune).
+                    return true;
                 }
 
                 // REPARSE_DATA_BUFFER starts with the 4-byte ReparseTag.
+                // Deny by default: ANY reparse tag prunes the directory.
+                // An allowlist of 4 tags missed APPEXECLINK, LX_SYMLINK,
+                // OneDrive/ProjFS, DFS and friends — unknown links were
+                // descended into, escaping the scan root.
                 var tag = BitConverter.ToUInt32(buffer, 0);
 
-                return tag == IO_REPARSE_TAG_SYMLINK
-                    || tag == IO_REPARSE_TAG_MOUNT_POINT
-                    || tag == IO_REPARSE_TAG_HSM
-                    || tag == IO_REPARSE_TAG_HSM2;
+                return tag != 0;
             }
             finally
             {
@@ -118,7 +129,8 @@ public sealed class Scanner
         }
         catch
         {
-            return false;
+            // Fail closed: unreadable entries are pruned, never descended.
+            return true;
         }
     }
 
@@ -169,7 +181,7 @@ public sealed class Scanner
         var roots = options.Roots.Count > 0 ? options.Roots.ToList() : DefaultScanRoots(options.IncludeMedium, options.IncludeAdvanced).ToList();
         var totalRoots = Math.Max(1, roots.Count);
 
-        var results = new System.Collections.Concurrent.ConcurrentBag<(List<Candidate> Candidates, ulong Files, ulong Dirs)>();
+        var results = new System.Collections.Concurrent.ConcurrentBag<(List<Candidate> Candidates, ulong Files, ulong Dirs, bool Truncated)>();
         var rootFileCounts = new ulong[roots.Count];
         var rootDirCounts = new ulong[roots.Count];
         var rootCandidateCounts = new int[roots.Count];
@@ -188,18 +200,18 @@ public sealed class Scanner
         var candidates = results.SelectMany(r => r.Candidates).ToList();
         candidates.AddRange(SpecialCandidates(options, systemDriveRoot: GetSystemDriveRoot()));
 
-        var scannedFiles = results.Aggregate(0ul, (a, r) => a + r.Files);
-        var scannedDirs = results.Aggregate(0ul, (a, r) => a + r.Dirs);
+        var scannedFiles = results.Aggregate(0ul, static (a, r) => SaturatingAddUlong(a, r.Files));
+        var scannedDirs = results.Aggregate(0ul, static (a, r) => SaturatingAddUlong(a, r.Dirs));
 
         var catStats = new Dictionary<Category, (int Count, long Size, long Potential)>();
         foreach (var c in candidates)
         {
             var entry = catStats.GetValueOrDefault(c.Category);
             entry.Count++;
-            entry.Size += c.Size;
+            entry.Size = SaturatingAdd(entry.Size, c.Size);
             if (c.Action is CandidateAction.Delete or CandidateAction.Review)
             {
-                entry.Potential += c.Size;
+                entry.Potential = SaturatingAdd(entry.Potential, c.Size);
             }
 
             catStats[c.Category] = entry;
@@ -225,7 +237,9 @@ public sealed class Scanner
 
         var totalPotential = candidates
             .Where(c => c.Action is CandidateAction.Delete or CandidateAction.Review)
-            .Sum(c => c.Size);
+            .Aggregate(0L, SaturatingAddSize);
+
+        var truncated = results.Any(r => r.Truncated);
 
         onProgress?.Invoke(new ScanProgress
         {
@@ -248,8 +262,35 @@ public sealed class Scanner
                 TotalPotential = totalPotential,
                 TotalCandidates = candidates.Count,
                 Categories = categories,
+                Truncated = truncated,
             },
         };
+    }
+
+    private static long SaturatingAdd(long a, long b)
+    {
+        try
+        {
+            return checked(a + b);
+        }
+        catch (OverflowException)
+        {
+            return long.MaxValue;
+        }
+    }
+
+    private static long SaturatingAddSize(long acc, Candidate c) => SaturatingAdd(acc, c.Size);
+
+    private static ulong SaturatingAddUlong(ulong a, ulong b)
+    {
+        try
+        {
+            return checked(a + b);
+        }
+        catch (OverflowException)
+        {
+            return ulong.MaxValue;
+        }
     }
 
     private static string GetSystemDriveRoot()
@@ -264,7 +305,7 @@ public sealed class Scanner
         return string.IsNullOrWhiteSpace(windows) ? @"C:\" : Path.GetPathRoot(windows) ?? @"C:\";
     }
 
-    private static async Task<(List<Candidate> Candidates, ulong Files, ulong Dirs)> ScanOneRootAsync(
+    private static async Task<(List<Candidate> Candidates, ulong Files, ulong Dirs, bool Truncated)> ScanOneRootAsync(
         string root,
         ScanOptions options,
         int rootIndex,
@@ -278,25 +319,54 @@ public sealed class Scanner
         var candidates = new List<Candidate>();
         ulong files = 0;
         ulong dirs = 0;
+        bool truncated = false;
 
-        var stack = new Stack<string>();
-        stack.Push(root);
+        // Root itself is trusted (explicitly chosen) but must be absolute,
+        // existing and not a reparse point — a symlink root would scan
+        // an arbitrary outside tree.
+        if (!IsScannableRoot(root))
+        {
+            return (candidates, files, dirs, truncated);
+        }
+
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var stack = new Stack<(string Path, int Depth)>();
+        stack.Push((root, 0));
 
         while (stack.Count > 0)
         {
             ct.ThrowIfCancellationRequested();
 
-            var current = stack.Pop();
+            var (current, depth) = stack.Pop();
+            string canonical;
+            try
+            {
+                canonical = Path.GetFullPath(current);
+            }
+            catch
+            {
+                continue;
+            }
+            if (!visited.Add(canonical))
+            {
+                continue; // cycle guard (reparse/tag-gap aliases)
+            }
+
             try
             {
                 await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                 {
                     dirs++;
+                    if (depth + 1 > options.MaxDepth)
+                    {
+                        truncated = true;
+                        continue;
+                    }
                     if (!ShouldPrune(sub)
                         && !IsReparsePoint(sub)
                         && !Safety.PathExclusions.IsExcluded(sub, options.Exclusions))
                     {
-                        stack.Push(sub);
+                        stack.Push((sub, depth + 1));
                     }
                 }
             }
@@ -319,6 +389,11 @@ public sealed class Scanner
                     var candidate = ProcessFile(file, options);
                     if (candidate is not null)
                     {
+                        if (candidates.Count >= options.MaxCandidates)
+                        {
+                            truncated = true;
+                            continue;
+                        }
                         candidates.Add(candidate);
                         rootCandidateCounts[rootIndex] = candidates.Count;
                     }
@@ -351,11 +426,44 @@ public sealed class Scanner
         rootDirCounts[rootIndex] = dirs;
         rootCandidateCounts[rootIndex] = candidates.Count;
 
-        return (candidates, files, dirs);
+        return (candidates, files, dirs, truncated);
+    }
+
+    /// <summary>
+    /// A scan root must be absolute, existing and not itself a reparse point.
+    /// The root's own contents are trusted (explicitly chosen); descent below
+    /// it is still filtered by <see cref="ShouldPrune"/> + reparse checks.
+    /// </summary>
+    public static bool IsScannableRoot(string root)
+    {
+        if (string.IsNullOrWhiteSpace(root) || !Path.IsPathFullyQualified(root))
+            return false;
+        try
+        {
+            if (!Directory.Exists(root) || IsReparsePoint(root))
+                return false;
+        }
+        catch
+        {
+            return false;
+        }
+        return true;
     }
 
     public static Candidate? ProcessFile(string path, ScanOptions options)
     {
+        // File reparse points (symlinks) are never classified: hashing or
+        // deleting them would act on the link TARGET under a false identity.
+        try
+        {
+            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+                return null;
+        }
+        catch
+        {
+            return null;
+        }
+
         FileInfo info;
         try
         {
@@ -447,7 +555,7 @@ public sealed class Scanner
                 outList.Add(new Candidate
                 {
                     Path = "__recycle_bin__",
-                    Size = (long)rb.Value.Size,
+                    Size = rb.Value.Size > (ulong)long.MaxValue ? long.MaxValue : (long)rb.Value.Size,
                     Category = Category.RecycleBin,
                     Confidence = confidence,
                     Action = CandidateAction.Delete,
@@ -489,29 +597,48 @@ public sealed class Scanner
         IReadOnlyList<string>? exclusions = null)
     {
         var exclusionPatterns = exclusions ?? Array.Empty<string>();
+        bool truncated = false;
 
         var hashMap = new System.Collections.Concurrent.ConcurrentDictionary<byte[], string>(new ByteArrayComparer());
         var candidates = new List<Candidate>();
 
         foreach (var root in roots)
         {
-            var stack = new Stack<string>();
-            stack.Push(root);
+            if (!IsScannableRoot(root))
+            {
+                continue;
+            }
+            var stack = new Stack<(string Path, int Depth)>();
+            stack.Push((root, 0));
 
             while (stack.Count > 0)
             {
                 ct.ThrowIfCancellationRequested();
-                var current = stack.Pop();
+                var (current, depth) = stack.Pop();
+                string canonical;
+                try
+                {
+                    canonical = Path.GetFullPath(current);
+                }
+                catch
+                {
+                    continue;
+                }
 
                 try
                 {
                     await foreach (var sub in EnumerateStreamingAsync(current, static p => Directory.EnumerateDirectories(p), ct))
                     {
+                        if (depth + 1 > MaxDuplicateDepth)
+                        {
+                            truncated = true;
+                            continue;
+                        }
                         if (!ShouldPrune(sub)
                             && !IsReparsePoint(sub)
                             && !Safety.PathExclusions.IsExcluded(sub, exclusionPatterns))
                         {
-                            stack.Push(sub);
+                            stack.Push((sub, depth + 1));
                         }
                     }
                 }
@@ -530,9 +657,19 @@ public sealed class Scanner
 
                         try
                         {
+                            if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0)
+                            {
+                                continue;
+                            }
                             var length = new FileInfo(file).Length;
                             if (length < DuplicateMinSize)
                             {
+                                continue;
+                            }
+                            if (length > MaxHashBytes)
+                            {
+                                // Hashing multi-GB files for duplicate detection
+                                // is a DoS vector; skip (safe direction).
                                 continue;
                             }
 
@@ -583,11 +720,18 @@ public sealed class Scanner
             Candidates = candidates,
             Summary = new ScanSummary
             {
-                TotalPotential = candidates.Sum(c => c.Size),
+                TotalPotential = candidates.Aggregate(0L, SaturatingAddSize),
                 TotalCandidates = candidates.Count,
+                Truncated = truncated,
             },
         };
     }
+
+    /// <summary>Upper bound for a single file hashed during duplicate scan.</summary>
+    private const long MaxHashBytes = 512L * 1024 * 1024;
+
+    /// <summary>Descent cap for duplicate scans (no ScanOptions on this path).</summary>
+    private const int MaxDuplicateDepth = 64;
 
     /// <summary>Streams a file through a BLAKE3 hasher. Returns null when unreadable.</summary>
     public static byte[]? HashFile(string path) => HashFileAsync(path, CancellationToken.None).GetAwaiter().GetResult();
@@ -631,24 +775,22 @@ public sealed class Scanner
         Func<string, IEnumerable<string>> enumerate,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        // Bounded channel: a million-entry directory must not buffer
+        // unboundedly, and the producer must observe cancellation.
+        var channel = Channel.CreateBounded<string>(new BoundedChannelOptions(1024)
         {
             SingleWriter = true,
             SingleReader = true,
+            FullMode = BoundedChannelFullMode.Wait,
         });
 
-        var producer = Task.Run(() =>
+        var producer = Task.Run(async () =>
         {
             try
             {
                 foreach (var entry in enumerate(path))
                 {
-                    if (ct.IsCancellationRequested)
-                    {
-                        break;
-                    }
-
-                    channel.Writer.TryWrite(entry);
+                    await channel.Writer.WriteAsync(entry, ct);
                 }
 
                 channel.Writer.TryComplete();
@@ -658,7 +800,7 @@ public sealed class Scanner
                 // unreadable directory — surface to the consumer
                 channel.Writer.TryComplete(ex);
             }
-        }, CancellationToken.None);
+        }, ct);
 
         await foreach (var entry in channel.Reader.ReadAllAsync(ct))
         {

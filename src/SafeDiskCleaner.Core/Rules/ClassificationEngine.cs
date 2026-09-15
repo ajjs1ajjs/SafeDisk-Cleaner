@@ -24,7 +24,8 @@ public sealed record ClassificationResult(MatchKind Kind, Category? Category, by
 /// </summary>
 public static class ClassificationEngine
 {
-    private static readonly string[] ProtectedExtensions = ["dll", "sys", "exe", "cat", "inf", "msi", "msp"];
+    private static readonly string[] ProtectedExtensions = ["dll", "sys", "exe", "cat", "inf", "msi", "msp",
+        "bat", "cmd", "ps1", "com", "scr", "drv", "mui", "cpl", "ocx", "ax"];
 
     /// <summary>The OS temp dir in backslash form (Unix only); used to classify temp files cross-platform.</summary>
     private static readonly string NormalizedTempRoot =
@@ -34,6 +35,23 @@ public static class ClassificationEngine
 
     public static bool IsProtectedExtension(string path) =>
         IsProtectedExtension((ReadOnlySpan<char>)Path.GetExtension(path));
+
+    /// <summary>
+    /// An ADS/stream suffix (`file.txt:evil`) changes the extension string
+    /// itself — treat any post-drive colon as protected, not cleanable.
+    /// </summary>
+    public static bool HasAdsSuffix(string path)
+    {
+        for (int i = 0; i < path.Length; i++)
+        {
+            if (path[i] != ':')
+                continue;
+            if (i == 1 && path.Length > 2 && (path[2] == '\\' || path[2] == '/'))
+                continue;
+            return true;
+        }
+        return false;
+    }
 
     public static bool IsProtectedExtension(ReadOnlySpan<char> extension)
     {
@@ -62,6 +80,11 @@ public static class ClassificationEngine
 
     public static ClassificationResult Classify(string path)
     {
+        if (HasAdsSuffix(path))
+        {
+            return ClassificationResult.Protected();
+        }
+
         if (IsProtectedExtension(path))
         {
             return ClassificationResult.Protected();
@@ -130,17 +153,24 @@ public static class ClassificationEngine
             return ClassificationResult.CandidateResult(Category.PackageCache, 92, "Package manager cache");
         }
 
-        if (lower.Contains(@"\deliveryoptimization\", StringComparison.Ordinal))
-        {
-            return ClassificationResult.CandidateResult(Category.DeliveryOptimization, 88, "Delivery Optimization cache");
-        }
+          if (lower.Contains(@"\deliveryoptimization\", StringComparison.Ordinal))
+          {
+              return ClassificationResult.CandidateResult(Category.DeliveryOptimization, 88, "Delivery Optimization cache");
+          }
 
-        if (lower.Contains(@"\windows\wer\", StringComparison.Ordinal)
-            || lower.Contains(@"\windows\werreportqueue", StringComparison.Ordinal)
-            || lower.Contains(@"\wer\reportqueue", StringComparison.Ordinal))
-        {
-            return ClassificationResult.CandidateResult(Category.WindowsErrorReporting, 92, "Windows Error Reporting queue");
-        }
+          // windows.old wins over narrower rules below (e.g. a WER queue
+          // inside an OLD install is Advanced junk, not live Safe data).
+          if (lower.Contains(@"\windows.old\", StringComparison.Ordinal) || lower.Contains(@"\windows~old\", StringComparison.Ordinal))
+          {
+              return ClassificationResult.CandidateResult(Category.OldWindowsInstall, 97, "File from a previous Windows installation");
+          }
+
+          if (lower.Contains(@"\windows\wer\", StringComparison.Ordinal)
+              || lower.Contains(@"\windows\werreportqueue", StringComparison.Ordinal)
+              || lower.Contains(@"\wer\reportqueue", StringComparison.Ordinal))
+          {
+              return ClassificationResult.CandidateResult(Category.WindowsErrorReporting, 92, "Windows Error Reporting queue");
+          }
 
         if (lower.Contains(@"\windows\inetcache", StringComparison.Ordinal)
             || lower.Contains(@"\internet explorer\cache", StringComparison.Ordinal))
@@ -174,11 +204,6 @@ public static class ClassificationEngine
             (name.StartsWith("thumbcache", StringComparison.Ordinal) || name.StartsWith("iconcache", StringComparison.Ordinal)))
         {
             return ClassificationResult.CandidateResult(Category.ThumbnailCache, 96, "Windows thumbnail cache database");
-        }
-
-        if (lower.Contains(@"\windows.old", StringComparison.Ordinal) || lower.Contains(@"\windows~old", StringComparison.Ordinal))
-        {
-            return ClassificationResult.CandidateResult(Category.OldWindowsInstall, 97, "File from a previous Windows installation");
         }
 
         return ClassificationResult.None();

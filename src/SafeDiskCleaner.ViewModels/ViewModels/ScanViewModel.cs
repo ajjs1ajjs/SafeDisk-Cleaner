@@ -25,6 +25,7 @@ public sealed partial class ScanViewModel : ObservableObject
     private readonly IRecycleBin _recycleBin;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _cleanupCts;
+    private IReadOnlyList<string> _lastScanRoots = Array.Empty<string>();
 
     [ObservableProperty]
     private ObservableCollection<DriveInfo> _drives = [];
@@ -158,6 +159,17 @@ public sealed partial class ScanViewModel : ObservableObject
         NotifySelectionChanged();
     }
 
+    /// <summary>
+    /// Neutralizes CSV formula injection: a cell starting with `= + - @ |`
+    /// would execute as a formula in Excel on open. The quote prefix keeps
+    /// it inert text. Embedded quotes are doubled per RFC 4180.
+    /// </summary>
+    private static string SanitizeCsvCell(string? value)
+    {
+        var s = (value ?? "").Replace("\"", "\"\"");
+        return s.Length > 0 && "=+-@|".Contains(s[0]) ? "'" + s : s;
+    }
+
     [RelayCommand]
     private async Task ExportAsync()
     {
@@ -197,7 +209,7 @@ public sealed partial class ScanViewModel : ObservableObject
                 sb.AppendLine("Path,Category,Risk,SizeBytes,Confidence,Recommendation,Reason");
                 foreach (var r in rows)
                 {
-                    sb.AppendLine($"\"{r.Path}\",{r.CategoryLabel},{r.RiskLevel.Label()},{r.Size},{r.Confidence},\"{r.Recommendation}\",\"{r.Reason}\"");
+                    sb.AppendLine($"\"{SanitizeCsvCell(r.Path)}\",{r.CategoryLabel},{r.RiskLevel.Label()},{r.Size},{r.Confidence},\"{SanitizeCsvCell(r.Recommendation)}\",\"{SanitizeCsvCell(r.Reason)}\"");
                 }
 
                 await System.IO.File.WriteAllTextAsync(path, sb.ToString());
@@ -373,13 +385,15 @@ public sealed partial class ScanViewModel : ObservableObject
             Exclusions = _settings.Exclusions,
         };
 
-        var validator = new Core.Validation.ScanOptionsValidator();
-        var validation = validator.Validate(options);
-        if (!validation.IsValid)
-        {
-            Message = string.Join("; ", validation.Errors.Select(e => e.ErrorMessage));
-            return;
-        }
+          var validator = new Core.Validation.ScanOptionsValidator();
+          var validation = validator.Validate(options);
+          if (!validation.IsValid)
+          {
+              Message = string.Join("; ", validation.Errors.Select(e => e.ErrorMessage));
+              return;
+          }
+
+          _lastScanRoots = options.Roots.ToList();
 
         _scanCts?.Cancel();
         _scanCts = new CancellationTokenSource();
@@ -496,13 +510,17 @@ Message = result.Candidates.Count == 0
                 QuarantineRetentionDays = _settings.QuarantineRetentionDays,
                 MoveToRecycleBin = MoveToRecycleBin,
                 AutoThreshold = _settings.AutoThreshold,
+                // The selection reached the engine only after the UI confirm
+                // above; the jail roots come from the scan that produced it.
+                ConfirmReview = true,
             };
 
             _cleanupCts?.Cancel();
             _cleanupCts = new CancellationTokenSource();
 
+            var roots = _lastScanRoots;
             var result = await Task.Run(
-                () => _cleanup.RunAsync(selected, options, OnCleanupProgress, _cleanupCts.Token),
+                () => _cleanup.RunAsync(selected, options, OnCleanupProgress, _cleanupCts.Token, roots),
                 _cleanupCts.Token);
             CleanupResult = result;
 

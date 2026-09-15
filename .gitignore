@@ -8,6 +8,14 @@ obj/
 BUILD/
 dist-portable/
 
+# Signing keys / certificates — never commit
+*.pfx
+*.p12
+*.key
+*.cer
+*.crt
+*.pem
+
 # Node (old frontend, kept for reference)
 node_modules
 dist

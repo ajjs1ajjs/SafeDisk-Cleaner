@@ -54,6 +54,7 @@ internal static class Uk
         ["Apps.ConfirmTitle"] = "Деінсталяція",
         ["Apps.ConfirmMsg"] = "Запустити офіційний деінсталятор «{0}»?",
         ["Apps.Launched"] = "Деінсталятор «{0}» запущено.",
+        ["Apps.ConfirmCommand"] = "Запустити офіційний деінсталятор для \"{0}\"?\n\nКоманда:\n{1} {2}",
         ["Apps.Error"] = "Помилка деінсталяції: {0}",
         ["Apps.WindowsOnly"] = "Список застосунків доступний лише на Windows.",
         ["Scan.TreemapToggle"] = "Карта результатів",
@@ -99,6 +100,8 @@ internal static class Uk
         ["Dup.NotFound"] = "Дублікатів не знайдено.",
         ["Dup.Found"] = "Знайдено дублікатів: {0}.",
         ["Dup.Cancelled"] = "Пошук дублікатів скасовано.",
+        ["Dup.DeleteTitle"] = "Видалення дублікатів",
+        ["Dup.DeleteConfirm"] = "Безповоротно видалити {0} вибраних дублікатів? Найновішу копію кожної групи збережено.",
 
         // Scan
         ["Scan.AreaTitle"] = "Область аналізу",
@@ -133,7 +136,7 @@ internal static class Uk
 
         // Recycle bin
         ["RecycleBin.CleanConfirmTitle"] = "Очищення кошика",
-        ["RecycleBin.CleanConfirmMsg"] = "Це назавжди видалить усі файли з кошика. Продовжити?",
+        ["RecycleBin.CleanConfirmMsg"] = "Це назавжди видалить усі файли з кошика. Продовжити? На ВСІХ дисках.",
         ["RecycleBin.Cleaned"] = "Кошик очищено.",
         ["RecycleBin.CleanFailed"] = "Не вдалося очистити кошик.",
 

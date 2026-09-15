@@ -46,9 +46,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.1.4, )",
-        "resolved": "3.1.4",
-        "contentHash": "5mj99LvCqrq3CNi06xYdyIAXOEh+5b33F2nErCzI5zWiDdLHXiPXEWFSUAF8zlIv0ZWqjZNCwHTQeAPYbF3pCg=="
+        "requested": "[2.8.2, )",
+        "resolved": "2.8.2",
+        "contentHash": "vm1tbfXhFmjFMUmS4M0J0ASXz3/U5XvXBa6DOQUL3fEz4Vt6YPhv+ESCarx6M6D+9kJkJYZKCNvJMas1+nVfmQ=="
       },
       "Castle.Core": {
         "type": "Transitive",
@@ -637,7 +637,7 @@
           "Microsoft.Extensions.Http.Resilience": "[10.8.0, )",
           "Refit": "[15.0.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )",
-          "SafeDiskCleaner.Core": "[1.7.0, )",
+          "SafeDiskCleaner.Core": "[1.7.4, )",
           "Serilog": "[4.4.0, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",

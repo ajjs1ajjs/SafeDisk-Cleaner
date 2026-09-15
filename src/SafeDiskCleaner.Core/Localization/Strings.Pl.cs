@@ -54,6 +54,7 @@ internal static class Pl
         ["Apps.ConfirmTitle"] = "Deinstalacja",
         ["Apps.ConfirmMsg"] = "Uruchomić oficjalny deinstalator „{0}”?",
         ["Apps.Launched"] = "Deinstalator „{0}” został uruchomiony.",
+        ["Apps.ConfirmCommand"] = "Uruchomić oficjalny deinstalator dla \"{0}\"?\n\nPolecenie:\n{1} {2}",
         ["Apps.Error"] = "Błąd deinstalacji: {0}",
         ["Apps.WindowsOnly"] = "Lista aplikacji jest dostępna tylko w systemie Windows.",
         ["Scan.TreemapToggle"] = "Mapa wyników",
@@ -100,6 +101,8 @@ internal static class Pl
         ["Dup.NotFound"] = "Nie znaleziono duplikatów.",
         ["Dup.Found"] = "Znaleziono duplikatów: {0}.",
         ["Dup.Cancelled"] = "Wyszukiwanie duplikatów anulowano.",
+        ["Dup.DeleteTitle"] = "Usuwanie duplikatów",
+        ["Dup.DeleteConfirm"] = "Trwale usunąć {0} wybranych duplikatów? Najnowsza kopia każdej grupy zostanie zachowana.",
 
         // Scan
         ["Scan.AreaTitle"] = "Zakres skanowania",
@@ -134,7 +137,7 @@ internal static class Pl
 
         // Recycle bin
         ["RecycleBin.CleanConfirmTitle"] = "Opróżnianie kosza",
-        ["RecycleBin.CleanConfirmMsg"] = "Spowoduje to trwałe usunięcie wszystkich plików z kosza. Kontynuować?",
+        ["RecycleBin.CleanConfirmMsg"] = "Spowoduje to trwałe usunięcie wszystkich plików z kosza. Kontynuować? Na WSZYSTKICH dyskach.",
         ["RecycleBin.Cleaned"] = "Kosz opróżniono.",
         ["RecycleBin.CleanFailed"] = "Nie udało się opróżnić kosza.",
 

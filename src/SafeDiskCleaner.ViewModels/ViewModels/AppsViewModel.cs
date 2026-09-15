@@ -90,17 +90,8 @@ public sealed partial class AppsViewModel : ObservableObject
             return;
         }
 
-        var confirmed = await _dialogs.ConfirmAsync(
-            Loc.T("Apps.ConfirmTitle"),
-            Loc.F("Apps.ConfirmMsg", row.Name),
-            Loc.T("Common.Delete"));
-        if (!confirmed)
-        {
-            return;
-        }
-
-        try
-        {
+          try
+          {
             // Prefer the vendor-provided quiet uninstaller when present.
             var command = !string.IsNullOrWhiteSpace(row.QuietUninstallString)
                 ? row.QuietUninstallString
@@ -108,17 +99,42 @@ public sealed partial class AppsViewModel : ObservableObject
 
             if (!InstalledAppsReader.TrySplitCommand(command, out var exe, out var args))
             {
-                exe = command;
-                args = string.Empty;
+                Message = Loc.F("Apps.Error", "Unrecognized uninstall command format.");
+                return;
             }
 
-            Process.Start(new ProcessStartInfo(exe, args)
+            // Registry uninstall strings are attacker-influenceable (HKCU is
+            // user-writable): the target must exist, no raw-command fallback.
+            if (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe))
             {
-                UseShellExecute = true,
-            });
+                Message = Loc.F("Apps.Error", "Uninstaller executable not found.");
+                return;
+            }
+
+            var confirmed = await _dialogs.ConfirmAsync(
+                Loc.T("Apps.ConfirmTitle"),
+                Loc.F("Apps.ConfirmCommand", row.Name, exe, args),
+                Loc.T("Common.Delete"));
+            if (!confirmed)
+            {
+                return;
+            }
+
+            var psi = new ProcessStartInfo(exe, args)
+            {
+                UseShellExecute = false,
+            };
+            // msiexec-style commands need elevation semantics that only the
+            // shell provides; keep it off otherwise (no PATH search games).
+            if (exe.EndsWith("msiexec.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                psi.UseShellExecute = true;
+            }
+
+            Process.Start(psi);
 
             Message = Loc.F("Apps.Launched", row.Name);
-        }
+          }
         catch (Exception ex)
         {
             Message = Loc.F("Apps.Error", ex.Message);

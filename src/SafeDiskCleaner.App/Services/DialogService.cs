@@ -38,7 +38,21 @@ public sealed class DialogService : IDialogService
             DefaultExt = ".csv",
         };
 
-        return Task.FromResult(dialog.ShowDialog() == true ? dialog.FileName : null);
+        if (dialog.ShowDialog() != true)
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        // Post-pick enforcement: "all files" choice bypasses the filter.
+        var picked = dialog.FileName;
+        var ext = System.IO.Path.GetExtension(defaultFileName);
+        if (!string.IsNullOrEmpty(ext)
+            && !picked.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        return Task.FromResult<string?>(picked);
     }
 }
 

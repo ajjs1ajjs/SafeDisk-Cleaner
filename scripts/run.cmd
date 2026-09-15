@@ -15,7 +15,7 @@ if exist "%DST%" if exist "%MARK%" (
 )
 mkdir "%LOCALAPPDATA%\SafeDisk\app" 2>nul
 copy /y "%SRC%" "%DST%" >nul
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Path '%DST%' -ErrorAction SilentlyContinue"
+powershell -NoProfile -ExecutionPolicy RemoteSigned -Command "Unblock-File -Path '%DST%' -ErrorAction SilentlyContinue"
 echo %SRC_DATE%~%SRC_SIZE%>"%MARK%"
 :run
 start "" "%DST%"

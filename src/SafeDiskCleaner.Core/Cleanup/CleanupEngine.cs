@@ -32,9 +32,15 @@ public sealed class CleanupEngine
         IReadOnlyList<Candidate> candidates,
         CleanupOptions options,
         Action<CleanupProgress>? onProgress,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IReadOnlyList<string>? scanRoots = null)
     {
-        await _quarantine.PurgeExpiredAsync(ct);
+        // Dry run must not mutate anything: previously the expired-quarantine
+        // purge ran before the DryRun early-out ("nothing was deleted" lied).
+        if (options.Mode is not CleanMode.DryRun and not CleanMode.Analyze)
+        {
+            await _quarantine.PurgeExpiredAsync(ct);
+        }
 
         var ordered = candidates
             .Where(c => c.Action != CandidateAction.Keep)
@@ -67,7 +73,7 @@ public sealed class CleanupEngine
 
                 if (options.Mode == CleanMode.DryRun)
                 {
-                    freed += candidate.Size;
+                    freed = SaturatingAdd(freed, candidate.Size);
                     entries.Add(new CleanupEntry
                     {
                         Path = candidate.Path,
@@ -85,7 +91,7 @@ public sealed class CleanupEngine
                 CleanupOutcome result;
                 try
                 {
-                    result = await ExecuteAsync(candidate, options, ct);
+                    result = await ExecuteAsync(candidate, options, scanRoots, ct);
                 }
                 catch (OperationCanceledException)
                 {
@@ -110,7 +116,7 @@ public sealed class CleanupEngine
 
                 if (result.Status.IsSuccess())
                 {
-                    freed += candidate.Size;
+                    freed = SaturatingAdd(freed, candidate.Size);
                 }
 
                 auditBuffer.Add(new AuditEntry
@@ -177,7 +183,8 @@ public sealed class CleanupEngine
         await _audit.AppendManyAsync(batch, ct);
     }
 
-    private async Task<CleanupOutcome> ExecuteAsync(Candidate candidate, CleanupOptions options, CancellationToken ct)
+    private async Task<CleanupOutcome> ExecuteAsync(
+        Candidate candidate, CleanupOptions options, IReadOnlyList<string>? scanRoots, CancellationToken ct)
     {
         if (options.Mode == CleanMode.Auto)
         {
@@ -192,6 +199,11 @@ public sealed class CleanupEngine
             }
         }
 
+        if (candidate.Action == CandidateAction.Review && !options.ConfirmReview)
+        {
+            return CleanupOutcome.Failed("Review-action candidate requires explicit user confirmation");
+        }
+
         if (candidate.Category == Category.RecycleBin && candidate.Path == RecycleBinSentinel)
         {
             return _recycleBin.Empty()
@@ -199,7 +211,7 @@ public sealed class CleanupEngine
                 : CleanupOutcome.Failed("Failed to empty Recycle Bin");
         }
 
-        var verdict = _safety.Validate(candidate.Path, candidate.Category, recencyDays: options.RecencyDays);
+        var verdict = _safety.Validate(candidate.Path, candidate.Category, recencyDays: options.RecencyDays, scanRoots);
         if (!verdict.Allowed)
         {
             return CleanupOutcome.Failed(string.Join("; ", verdict.Reasons));
@@ -218,8 +230,14 @@ public sealed class CleanupEngine
             _recycleBin.MoveToRecycleBin(candidate.Path);
             return CleanupOutcome.Success(CleanupStatus.Recycled);
         }
-        catch
+        catch (Exception ex)
         {
+            // A user who chose "Recycle Bin" must not silently lose the file
+            // elsewhere: report the failure unless fallback was opted into.
+            if (!options.FallbackToQuarantine)
+            {
+                return CleanupOutcome.Failed($"Recycle failed: {ex.Message}");
+            }
             await _quarantine.QuarantineAsync(candidate.Path, options.QuarantineRetentionDays, ct);
             return CleanupOutcome.Success(CleanupStatus.Quarantined);
         }
@@ -229,5 +247,17 @@ public sealed class CleanupEngine
     {
         public static CleanupOutcome Success(CleanupStatus status) => new(status, string.Empty);
         public static CleanupOutcome Failed(string error) => new(CleanupStatus.Failed, error);
+    }
+
+    private static long SaturatingAdd(long a, long b)
+    {
+        try
+        {
+            return checked(a + b);
+        }
+        catch (OverflowException)
+        {
+            return long.MaxValue;
+        }
     }
 }
